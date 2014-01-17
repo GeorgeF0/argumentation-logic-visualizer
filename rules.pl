@@ -1,3 +1,6 @@
+% Make prolog not abbreviate lists and long results
+%set_prolog_flag(toplevel_print_options, [quoted(true), portray(true)]).
+
 % Convert list of givens to steps (internal ND data-structure)
 % steps are of the format step(formula, reason as to how this formula was derived, position of this step in the overall proof)
 toSteps(Givens, RevSteps) :- reverse(Steps, RevSteps), toSteps(Givens, Steps, 0).
@@ -42,8 +45,8 @@ andEx(OldSteps, [_|Steps], NewSteps) :- andEx(OldSteps, Steps, NewSteps).
 % Base case: no more goals to prove means we've completed the proof
 backwardProve(Steps, [], Steps).
 % Check: if the goal appears as a step (ie: if the goal has been derived) check it and try to prove the rest of the goals
-backwardProve(Steps, [G|Goals], [step(G, [check, LineNumber], NextLineNumber)|Proof]) :- member(step(G, _, LineNumber), Steps), ln(Steps, NextLineNumber), backwardProve(Steps, Goals, Proof).
+backwardProve(Steps, [G|Goals], [step(G, [check, LineNumber], NextLineNumber)|Proof]) :- member(step(G, _, LineNumber), Steps), backwardProve(Steps, Goals, Proof), ln(Proof, NextLineNumber).
 % And Introduction: prove and(a,b) by proving a and b separately
-backwardProve(Steps, [and(A, B)| Goals], [step(and(A, B), [andI, LineNumber1, LineNumber2], NextLineNumber)|Proof]) :- backwardProve(Steps, [A, B|Goals], Proof), member(step(A, _, LineNumber1), Proof), member(step(B, _, LineNumber2), Proof), ln(Steps, NextLineNumber).
+backwardProve(Steps, [and(A, B)| Goals], [step(and(A, B), [andI, LineNumber1, LineNumber2], NextLineNumber)|Proof]) :- backwardProve(Steps, [A, B|Goals], Proof), member(step(A, _, LineNumber1), Proof), member(step(B, _, LineNumber2), Proof), ln(Proof, NextLineNumber).
 % try Forward prove: if no further progress can be done backwards, try to break down derived formulas again
 backwardProve(Steps, Goals, Proof) :- length(Steps, S1), forwardProve(Steps, NewSteps), !, length(NewSteps, S2), S2 > S1, backwardProve(NewSteps, Goals, Proof).
