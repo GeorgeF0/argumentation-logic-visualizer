@@ -17,6 +17,18 @@ ln([step(_, _, LineNumber)|_], NextLineNumber) :- is(NextLineNumber, LineNumber 
 % ln(current line number, next line number)
 ln(LineNumber, NextLineNumber) :- integer(LineNumber), is(NextLineNumber, LineNumber + 1).
 
+% Pretty print prove
+prettyProve(Givens, Goal) :- pprove(Givens, Goal).
+pprove(Givens, Goal) :- prove(Givens, Goal, Proof), prettyPrint(Proof).
+prettyPrint([]).
+prettyPrint([Step|Proof]) :- prettyPrint(Proof), prettyPrintStep(Step).
+prettyPrintStep(step(Formula, Reason, LineNumber)) :- prettyPrintFormula(Formula, PrettyFormula), format('~w~20|~w~40|~d~60|~n', [PrettyFormula, Reason, LineNumber]).
+prettyPrintFormula(and(A, B), String) :- prettyPrintFormula(A, PrettyA), prettyPrintFormula(B, PrettyB), swritef(String, '(%w&%w)', [PrettyA, PrettyB]).
+prettyPrintFormula(or(A, B), String) :- prettyPrintFormula(A, PrettyA), prettyPrintFormula(B, PrettyB), swritef(String, '(%w|%w)', [PrettyA, PrettyB]).
+prettyPrintFormula(n(A), String) :- prettyPrintFormula(A, PrettyA), swritef(String, '~(%w)', [PrettyA]).
+prettyPrintFormula(implies(A, B), String) :- prettyPrintFormula(A, PrettyA), prettyPrintFormula(B, PrettyB), swritef(String, '(%w->%w)', [PrettyA, PrettyB]).
+prettyPrintFormula(A, A).
+
 % Contruct a proof in Natural Deduction
 % prove is of the format prove([givens, ex: and(a,b), c, d], [goal that needs to be proven], Output proof given as variable)
 prove(Givens, Goal, Proof) :- is_list(Givens), is_list(Goal), toSteps(Givens, Steps), !, backwardProve(Steps, Goal, Proof).
@@ -48,6 +60,7 @@ notEx(OldSteps, [step(n(n(A)), _, LineNumber)|Steps], NewSteps) :-
 	ln(NS, NextLineNumber), ExtraSteps = [step(A, [notE, LineNumber], NextLineNumber)], !),
 	a2(ExtraSteps, NS, NewSteps).
 notEx(OldSteps, [_|Steps], NewSteps) :- notEx(OldSteps, Steps, NewSteps).
+
 % BackwardProve: tries to match the current steps to goals, or simplify goals and try matching again
 % whenever no further progress can be made, a call to forwardProve is made in order to break down steps into simpler formulas that might be of use
 % Base case: no more goals to prove means we've completed the proof
