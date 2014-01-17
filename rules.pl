@@ -24,7 +24,7 @@ prove(Givens, Goal, Proof) :- is_list(Givens), is_list(Goal), toSteps(Givens, St
 % Forward Prove: iterates through all steps and breaks down formulas into smaller, simpler parts
 % this process does not take into account the goals or the proof so far
 % this process repeats itself until no further progress can be made (ie: until formulas can not be broken down any longer)
-forwardProve(Steps, NewSteps) :- length(Steps, S1), andE(Steps, NewSteps1), length(NewSteps1, S2), S2 > S1, forwardProve(NewSteps1, NewSteps).
+forwardProve(Steps, NewSteps) :- length(Steps, S1), andE(Steps, NewSteps1), notE(NewSteps1, NewSteps2), length(NewSteps2, S2), S2 > S1, forwardProve(NewSteps2, NewSteps).
 forwardProve(NewSteps, NewSteps).
 % Forward Prove Rules: different rules that break down different types of formulas
 % all rules are of the form rule(current steps, Expanded steps)
@@ -39,7 +39,15 @@ andEx(OldSteps, [step(and(A, B), _, LineNumber)|Steps], NewSteps) :-
 	ln(NS, NextLineNumber), ln(NextLineNumber, NextNextLineNumber), LeftRightClause = [step(A, [andE, LineNumber], NextNextLineNumber), step(B, [andE, LineNumber], NextLineNumber)], !),
 	a2(LeftRightClause, NS, NewSteps).
 andEx(OldSteps, [_|Steps], NewSteps) :- andEx(OldSteps, Steps, NewSteps).
-
+% Not Elimination:
+notE(Steps, NewSteps) :- notEx(Steps, Steps, NewSteps).
+notEx(OldSteps, [], OldSteps).
+notEx(OldSteps, [step(n(n(A)), _, LineNumber)|Steps], NewSteps) :-
+	notEx(OldSteps, Steps, NS),
+	(member(step(A, _, _), NS), ExtraSteps = [], !;
+	ln(NS, NextLineNumber), ExtraSteps = [step(A, [notE, LineNumber], NextLineNumber)], !),
+	a2(ExtraSteps, NS, NewSteps).
+notEx(OldSteps, [_|Steps], NewSteps) :- notEx(OldSteps, Steps, NewSteps).
 % BackwardProve: tries to match the current steps to goals, or simplify goals and try matching again
 % whenever no further progress can be made, a call to forwardProve is made in order to break down steps into simpler formulas that might be of use
 % Base case: no more goals to prove means we've completed the proof
