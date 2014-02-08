@@ -3,7 +3,7 @@
 
 % Convert list of givens to steps (internal ND data-structure)
 % steps are of the format step(formula, reason as to how this formula was derived, position of this step in the overall proof)
-toSteps(Givens, RevSteps) :- reverse(Steps, RevSteps), toSteps(Givens, Steps, 0).
+toSteps(Givens, RevSteps) :- toSteps(Givens, Steps, 0), reverse(Steps, RevSteps).
 toSteps([], [], _).
 toSteps([G|Givens], [step(G, given, LineNumber)|Steps], LineNumber) :- is(N, LineNumber + 1), toSteps(Givens, Steps, N).
 
@@ -36,7 +36,7 @@ prove(Givens, Goal, Proof) :- is_list(Givens), is_list(Goal), toSteps(Givens, St
 % Forward Prove: iterates through all steps and breaks down formulas into smaller, simpler parts
 % this process does not take into account the goals or the proof so far
 % this process repeats itself until no further progress can be made (ie: until formulas can not be broken down any longer)
-forwardProve(Steps, NewSteps) :- length(Steps, S1), andE(Steps, NewSteps1), notE(NewSteps1, NewSteps2), length(NewSteps2, S2), S2 > S1, forwardProve(NewSteps2, NewSteps).
+forwardProve(Steps, NewSteps) :- length(Steps, S1), andE(Steps, NewSteps1), notE(NewSteps1, NewSteps2), falsityI(NewSteps2, NewSteps3), length(NewSteps3, S2), S2 > S1, forwardProve(NewSteps3, NewSteps).
 forwardProve(NewSteps, NewSteps).
 % Forward Prove Rules: different rules that break down different types of formulas
 % all rules are of the form rule(current steps, Expanded steps)
@@ -60,6 +60,12 @@ notEx(OldSteps, [step(n(n(A)), _, LineNumber)|Steps], NewSteps) :-
 	ln(NS, NextLineNumber), ExtraSteps = [step(A, [notE, LineNumber], NextLineNumber)], !),
 	a2(ExtraSteps, NS, NewSteps).
 notEx(OldSteps, [_|Steps], NewSteps) :- notEx(OldSteps, Steps, NewSteps).
+% Falsity Introduction:
+falsityI(Steps, NewSteps) :- falsityIx(Steps, Steps, NewSteps).
+falsityIx(OldSteps, [], OldSteps).
+falsityIx(OldSteps, _, OldSteps) :- member(step(falsity, _, _), OldSteps), !.
+falsityIx(OldSteps, [step(A, _, LineNumber1)|_], [step(falsity, [falsityI, LineNumber1, LineNumber2], NextLineNumber)|OldSteps]) :- member(step(n(A), _, LineNumber2), OldSteps), ln(OldSteps, NextLineNumber).
+falsityIx(OldSteps, [_|Steps], NewSteps) :- falsityIx(OldSteps, Steps, NewSteps).
 
 % BackwardProve: tries to match the current steps to goals, or simplify goals and try matching again
 % whenever no further progress can be made, a call to forwardProve is made in order to break down steps into simpler formulas that might be of use
@@ -72,5 +78,7 @@ backwardProve(Steps, [and(A, B)| Goals], [step(and(A, B), [andI, LineNumber1, Li
 backwardProve(Steps, [and(A, B)| Goals], [step(and(A, B), [andI, LineNumber1, LineNumber2], NextLineNumber)|Proof]) :- member(step(A, _, LineNumber1), Steps), backwardProve(Steps, [B|Goals], Proof),  member(step(B, _, LineNumber2), Proof), ln(Proof, NextLineNumber).
 backwardProve(Steps, [and(A, B)| Goals], [step(and(A, B), [andI, LineNumber1, LineNumber2], NextLineNumber)|Proof]) :- member(step(B, _, LineNumber2), Steps), backwardProve(Steps, [A|Goals], Proof), member(step(A, _, LineNumber1), Proof), ln(Proof, NextLineNumber).
 backwardProve(Steps, [and(A, B)| Goals], [step(and(A, B), [andI, LineNumber1, LineNumber2], NextLineNumber)|Proof]) :- backwardProve(Steps, [A, B|Goals], Proof), member(step(A, _, LineNumber1), Proof), member(step(B, _, LineNumber2), Proof), ln(Proof, NextLineNumber).
+% Falsity Elimination: if contradiction has been established, vacuously prove current goal
+backwardProve(Steps, [G|Goals], [step(G, [falsityE, LineNumber], NextLineNumber)|Proof]) :- member(step(falsity, _, LineNumber), Steps), backwardProve(Steps, Goals, Proof), ln(Proof, NextLineNumber).
 % try Forward prove: if no further progress can be done backwards, try to break down derived formulas again
 backwardProve(Steps, Goals, Proof) :- length(Steps, S1), forwardProve(Steps, NewSteps), !, length(NewSteps, S2), S2 > S1, backwardProve(NewSteps, Goals, Proof).
