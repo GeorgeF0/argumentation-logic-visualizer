@@ -5,7 +5,7 @@
 % steps are of the format step(formula, reason as to how this formula was derived, position of this step in the overall proof)
 toSteps(Givens, RevSteps) :- toSteps(Givens, Steps, 0), reverse(Steps, RevSteps).
 toSteps([], [], _).
-toSteps([G|Givens], [step(G, given, LineNumber)|Steps], LineNumber) :- is(N, LineNumber + 1), toSteps(Givens, Steps, N).
+toSteps([G|Givens], [step(G, [given], LineNumber)|Steps], LineNumber) :- is(N, LineNumber + 1), toSteps(Givens, Steps, N).
 
 % Append 3 lists and Append shortcut
 a2(L1, L2, L) :- append(L1, L2, L).
@@ -21,9 +21,45 @@ ln([step(_, _, LineNumber)|_], NextLineNumber) :- is(NextLineNumber, LineNumber 
 % ln(current line number, next line number)
 ln(LineNumber, NextLineNumber) :- integer(LineNumber), is(NextLineNumber, LineNumber + 1).
 
+% Prune unused steps in a proof and "check" steps for a more natural and concise proof
+prune([step(X, Y, LineNumber)|Proof], PrunedProof) :- pruneSteps([step(X, Y, LineNumber)|Proof], [LineNumber], _, PrunedProof).
+% Prune unused steps in a proof and "check" steps
+pruneSteps([], UsedSteps, UsedSteps, []).
+pruneSteps([step(X, [Z], Y)|Proof], _, _, [step(X, [Z], Y)|Proof]) :-
+	Z = given; Z = hypothesis.
+pruneSteps([step(X, [Y, LN1, LN2], LN)|Proof], UsedSteps, SubSteps, [step(X, [Y, NewLN1, NewLN2], LN)|PrunedProof]) :-
+	m2(LN, UsedSteps),
+	(
+		m2(step(_, Reason1, LN1), Proof), 
+		(Reason1 = [check, LN3], NewLN1 = LN3; LN1 = NewLN1);
+		
+		NewLN1 = LN1
+	),
+	(
+		m2(step(_, Reason2, LN2), Proof), 
+		(Reason2 = [check, LN4], NewLN2 = LN4; LN2 = NewLN2);
+		
+		NewLN2 = LN2
+	),
+	pruneSteps(Proof, [NewLN1, NewLN2|UsedSteps], SubSteps, PrunedProof).
+pruneSteps([step(X, [Y, LN1], LN)|Proof], UsedSteps, SubSteps, [step(X, [Y, NewLN1], LN)|PrunedProof]) :-
+	m2(LN, UsedSteps), 
+	(
+		m2(step(_, Reason, LN1), Proof), 
+		(Reason = [check, LN3], NewLN1 = LN3; LN1 = NewLN1);
+		
+		NewLN1 = LN1
+	),
+	pruneSteps(Proof, [NewLN1|UsedSteps], SubSteps, PrunedProof).
+pruneSteps([box(BoxProof)|Proof], UsedSteps, SubSteps, [box(PrunedBoxProof)|PrunedProof]) :-
+	m2(step(_, _, LN), BoxProof), m2(LN, UsedSteps),
+	pruneSteps(BoxProof, UsedSteps, BoxSteps, PrunedBoxProof),
+	pruneSteps(Proof, BoxSteps, SubSteps, PrunedProof).
+pruneSteps([_|Proof], UsedSteps, SubSteps, PrunedProof) :- pruneSteps(Proof, UsedSteps, SubSteps, PrunedProof).
+
 % Pretty print prove
 prettyProve(Givens, Goal) :- pprove(Givens, Goal). % alias
-pprove(Givens, Goal) :- prove(Givens, Goal, Proof), prettyPrint(Proof, '').
+pprove(Givens, Goal) :- prove(Givens, Goal, Proof), prune(Proof, PrunedProof), prettyPrint(PrunedProof, '').
 prettyPrint([], _).
 prettyPrint([Step|Proof], Indent) :- prettyPrint(Proof, Indent), prettyPrintStep(Step, Indent).
 prettyPrintStep(step(Formula, Reason, LineNumber), Indent) :- 
@@ -132,6 +168,12 @@ backwardProve(Steps, Context, [implies(A, B)|Goals], [step(implies(A, B), [impli
 	backwardProve(Steps, Context, Goals, Proof), 
 	ln(Proof, LineNumber1), a2(Context, Steps, NewContext), 
 	backwardProve([step(A, [hypothesis], LineNumber1)], NewContext, [B], BoxProof), 
+	ln(BoxProof, NextLineNumber), is(LineNumber2, NextLineNumber-1).
+% Not Introduction: prove ¬a by starting a nested proof and assuming a, and trying to prove contradiction
+backwardProve(Steps, Context, [n(A)|Goals], [step(n(A), [notI, LineNumber1, LineNumber2], NextLineNumber), box(BoxProof)|Proof]) :-
+	backwardProve(Steps, Context, Goals, Proof), 
+	ln(Proof, LineNumber1), a2(Context, Steps, NewContext), 
+	backwardProve([step(A, [hypothesis], LineNumber1)], NewContext, [falsity], BoxProof), 
 	ln(BoxProof, NextLineNumber), is(LineNumber2, NextLineNumber-1).
 % try Forward prove: if no further progress can be done backwards, try to break down derived formulas again
 backwardProve(Steps, Context, Goals, Proof) :- 
