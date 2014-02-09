@@ -56,15 +56,15 @@ andEx(OldSteps, _, [], OldSteps).
 andEx(OldSteps, Context, [step(and(A, B), _, LineNumber)|Steps], NewSteps) :- 
 	andEx(OldSteps, Context, Steps, NS), 
 	(
-		(member(step(A, _, _), NS); member(step(A, _, _), Context)), 
-		(member(step(B, _, _), NS); member(step(B, _, _), Context)), 
+		m3(step(A, _, _), NS, Context), 
+		m3(step(B, _, _), NS, Context), 
 		LeftRightClause = [], !;
 		
-		(member(step(A, _, _), NS); member(step(A, _, _), Context)), 
+		m3(step(A, _, _), NS, Context), 
 		ln(NS, NextLineNumber), 
 		LeftRightClause = [step(B, [andE, LineNumber], NextLineNumber)], !;
 		
-		(member(step(B, _, _), NS); member(step(B, _, _), Context)), 
+		m3(step(B, _, _), NS, Context), 
 		ln(NS, NextLineNumber), 
 		LeftRightClause = [step(A, [andE, LineNumber], NextLineNumber)], !;
 		
@@ -80,7 +80,7 @@ notEx(OldSteps, _, [], OldSteps).
 notEx(OldSteps, Context, [step(n(n(A)), _, LineNumber)|Steps], NewSteps) :-
 	notEx(OldSteps, Context, Steps, NS),
 	(
-		(member(step(A, _, _), NS); member(step(A, _, _), Context)), ExtraSteps = [], !;
+		m3(step(A, _, _), NS, Context), ExtraSteps = [], !;
 		
 		ln(NS, NextLineNumber), ExtraSteps = [step(A, [notE, LineNumber], NextLineNumber)], !
 	),
@@ -89,9 +89,9 @@ notEx(OldSteps, Context, [_|Steps], NewSteps) :- notEx(OldSteps, Context, Steps,
 % Falsity Introduction:
 falsityI(Steps, Context, NewSteps) :- a2(Context, Steps, AllSteps), falsityIx(Steps, Context, AllSteps, NewSteps).
 falsityIx(OldSteps, _, [], OldSteps).
-falsityIx(OldSteps, _, _, OldSteps) :- member(step(falsity, _, _), OldSteps), !.
+falsityIx(OldSteps, _, _, OldSteps) :- m2(step(falsity, _, _), OldSteps), !.
 falsityIx(OldSteps, Context, [step(A, _, LineNumber1)|_], [step(falsity, [falsityI, LineNumber1, LineNumber2], NextLineNumber)|OldSteps]) :- 
-	(member(step(n(A), _, LineNumber2), OldSteps); member(step(n(A), _, LineNumber2), Context)), ln(OldSteps, NextLineNumber).
+	m3(step(n(A), _, LineNumber2), OldSteps, Context), ln(OldSteps, NextLineNumber).
 falsityIx(OldSteps, Context, [_|Steps], NewSteps) :- falsityIx(OldSteps, Context, Steps, NewSteps).
 
 % BackwardProve: tries to match the current steps to goals, or simplify goals and try matching again
@@ -100,27 +100,27 @@ falsityIx(OldSteps, Context, [_|Steps], NewSteps) :- falsityIx(OldSteps, Context
 backwardProve(Steps, _, [], Steps).
 % Check: if the goal appears as a step (ie: if the goal has been derived) check it and try to prove the rest of the goals
 backwardProve(Steps, Context, [G|Goals], [step(G, [check, LineNumber], NextLineNumber)|Proof]) :- 
-	(member(step(G, _, LineNumber), Steps); member(step(G, _, LineNumber), Context)), 
+	m3(step(G, _, LineNumber), Steps, Context), 
 	backwardProve(Steps, Context, Goals, Proof), ln(Proof, NextLineNumber).
 % And Introduction: prove and(a,b) by proving a and b separately
 backwardProve(Steps, Context, [and(A, B)|Goals], [step(and(A, B), [andI, LineNumber1, LineNumber2], NextLineNumber)|Proof]) :- 
-	(member(step(A, _, LineNumber1), Steps); member(step(A, _, LineNumber1), Context)), 
-	(member(step(B, _, LineNumber2), Steps); member(step(B, _, LineNumber2), Context)), 
+	m3(step(A, _, LineNumber1), Steps, Context), 
+	m3(step(B, _, LineNumber2), Steps, Context), 
 	backwardProve(Steps, Context, Goals, Proof), ln(Proof, NextLineNumber).
 backwardProve(Steps, Context, [and(A, B)|Goals], [step(and(A, B), [andI, LineNumber1, LineNumber2], NextLineNumber)|Proof]) :- 
-	(member(step(A, _, LineNumber1), Steps); member(step(A, _, LineNumber1), Context)), 
-	backwardProve(Steps, Context, [B|Goals], Proof),  member(step(B, _, LineNumber2), Proof), ln(Proof, NextLineNumber).
+	m3(step(A, _, LineNumber1), Steps, Context), 
+	backwardProve(Steps, Context, [B|Goals], Proof),  m2(step(B, _, LineNumber2), Proof), ln(Proof, NextLineNumber).
 backwardProve(Steps, Context, [and(A, B)|Goals], [step(and(A, B), [andI, LineNumber1, LineNumber2], NextLineNumber)|Proof]) :- 
-	(member(step(B, _, LineNumber2), Steps); member(step(B, _, LineNumber2), Context)), 
-	backwardProve(Steps, Context, [A|Goals], Proof), member(step(A, _, LineNumber1), Proof), 
+	m3(step(B, _, LineNumber2), Steps, Context), 
+	backwardProve(Steps, Context, [A|Goals], Proof), m2(step(A, _, LineNumber1), Proof), 
 	ln(Proof, NextLineNumber).
 backwardProve(Steps, Context, [and(A, B)|Goals], [step(and(A, B), [andI, LineNumber1, LineNumber2], NextLineNumber)|Proof]) :- 
 	backwardProve(Steps, Context, [A, B|Goals], Proof), 
-	member(step(A, _, LineNumber1), Proof), member(step(B, _, LineNumber2), Proof), 
+	m2(step(A, _, LineNumber1), Proof), m2(step(B, _, LineNumber2), Proof), 
 	ln(Proof, NextLineNumber).
 % Falsity Elimination: if contradiction has been established, vacuously prove current goal
 backwardProve(Steps, Context, [G|Goals], [step(G, [falsityE, LineNumber], NextLineNumber)|Proof]) :- 
-	(member(step(falsity, _, LineNumber), Steps); member(step(falsity, _, LineNumber), Context)), 
+	m3(step(falsity, _, LineNumber), Steps, Context), 
 	backwardProve(Steps, Context, Goals, Proof), ln(Proof, NextLineNumber).
 % Implies Introduction: prove implies(a, b) by starting a nested proof and assuming a, and trying to prove b
 backwardProve(Steps, Context, [implies(A, B)|Goals], [box(BoxProof), step(implies(A, B), [impliesI, LineNumber1, LineNumber2], NextLineNumber)|Proof]) :-
