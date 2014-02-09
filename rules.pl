@@ -22,11 +22,16 @@ ln([step(_, _, LineNumber)|_], NextLineNumber) :- is(NextLineNumber, LineNumber 
 ln(LineNumber, NextLineNumber) :- integer(LineNumber), is(NextLineNumber, LineNumber + 1).
 
 % Pretty print prove
-prettyProve(Givens, Goal) :- pprove(Givens, Goal).
-pprove(Givens, Goal) :- prove(Givens, Goal, Proof), prettyPrint(Proof).
-prettyPrint([]).
-prettyPrint([Step|Proof]) :- prettyPrint(Proof), prettyPrintStep(Step).
-prettyPrintStep(step(Formula, Reason, LineNumber)) :- prettyPrintFormula(Formula, PrettyFormula), format('~w~20|~w~40|~d~60|~n', [PrettyFormula, Reason, LineNumber]).
+prettyProve(Givens, Goal) :- pprove(Givens, Goal). % alias
+pprove(Givens, Goal) :- prove(Givens, Goal, Proof), prettyPrint(Proof, '').
+prettyPrint([], _).
+prettyPrint([Step|Proof], Indent) :- prettyPrint(Proof, Indent), prettyPrintStep(Step, Indent).
+prettyPrintStep(step(Formula, Reason, LineNumber), Indent) :- 
+	prettyPrintFormula(Formula, PrettyFormula), 
+	format('~w~w~20|~w~40|~d~60|~n', [Indent, PrettyFormula, Reason, LineNumber]).
+prettyPrintStep(box(BoxProof), Indent) :-
+	atomic_concat(Indent, '>', NewIndent),
+	prettyPrint(BoxProof, NewIndent).
 prettyPrintFormula(and(A, B), String) :- prettyPrintFormula(A, PrettyA), prettyPrintFormula(B, PrettyB), swritef(String, '(%w&%w)', [PrettyA, PrettyB]).
 prettyPrintFormula(or(A, B), String) :- prettyPrintFormula(A, PrettyA), prettyPrintFormula(B, PrettyB), swritef(String, '(%w|%w)', [PrettyA, PrettyB]).
 prettyPrintFormula(n(A), String) :- prettyPrintFormula(A, PrettyA), swritef(String, '~(%w)', [PrettyA]).
@@ -123,7 +128,7 @@ backwardProve(Steps, Context, [G|Goals], [step(G, [falsityE, LineNumber], NextLi
 	m3(step(falsity, _, LineNumber), Steps, Context), 
 	backwardProve(Steps, Context, Goals, Proof), ln(Proof, NextLineNumber).
 % Implies Introduction: prove implies(a, b) by starting a nested proof and assuming a, and trying to prove b
-backwardProve(Steps, Context, [implies(A, B)|Goals], [box(BoxProof), step(implies(A, B), [impliesI, LineNumber1, LineNumber2], NextLineNumber)|Proof]) :-
+backwardProve(Steps, Context, [implies(A, B)|Goals], [step(implies(A, B), [impliesI, LineNumber1, LineNumber2], NextLineNumber), box(BoxProof)|Proof]) :-
 	backwardProve(Steps, Context, Goals, Proof), 
 	ln(Proof, LineNumber1), a2(Context, Steps, NewContext), 
 	backwardProve([step(A, [hypothesis], LineNumber1)], NewContext, [B], BoxProof), 
