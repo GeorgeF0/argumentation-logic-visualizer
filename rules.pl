@@ -22,7 +22,9 @@ ln([step(_, _, LineNumber)|_], NextLineNumber) :- is(NextLineNumber, LineNumber 
 ln(LineNumber, NextLineNumber) :- integer(LineNumber), is(NextLineNumber, LineNumber + 1).
 
 % Prune unused steps in a proof and "check" steps for a more natural and concise proof
-prune([step(X, Y, LineNumber)|Proof], PrunedProof) :- pruneSteps([step(X, Y, LineNumber)|Proof], [LineNumber], _, PrunedProof).
+prune([step(X, Y, LineNumber)|Proof], LNPrunedProof) :- 
+	pruneSteps([step(X, Y, LineNumber)|Proof], [LineNumber], _, PrunedProof),
+	recalculateLineNumbers(PrunedProof, LNPrunedProof).
 % Prune unused steps in a proof and "check" steps
 pruneSteps([], UsedSteps, UsedSteps, []).
 pruneSteps([step(X, [Z], Y)|Proof], _, _, [step(X, [Z], Y)|Proof]) :-
@@ -56,6 +58,30 @@ pruneSteps([box(BoxProof)|Proof], UsedSteps, SubSteps, [box(PrunedBoxProof)|Prun
 	pruneSteps(BoxProof, UsedSteps, BoxSteps, PrunedBoxProof),
 	pruneSteps(Proof, BoxSteps, SubSteps, PrunedProof).
 pruneSteps([_|Proof], UsedSteps, SubSteps, PrunedProof) :- pruneSteps(Proof, UsedSteps, SubSteps, PrunedProof).
+% Recalculates line numbers after removing unused steps from the proof
+recalculateLineNumbers(PrunedProof, LNPrunedProof) :- 
+	reverse(PrunedProof, RevPrunedProof), 
+	recalculateLN(RevPrunedProof, 0, _, [], _, RevLNPrunedProof), 
+	reverse(RevLNPrunedProof, LNPrunedProof).
+recalculateLN([], CurrentLine, CurrentLine, Substitutions, Substitutions, []).
+recalculateLN([step(X, Y, LineNumber)|Proof], CurrentLine, NewCurrentLine, Substitutions, NewSubstitutions, [step(X, Z, CurrentLine)|LNProof]) :-
+	(
+		Y = [Reason2, LN], m2([LN, SubLN], Substitutions), 
+		Z = [Reason2, SubLN];
+		
+		Y = [Reason1, LN1, LN2], 
+		m2([LN1, SubLN1], Substitutions), m2([LN2, SubLN2], Substitutions), 
+		Z = [Reason1, SubLN1, SubLN2];
+		
+		Y = Z
+	),
+	ln(CurrentLine, NextLine),
+	recalculateLN(Proof, NextLine, NewCurrentLine, [[LineNumber, CurrentLine]|Substitutions], NewSubstitutions, LNProof).
+recalculateLN([box(BoxProof)|Proof], CurrentLine, NewCurrentLine1, Substitutions, NewSubstitutions1, [box(LNBoxProof)|LNProof]) :-
+	reverse(BoxProof, RevBoxProof),
+	recalculateLN(RevBoxProof, CurrentLine, NewCurrentLine2, Substitutions, NewSubstitutions2, RevLNBoxProof),
+	reverse(RevLNBoxProof, LNBoxProof),
+	recalculateLN(Proof, NewCurrentLine2, NewCurrentLine1, NewSubstitutions2, NewSubstitutions1, LNProof).
 
 % Pretty print prove
 prettyProve(Givens, Goal) :- pprove(Givens, Goal). % alias
