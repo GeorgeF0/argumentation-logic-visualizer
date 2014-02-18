@@ -221,9 +221,9 @@ backwardProve(Steps, Context, Extras, [G|Goals], [step(G, [falsityE, LineNumber]
 % IMPLIES ELIMINATION: for each derived step of the form implies(a,b), prove a, derive b, then prove goal from/using b
 backwardProve(Steps, Context, Extras, Goals, Proof) :-
 	nth0(1, Extras, PastTries, RestExtras),
-	bagof(implies(A, B), m3(step(implies(A, B), _, LN1), Steps, Context), implies(X, Y)),
+	bagof(implies(A, B), m3(step(implies(A, B), _, LN1), Steps, Context), [implies(X, Y)]),
 	not(m2(implies(X, Y), PastTries)),
 	nth0(1, NewExtras, [implies(X, Y)|PastTries], RestExtras),
 	backwardProve(Steps, Context, NewExtras, [X], SubProof),
 	ln(SubProof, NextLine), is(LN2, NextLine - 1),
-	backwardProve([step(Y, [impliesE, LN1, LN2], NextLine)|SubProof], Context, Extras, Goals, Proof).
+	backwardProve([step(Y, [impliesE, LN1, LN2], NextLine)|SubProof], Context, NewExtras, Goals, Proof).
