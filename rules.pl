@@ -195,6 +195,14 @@ backwardProve(Steps, Context, [implies(A, B)|Goals], [step(implies(A, B), [impli
 	ln(Proof, LineNumber1), a2(Context, Steps, NewContext), 
 	backwardProve([step(A, [hypothesis], LineNumber1)], NewContext, [B], BoxProof), 
 	ln(BoxProof, NextLineNumber), is(LineNumber2, NextLineNumber-1).
+% Falsity Introduction-Elimination: for each derived step of the form ¬a, prove a, then falsity then the goal
+backwardProve(Steps, Context, [G|Goals], [step(G, [falsityE, LineNumber], NextLineNumber), step(falsity, [falsityI, LN1, LN2], LineNumber)| Proof]) :-
+	backwardProve(Steps, Context, Goals, RestProof),
+	bagof(A, m3(step(n(A), _, LN1), Steps, Context), BagOfA), 
+	backwardProve(RestProof, Context, BagOfA, Proof),
+	ln(Proof, LineNumber),
+	ln(LineNumber, NextLineNumber),
+	is(LN2, LineNumber - 1).
 % Not Introduction: prove ¬a by starting a nested proof and assuming a, and trying to prove contradiction
 backwardProve(Steps, Context, [n(A)|Goals], [step(n(A), [notI, LineNumber1, LineNumber2], NextLineNumber), box(BoxProof)|Proof]) :-
 	backwardProve(Steps, Context, Goals, Proof), 
