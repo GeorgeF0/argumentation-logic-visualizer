@@ -102,7 +102,7 @@ prettyPrintFormula(A, A).
 
 % Contruct a proof in Natural Deduction
 % prove is of the format prove([givens, ex: and(a,b), c, d], [goal that needs to be proven], Output proof given as variable)
-prove(Givens, Goal, Proof) :- is_list(Givens), is_list(Goal), toSteps(Givens, Steps), !, backwardProve(Steps, [], [[]], Goal, Proof).
+prove(Givens, Goal, Proof) :- is_list(Givens), is_list(Goal), toSteps(Givens, Steps), !, backwardProve(Steps, [], [[], []], Goal, Proof).
 
 % FORWARD PROVE: iterates through all steps and breaks down formulas into smaller, simpler parts
 % this process does not take into account the goals or the proof so far
@@ -204,17 +204,26 @@ backwardProve(Steps, Context, Extras, [n(A)|Goals], [step(n(A), [notI, LineNumbe
 % FORWARD PROVE: if no further progress can be done backwards, try to break down derived formulas again
 backwardProve(Steps, Context, Extras, Goals, Proof) :- 
 	length(Steps, S1), 
-	forwardProve(Steps, Context, NewSteps), !, 
+	forwardProve(Steps, Context, NewSteps), 
 	length(NewSteps, S2), S2 > S1, 
 	backwardProve(NewSteps, Context, Extras, Goals, Proof).
 % FALSITY INTRODUCTION-ELIMINATION: for each derived step of the form ¬a, prove a, then falsity then the goal
 backwardProve(Steps, Context, Extras, [G|Goals], [step(G, [falsityE, LineNumber], NextLineNumber), step(falsity, [falsityI, LN1, LN2], LineNumber)| Proof]) :-
 	nth0(0, Extras, PastTries, RestExtras),
 	backwardProve(Steps, Context, Extras, Goals, RestProof),
-	bagof(A, m3(step(n(A), _, LN1), Steps, Context), BagOfA),
-	not(m2(BagOfA, PastTries)),
-	nth0(0, NewExtras, [A|PastTries], RestExtras),
-	backwardProve(RestProof, Context, NewExtras, BagOfA, Proof),
+	bagof(A, m3(step(n(A), _, LN1), Steps, Context), [X]),
+	not(m2(X, PastTries)),
+	nth0(0, NewExtras, [X|PastTries], RestExtras),
+	backwardProve(RestProof, Context, NewExtras, [X], Proof),
 	ln(Proof, LineNumber),
 	ln(LineNumber, NextLineNumber),
 	is(LN2, LineNumber - 1).
+% IMPLIES ELIMINATION: for each derived step of the form implies(a,b), prove a, derive b, then prove goal from/using b
+backwardProve(Steps, Context, Extras, Goals, Proof) :-
+	nth0(1, Extras, PastTries, RestExtras),
+	bagof(implies(A, B), m3(step(implies(A, B), _, LN1), Steps, Context), implies(X, Y)),
+	not(m2(implies(X, Y), PastTries)),
+	nth0(1, NewExtras, [implies(X, Y)|PastTries], RestExtras),
+	backwardProve(Steps, Context, NewExtras, [X], SubProof),
+	ln(SubProof, NextLine), is(LN2, NextLine - 1),
+	backwardProve([step(Y, [impliesE, LN1, LN2], NextLine)|SubProof], Context, Extras, Goals, Proof).
