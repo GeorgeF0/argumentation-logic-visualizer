@@ -210,10 +210,10 @@ backwardProve(Steps, Context, Extras, Goals, Proof) :-
 % FALSITY INTRODUCTION-ELIMINATION: for each derived step of the form ¬a, prove a, then falsity then the goal
 backwardProve(Steps, Context, Extras, [G|Goals], [step(G, [falsityE, LineNumber], NextLineNumber), step(falsity, [falsityI, LN1, LN2], LineNumber)| Proof]) :-
 	nth0(0, Extras, PastTries, RestExtras),
-	backwardProve(Steps, Context, Extras, Goals, RestProof),
 	bagof(A, m3(step(n(A), _, LN1), Steps, Context), [X]),
 	not(m2(X, PastTries)),
 	nth0(0, NewExtras, [X|PastTries], RestExtras),
+	backwardProve(Steps, Context, NewExtras, Goals, RestProof),
 	backwardProve(RestProof, Context, NewExtras, [X], Proof),
 	ln(Proof, LineNumber),
 	ln(LineNumber, NextLineNumber),
