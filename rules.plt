@@ -48,8 +48,9 @@ test(impliesEimpliesI) :- prove([implies(a, b), implies(b, c)], [implies(a, c)],
 test(impliesEimpliesI) :- prove([implies(and(a, b), c), implies(a, b)], [implies(a, c)], _).
 test(impliesEimpliesI) :- prove([and(a, d), implies(b, c)], [implies(implies(a, b), c)], _).
 test(impliesEimpliesIfalsityIEnotI) :- prove([n(and(a, n(b))), implies(n(n(b)), b)], [implies(a, b)], _).
-test(impliesIproofByContradiction) :- prove([n(and(a, n(b)))], [implies(a, b)], _).
 test(impliesEimpliesIfalsityIE) :- prove([implies(a, c), implies(c, and(d, b)), implies(d, n(and(b, c)))], [implies(a, g)], _).
 test(impliesEimpliesI, [fail]) :- prove([implies(a, c), implies(c, and(d, b)), implies(d, n(and(n(b), c)))], [implies(a, g)], _).
 
+test(impliesIproofByContradiction) :- prove([n(and(a, n(b)))], [implies(a, b)], _).
+test(impliesIproofByContradiction) :- prove([implies(and(n(b), a), falsity)], [implies(a, b)], _).
 :- end_tests(rules).
