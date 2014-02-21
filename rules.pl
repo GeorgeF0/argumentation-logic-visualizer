@@ -173,7 +173,8 @@ backwardProve(Steps, Context, Extras, Goals, Proof) :-
 	notI(Steps, Context, Extras, Goals, Proof);
 	forward(Steps, Context, Extras, Goals, Proof);
 	falsityIE(Steps, Context, Extras, Goals, Proof);
-	impliesE(Steps, Context, Extras, Goals, Proof).
+	impliesE(Steps, Context, Extras, Goals, Proof);
+	proofByContradiction(Steps, Context, Extras, Goals, Proof).
 
 % CHECK: if the goal appears as a step (ie: if the goal has been derived) check it and try to prove the rest of the goals
 check(Steps, Context, Extras, [G|Goals], [step(G, [check, LineNumber], NextLineNumber)|Proof]) :- 
@@ -210,7 +211,7 @@ notI(Steps, Context, Extras, [n(A)|Goals], [step(n(A), [notI, LineNumber1, LineN
 	backwardProve(Steps, Context, Extras, Goals, Proof), 
 	ln(Proof, LineNumber1), a2(Steps, Context, NewContext), 
 	backwardProve([step(A, [hypothesis], LineNumber1)], NewContext, Extras, [falsity], BoxProof), 
-	ln(BoxProof, NextLineNumber), is(LineNumber2, NextLineNumber-1).
+	ln(BoxProof, NextLineNumber), is(LineNumber2, NextLineNumber - 1).
 % FORWARD PROVE: if no further progress can be done backwards, try to break down derived formulas again
 forward(Steps, Context, Extras, Goals, Proof) :- 
 	length(Steps, S1), 
@@ -237,3 +238,11 @@ impliesE(Steps, Context, Extras, Goals, Proof) :-
 	backwardProve(Steps, Context, NewExtras, [X], SubProof),
 	ln(SubProof, NextLine), is(LN2, NextLine - 1), !,
 	backwardProve([step(Y, [impliesE, LN1, LN2], NextLine)|SubProof], Context, NewExtras, Goals, Proof).
+% PROOF BY CONTRADICTION: prove a by starting a nested proof and assuming ¬a, and trying to prove contradiction
+proofByContradiction(Steps, Context, Extras, [G|Goals], [step(G, [notE, NextLineNumber], NextNextLineNumber), step(n(n(G)), [notI, LineNumber1, LineNumber2], NextLineNumber), box(BoxProof)|Proof]) :-
+	not(G = falsity),
+	backwardProve(Steps, Context, Extras, Goals, Proof),
+	ln(Proof, LineNumber1), a2(Steps, Context, NewContext), !,
+	backwardProve([step(n(G), [hypothesis], LineNumber1)], NewContext, Extras, [falsity], BoxProof),
+	ln(BoxProof, NextLineNumber), is(LineNumber2, NextLineNumber - 1),
+	ln(NextLineNumber, NextNextLineNumber).
