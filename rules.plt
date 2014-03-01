@@ -53,4 +53,22 @@ test(impliesEimpliesI, [fail]) :- prove([implies(a, c), implies(c, and(d, b)), i
 
 test(impliesIproofByContradiction) :- prove([n(and(a, n(b)))], [implies(a, b)], _).
 test(impliesIproofByContradiction) :- prove([implies(and(n(b), a), falsity)], [implies(a, b)], _).
+
+% examples from the AL paper
+
+test(example1) :- prove([implies(a, implies(b, c))], [implies(and(a,b), c)], _).
+test(example1, [blocked('orI unimplimented')]) :- prove([n(or(a, b))], [n(a)], _).
+test(example2) :- prove([implies(a, falsity), implies(n(a), falsity)], [falsity], _).
+test(example2) :- prove([a, n(a)], [falsity], _).
+test(example4, [fail]) :- prove([implies(and(a, b), falsity), implies(n(b), falsity)], [falsity], _).
+test(example4) :- prove([implies(and(a, b), falsity), implies(n(b), falsity)], [implies(n(b), falsity)], _).
+test(example4, [blocked(loop)]) :- prove([implies(and(a, b), falsity), implies(n(b), falsity)], [implies(a, falsity)], _).
+test(example6, [blocked(loop), fail]) :- prove([implies(and(a, n(b)), falsity), implies(and(b, c), falsity), implies(and(and(a, b), n(c)), falsity)], [falsity], _).
+test(example6) :- prove([implies(and(a, n(b)), falsity), implies(and(b, c), falsity), implies(and(and(a, b), n(c)), falsity)], [implies(a, falsity)], _).
+test(example7, [blocked('rules unimplimented')]) :- prove([n(or(b, n(b)))], [falsity], _).
+test(example7) :- prove([and(b, n(b))], [falsity], _).
+test(example8) :- prove([implies(and(a, n(b)), falsity), implies(and(b, c), falsity), implies(and(and(a, b), n(c)), falsity)], [n(a)], _).
+test(example10) :- prove([n(and(a, b)), n(and(n(a), c)), b, c], [n(d)], _).
+test(example11) :- prove([n(and(a, b)), n(and(c, n(b))), c], [n(a)], _).
+
 :- end_tests(rules).
