@@ -1,3 +1,10 @@
+[rules].
+% how to run the tests:
+% load the tests by typing "load_test_files([])."
+% run the tests by typing "run_tests."
+% the prolog code will hopefully be automatically loaded using "[rules]." above
+% some tests take a few seconds to run
+
 :- begin_tests(rules).
 
 % forward rule tests
@@ -53,6 +60,10 @@ test(impliesEimpliesI, [fail]) :- prove([implies(a, c), implies(c, and(d, b)), i
 
 test(impliesIproofByContradiction) :- prove([n(and(a, n(b)))], [implies(a, b)], _).
 test(impliesIproofByContradiction) :- prove([implies(and(n(b), a), falsity)], [implies(a, b)], _).
+
+% other tests
+
+test(pierceLaw) :- prove([], [implies(implies(implies(p, q), p), p)], _).
 
 % examples from the AL paper
 
