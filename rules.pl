@@ -18,6 +18,7 @@ m3(Item, List1, List2) :- member(Item, List1); member(Item, List2).
 % Get next line number from steps
 % ln(step, next line number)
 ln([step(_, _, LineNumber)|_], NextLineNumber) :- !, is(NextLineNumber, LineNumber + 1).
+ln([], 0) :- !.
 % ln(current line number, next line number)
 ln(LineNumber, NextLineNumber) :- !, integer(LineNumber), is(NextLineNumber, LineNumber + 1).
 
