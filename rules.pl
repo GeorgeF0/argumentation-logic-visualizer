@@ -25,7 +25,7 @@ ln(LineNumber, NextLineNumber) :- !, integer(LineNumber), is(NextLineNumber, Lin
 % Prune unused steps in a proof and "check" steps for a more natural and concise proof
 prune([step(X, Y, LineNumber)|Proof], LNPrunedProof) :- 
 	pruneSteps([step(X, Y, LineNumber)|Proof], [LineNumber], _, PrunedProof),
-	recalculateLineNumbers(PrunedProof, LNPrunedProof).
+	recalculateLineNumbers(PrunedProof, LNPrunedProof), !.
 % Prune unused steps in a proof and "check" steps
 pruneSteps([], UsedSteps, UsedSteps, []).
 pruneSteps([step(X, [Z], Y)|Proof], _, _, [step(X, [Z], Y)|Proof]) :-
@@ -87,11 +87,11 @@ recalculateLN([box(BoxProof)|Proof], CurrentLine, NewCurrentLine1, Substitutions
 % Pretty print prove
 prettyProve(Givens, Goal) :- pprove(Givens, Goal). % alias
 pprove(Givens, Goal) :- prove(Givens, Goal, Proof), prune(Proof, PrunedProof), prettyPrint(PrunedProof, '').
-prettyPrint([], _).
-prettyPrint([Step|Proof], Indent) :- prettyPrint(Proof, Indent), prettyPrintStep(Step, Indent).
+prettyPrint([], _) :- !.
+prettyPrint([Step|Proof], Indent) :- prettyPrint(Proof, Indent), prettyPrintStep(Step, Indent), !.
 prettyPrintStep(step(Formula, Reason, LineNumber), Indent) :- 
 	prettyPrintFormula(Formula, PrettyFormula), 
-	format('~w~w~20|~w~40|~d~60|~n', [Indent, PrettyFormula, Reason, LineNumber]).
+	format('~w~w~20|~w~40|~d~60|~n', [Indent, PrettyFormula, Reason, LineNumber]), !.
 prettyPrintStep(box(BoxProof), Indent) :-
 	atomic_concat(Indent, '>', NewIndent),
 	prettyPrint(BoxProof, NewIndent).
@@ -165,7 +165,7 @@ falsityIx(OldSteps, Context, [_|Steps], NewSteps) :- falsityIx(OldSteps, Context
 % BACKWARD PROVE: tries to match the current steps to goals, or simplify goals and try matching again
 % whenever no further progress can be made, a call to forwardProve is made in order to break down steps into simpler formulas that might be of use
 % BASE CASE: no more goals to prove means we've completed the proof
-backwardProve(Steps, _, _, [], Steps).
+backwardProve(Steps, _, _, [], Steps) :- !.
 backwardProve(Steps, Context, Extras, Goals, Proof) :- 
 	check(Steps, Context, Extras, Goals, Proof);
 	andI(Steps, Context, Extras, Goals, Proof);
@@ -198,7 +198,8 @@ andI(Steps, Context, Extras, [and(A, B)|Goals], [step(and(A, B), [andI, LineNumb
 	m2(step(A, _, LineNumber1), Proof), m2(step(B, _, LineNumber2), Proof), 
 	ln(Proof, NextLineNumber).
 % FALSITY ELIMINATION: if contradiction has been established, vacuously prove current goal
-falsityE(Steps, Context, Extras, [G|Goals], [step(G, [falsityE, LineNumber], NextLineNumber)|Proof]) :- 
+falsityE(Steps, Context, Extras, [G|Goals], [step(G, [falsityE, LineNumber], NextLineNumber)|Proof]) :-
+	not(G = falsity),
 	m3(step(falsity, _, LineNumber), Steps, Context), 
 	backwardProve(Steps, Context, Extras, Goals, Proof), ln(Proof, NextLineNumber).
 % IMPLIES INTRODUCTION: prove implies(a, b) by starting a nested proof and assuming a, and trying to prove b
@@ -221,6 +222,7 @@ forward(Steps, Context, Extras, Goals, Proof) :-
 	backwardProve(NewSteps, Context, Extras, Goals, Proof).
 % FALSITY INTRODUCTION-ELIMINATION: for each derived step of the form ¬a, prove a, then falsity then the goal
 falsityIE(Steps, Context, Extras, [G|Goals], [step(G, [falsityE, LineNumber], NextLineNumber), step(falsity, [falsityI, LN1, LN2], LineNumber)| Proof]) :-
+	not(m3(step(falsity, _, _), Steps, Context)),
 	nth0(0, Extras, PastTries, RestExtras),
 	bagof(A, m3(step(n(A), _, LN1), Steps, Context), [X]),
 	not(m2(X, PastTries)),
