@@ -65,8 +65,10 @@ falsityIx(OldSteps, Context, [_|Steps], NewSteps) :- falsityIx(OldSteps, Context
 backwardProve(Steps, _, _, [], Steps) :- !.
 backwardProve(Steps, Context, Extras, Goals, Proof) :- 
 	check(Steps, Context, Extras, Goals, Proof);
+	% if contradiction has already been established, it reaaaaally makes no sense 
+	% to try and prove your goal with any other rule. hence the cut after the falsityE rule below
+	falsityE(Steps, Context, Extras, Goals, Proof), !;
 	andI(Steps, Context, Extras, Goals, Proof);
-	falsityE(Steps, Context, Extras, Goals, Proof);
 	impliesI(Steps, Context, Extras, Goals, Proof);
 	notI(Steps, Context, Extras, Goals, Proof);
 	forward(Steps, Context, Extras, Goals, Proof);
@@ -121,10 +123,10 @@ forward(Steps, Context, Extras, Goals, Proof) :-
 falsityIE(Steps, Context, Extras, [G|Goals], [step(G, [falsityE, LineNumber], NextLineNumber), step(falsity, [falsityI, LN1, LN2], LineNumber)| Proof]) :-
 	not(m3(step(falsity, _, _), Steps, Context)),
 	nth0(0, Extras, PastTries, RestExtras),
-	bagof(A, m3(step(n(A), _, LN1), Steps, Context), [X]),
+	bagof(A, (m3(step(n(A), _, LN1), Steps, Context), not(m3(step(A, _, _), Steps, Context))), [X]),
 	not(m2(X, PastTries)),
 	nth0(0, NewExtras, [X|PastTries], RestExtras),
-	backwardProve(Steps, Context, NewExtras, Goals, RestProof), !,
+	backwardProve(Steps, Context, NewExtras, Goals, RestProof),
 	backwardProve(RestProof, Context, NewExtras, [X], Proof),
 	ln(Proof, LineNumber),
 	ln(LineNumber, NextLineNumber),
@@ -140,7 +142,7 @@ impliesE(Steps, Context, Extras, Goals, Proof) :-
 	backwardProve([step(Y, [impliesE, LN1, LN2], NextLine)|SubProof], Context, NewExtras, Goals, Proof).
 % PROOF BY CONTRADICTION: prove a by starting a nested proof and assuming ¬a, and trying to prove contradiction
 proofByContradiction(Steps, Context, Extras, [G|Goals], [step(G, [notE, NextLineNumber], NextNextLineNumber), step(n(n(G)), [notI, LineNumber1, LineNumber2], NextLineNumber), box(BoxProof)|Proof]) :-
-	not(G = falsity),
+	not(G = falsity), not(G = n(_)),
 	backwardProve(Steps, Context, Extras, Goals, Proof),
 	ln(Proof, LineNumber1), a2(Steps, Context, NewContext), !,
 	backwardProve([step(n(G), [hypothesis], LineNumber1)], NewContext, Extras, [falsity], BoxProof),
