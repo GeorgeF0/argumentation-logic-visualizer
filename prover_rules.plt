@@ -1,8 +1,7 @@
-[bootstrap].
 % how to run the tests:
-% load the tests by typing "load_test_files([])."
+% load the files required to run the tests (the files containing the predicates under test)
+% load the tests by typing "load_test_files([])." or load this file directly
 % run the tests by typing "run_tests."
-% the prolog code will hopefully be automatically loaded using "[bootstrap]." above
 % some tests take a few seconds to run
 
 :- begin_tests(rules).
