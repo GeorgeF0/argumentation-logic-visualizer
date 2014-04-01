@@ -1,6 +1,7 @@
 % Contruct a proof in Natural Deduction
 % prove is of the format prove([givens, ex: and(a,b), c, d], [goal that needs to be proven], Output proof given as variable)
-prove(Givens, Goal, Proof) :- is_list(Givens), is_list(Goal), toSteps(Givens, Steps), !, backwardProve(Steps, [], [[], []], Goal, Proof).
+prove(Givens, Goal, Proof) :- is_list(Givens), is_list(Goal), toSteps(Givens, Steps), !, backwardProve(no, Steps, [], [[], []], Goal, Proof).
+proveMRA(Givens, Goal, Proof) :- is_list(Givens), is_list(Goal), toSteps(Givens, Steps), !, backwardProve(yes, Steps, [], [[], []], Goal, Proof).
 
 % FORWARD PROVE: iterates through all steps and breaks down formulas into smaller, simpler parts
 % this process does not take into account the goals or the proof so far
@@ -62,89 +63,89 @@ falsityIx(OldSteps, Context, [_|Steps], NewSteps) :- falsityIx(OldSteps, Context
 % BACKWARD PROVE: tries to match the current steps to goals, or simplify goals and try matching again
 % whenever no further progress can be made, a call to forwardProve is made in order to break down steps into simpler formulas that might be of use
 % BASE CASE: no more goals to prove means we've completed the proof
-backwardProve(Steps, _, _, [], Steps) :- !.
-backwardProve(Steps, Context, Extras, Goals, Proof) :- 
-	check(Steps, Context, Extras, Goals, Proof);
+backwardProve(_, Steps, _, _, [], Steps) :- !.
+backwardProve(MRA, Steps, Context, Extras, Goals, Proof) :- 
+	check(MRA, Steps, Context, Extras, Goals, Proof);
 	% if contradiction has already been established, it reaaaaally makes no sense 
 	% to try and prove your goal with any other rule. hence the cut after the falsityE rule below
-	falsityE(Steps, Context, Extras, Goals, Proof), !;
-	andI(Steps, Context, Extras, Goals, Proof);
-	impliesI(Steps, Context, Extras, Goals, Proof);
-	notI(Steps, Context, Extras, Goals, Proof);
-	forward(Steps, Context, Extras, Goals, Proof);
-	falsityIE(Steps, Context, Extras, Goals, Proof);
-	impliesE(Steps, Context, Extras, Goals, Proof);
-	proofByContradiction(Steps, Context, Extras, Goals, Proof).
+	falsityE(MRA, Steps, Context, Extras, Goals, Proof), !;
+	andI(MRA, Steps, Context, Extras, Goals, Proof);
+	impliesI(MRA, Steps, Context, Extras, Goals, Proof);
+	MRA = no, notI(MRA, Steps, Context, Extras, Goals, Proof);
+	forward(MRA, Steps, Context, Extras, Goals, Proof);
+	falsityIE(MRA, Steps, Context, Extras, Goals, Proof);
+	impliesE(MRA, Steps, Context, Extras, Goals, Proof);
+	MRA = no, proofByContradiction(MRA, Steps, Context, Extras, Goals, Proof).
 
 % CHECK: if the goal appears as a step (ie: if the goal has been derived) check it and try to prove the rest of the goals
-check(Steps, Context, Extras, [G|Goals], [step(G, [check, LineNumber], NextLineNumber)|Proof]) :- 
+check(MRA, Steps, Context, Extras, [G|Goals], [step(G, [check, LineNumber], NextLineNumber)|Proof]) :- 
 	m3(step(G, _, LineNumber), Steps, Context), 
-	backwardProve(Steps, Context, Extras, Goals, Proof), ln(Proof, NextLineNumber).
+	backwardProve(MRA, Steps, Context, Extras, Goals, Proof), ln(Proof, NextLineNumber).
 % AND INTRODUCTION: prove and(a,b) by proving a and b separately
-andI(Steps, Context, Extras, [and(A, B)|Goals], [step(and(A, B), [andI, LineNumber1, LineNumber2], NextLineNumber)|Proof]) :- 
+andI(MRA, Steps, Context, Extras, [and(A, B)|Goals], [step(and(A, B), [andI, LineNumber1, LineNumber2], NextLineNumber)|Proof]) :- 
 	m3(step(A, _, LineNumber1), Steps, Context), 
 	m3(step(B, _, LineNumber2), Steps, Context), 
-	!, backwardProve(Steps, Context, Extras, Goals, Proof), ln(Proof, NextLineNumber).
-andI(Steps, Context, Extras, [and(A, B)|Goals], [step(and(A, B), [andI, LineNumber1, LineNumber2], NextLineNumber)|Proof]) :- 
+	!, backwardProve(MRA, Steps, Context, Extras, Goals, Proof), ln(Proof, NextLineNumber).
+andI(MRA, Steps, Context, Extras, [and(A, B)|Goals], [step(and(A, B), [andI, LineNumber1, LineNumber2], NextLineNumber)|Proof]) :- 
 	m3(step(A, _, LineNumber1), Steps, Context), !, 
-	backwardProve(Steps, Context, Extras, [B|Goals], Proof),  m2(step(B, _, LineNumber2), Proof), ln(Proof, NextLineNumber).
-andI(Steps, Context, Extras, [and(A, B)|Goals], [step(and(A, B), [andI, LineNumber1, LineNumber2], NextLineNumber)|Proof]) :- 
+	backwardProve(MRA, Steps, Context, Extras, [B|Goals], Proof),  m2(step(B, _, LineNumber2), Proof), ln(Proof, NextLineNumber).
+andI(MRA, Steps, Context, Extras, [and(A, B)|Goals], [step(and(A, B), [andI, LineNumber1, LineNumber2], NextLineNumber)|Proof]) :- 
 	m3(step(B, _, LineNumber2), Steps, Context), !,
-	backwardProve(Steps, Context, Extras, [A|Goals], Proof), m2(step(A, _, LineNumber1), Proof), 
+	backwardProve(MRA, Steps, Context, Extras, [A|Goals], Proof), m2(step(A, _, LineNumber1), Proof), 
 	ln(Proof, NextLineNumber).
-andI(Steps, Context, Extras, [and(A, B)|Goals], [step(and(A, B), [andI, LineNumber1, LineNumber2], NextLineNumber)|Proof]) :- 
-	backwardProve(Steps, Context, Extras, [A, B|Goals], Proof), 
+andI(MRA, Steps, Context, Extras, [and(A, B)|Goals], [step(and(A, B), [andI, LineNumber1, LineNumber2], NextLineNumber)|Proof]) :- 
+	backwardProve(MRA, Steps, Context, Extras, [A, B|Goals], Proof), 
 	m2(step(A, _, LineNumber1), Proof), m2(step(B, _, LineNumber2), Proof), 
 	ln(Proof, NextLineNumber).
 % FALSITY ELIMINATION: if contradiction has been established, vacuously prove current goal
-falsityE(Steps, Context, Extras, [G|Goals], [step(G, [falsityE, LineNumber], NextLineNumber)|Proof]) :-
+falsityE(MRA, Steps, Context, Extras, [G|Goals], [step(G, [falsityE, LineNumber], NextLineNumber)|Proof]) :-
 	not(G = falsity),
 	m3(step(falsity, _, LineNumber), Steps, Context), 
-	backwardProve(Steps, Context, Extras, Goals, Proof), ln(Proof, NextLineNumber).
+	backwardProve(MRA, Steps, Context, Extras, Goals, Proof), ln(Proof, NextLineNumber).
 % IMPLIES INTRODUCTION: prove implies(a, b) by starting a nested proof and assuming a, and trying to prove b
-impliesI(Steps, Context, Extras, [implies(A, B)|Goals], [step(implies(A, B), [impliesI, LineNumber1, LineNumber2], NextLineNumber), box(BoxProof)|Proof]) :-
-	backwardProve(Steps, Context, Extras, Goals, Proof), 
+impliesI(MRA, Steps, Context, Extras, [implies(A, B)|Goals], [step(implies(A, B), [impliesI, LineNumber1, LineNumber2], NextLineNumber), box(BoxProof)|Proof]) :-
+	backwardProve(MRA, Steps, Context, Extras, Goals, Proof), 
 	ln(Proof, LineNumber1), a2(Context, Steps, NewContext), 
-	backwardProve([step(A, [hypothesis], LineNumber1)], NewContext, Extras, [B], BoxProof), 
+	backwardProve(MRA, [step(A, [hypothesis], LineNumber1)], NewContext, Extras, [B], BoxProof), 
 	ln(BoxProof, NextLineNumber), is(LineNumber2, NextLineNumber-1).
 % NOT INTRODUCTION: prove ¬a by starting a nested proof and assuming a, and trying to prove contradiction
-notI(Steps, Context, Extras, [n(A)|Goals], [step(n(A), [notI, LineNumber1, LineNumber2], NextLineNumber), box(BoxProof)|Proof]) :-
-	backwardProve(Steps, Context, Extras, Goals, Proof), 
+notI(MRA, Steps, Context, Extras, [n(A)|Goals], [step(n(A), [notI, LineNumber1, LineNumber2], NextLineNumber), box(BoxProof)|Proof]) :-
+	backwardProve(MRA, Steps, Context, Extras, Goals, Proof), 
 	ln(Proof, LineNumber1), a2(Steps, Context, NewContext), 
-	backwardProve([step(A, [hypothesis], LineNumber1)], NewContext, Extras, [falsity], BoxProof), 
+	backwardProve(MRA, [step(A, [hypothesis], LineNumber1)], NewContext, Extras, [falsity], BoxProof), 
 	ln(BoxProof, NextLineNumber), is(LineNumber2, NextLineNumber - 1).
 % FORWARD PROVE: if no further progress can be done backwards, try to break down derived formulas again
-forward(Steps, Context, Extras, Goals, Proof) :- 
+forward(MRA, Steps, Context, Extras, Goals, Proof) :- 
 	length(Steps, S1), 
 	forwardProve(Steps, Context, NewSteps), 
 	length(NewSteps, S2), S2 > S1, !,
-	backwardProve(NewSteps, Context, Extras, Goals, Proof).
+	backwardProve(MRA, NewSteps, Context, Extras, Goals, Proof).
 % FALSITY INTRODUCTION-ELIMINATION: for each derived step of the form ¬a, prove a, then falsity then the goal
-falsityIE(Steps, Context, Extras, [G|Goals], [step(G, [falsityE, LineNumber], NextLineNumber), step(falsity, [falsityI, LN1, LN2], LineNumber)| Proof]) :-
+falsityIE(MRA, Steps, Context, Extras, [G|Goals], [step(G, [falsityE, LineNumber], NextLineNumber), step(falsity, [falsityI, LN1, LN2], LineNumber)| Proof]) :-
 	not(m3(step(falsity, _, _), Steps, Context)),
 	nth0(0, Extras, PastTries, RestExtras),
 	bagof(A, (m3(step(n(A), _, LN1), Steps, Context), not(m3(step(A, _, _), Steps, Context))), [X]),
 	not(m2(X, PastTries)),
 	nth0(0, NewExtras, [X|PastTries], RestExtras),
-	backwardProve(Steps, Context, NewExtras, Goals, RestProof),
-	backwardProve(RestProof, Context, NewExtras, [X], Proof),
+	backwardProve(MRA, Steps, Context, NewExtras, Goals, RestProof),
+	backwardProve(MRA, RestProof, Context, NewExtras, [X], Proof),
 	ln(Proof, LineNumber),
 	ln(LineNumber, NextLineNumber),
 	is(LN2, LineNumber - 1).
 % IMPLIES ELIMINATION: for each derived step of the form implies(a,b), prove a, derive b, then prove goal from/using b
-impliesE(Steps, Context, Extras, Goals, Proof) :-
+impliesE(MRA, Steps, Context, Extras, Goals, Proof) :-
 	nth0(1, Extras, PastTries, RestExtras),
 	bagof(implies(A, B), m3(step(implies(A, B), _, LN1), Steps, Context), [implies(X, Y)]),
 	not(m2(implies(X, Y), PastTries)),
 	nth0(1, NewExtras, [implies(X, Y)|PastTries], RestExtras),
-	backwardProve(Steps, Context, NewExtras, [X], SubProof),
+	backwardProve(MRA, Steps, Context, NewExtras, [X], SubProof),
 	ln(SubProof, NextLine), is(LN2, NextLine - 1), !,
-	backwardProve([step(Y, [impliesE, LN1, LN2], NextLine)|SubProof], Context, NewExtras, Goals, Proof).
+	backwardProve(MRA, [step(Y, [impliesE, LN1, LN2], NextLine)|SubProof], Context, NewExtras, Goals, Proof).
 % PROOF BY CONTRADICTION: prove a by starting a nested proof and assuming ¬a, and trying to prove contradiction
-proofByContradiction(Steps, Context, Extras, [G|Goals], [step(G, [notE, NextLineNumber], NextNextLineNumber), step(n(n(G)), [notI, LineNumber1, LineNumber2], NextLineNumber), box(BoxProof)|Proof]) :-
+proofByContradiction(MRA, Steps, Context, Extras, [G|Goals], [step(G, [notE, NextLineNumber], NextNextLineNumber), step(n(n(G)), [notI, LineNumber1, LineNumber2], NextLineNumber), box(BoxProof)|Proof]) :-
 	not(G = falsity), not(G = n(_)),
-	backwardProve(Steps, Context, Extras, Goals, Proof),
+	backwardProve(MRA, Steps, Context, Extras, Goals, Proof),
 	ln(Proof, LineNumber1), a2(Steps, Context, NewContext), !,
-	backwardProve([step(n(G), [hypothesis], LineNumber1)], NewContext, Extras, [falsity], BoxProof),
+	backwardProve(MRA, [step(n(G), [hypothesis], LineNumber1)], NewContext, Extras, [falsity], BoxProof),
 	ln(BoxProof, NextLineNumber), is(LineNumber2, NextLineNumber - 1),
 	ln(NextLineNumber, NextNextLineNumber).
