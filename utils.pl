@@ -1,4 +1,4 @@
-% PROVER_UTILS: predicates used by the proof system to facilitate theorem proving
+% UTILS: predicates used by predicates in other files
 
 % Convert list of givens to steps (internal ND data-structure)
 % steps are of the format step(formula, reason as to how this formula was derived, position of this step in the overall proof)
@@ -9,6 +9,7 @@ toSteps([G|Givens], [step(G, [given], LineNumber)|Steps], LineNumber) :- is(N, L
 % Append 3 lists and Append shortcut
 a2(L1, L2, L) :- append(L1, L2, L).
 a3(L1, L2, L3, L) :- append(L1, L2, Lx), append(Lx, L3, L).
+a4(L1, L2, L3, L4, L) :- append(L1, L2, Lx), append(Lx, L3, Ly), append(Ly, L4, L).
 
 % Member of either list and Member shortcut
 m2(Item, List) :- member(Item, List).

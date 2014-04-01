@@ -2,7 +2,7 @@
 :- set_prolog_flag(toplevel_print_options, [quoted(true), portray(true)]).
 % Load all modules
 :-
-	[prover_utils],
+	[utils],
 	[prover_rules],
 	[prune],
 	[pretty_print].
