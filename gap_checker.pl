@@ -2,14 +2,23 @@
 
 % Checks that the given proof follows the GAP property
 % Gap checker assumes valid propositional logic proofs
-checkGAP(Proof) :- reverse(Proof, RevProof), checkRAND(RevProof), checkRestricted(RevProof), checkGAP([], RevProof).
-checkGAP(_, []). % should every box end with falsity? ie checkGAP(_, [step(falsity, _, _)]). how about outermost proof?
-checkGAP(Context, [step(Derivation, _, _)|Proof]) :-
-	checkGAP([Derivation|Context], Proof).
-checkGAP(Context, [box(SubProof), step(Conclusion, [notI, _, _], _)|Proof]) :-
-	not(proveMRA(Context, [falsity], _)),
-	checkGAP(Context, SubProof),
-	checkGAP([Conclusion|Context], Proof).
+checkGAP(Proof) :- 
+	reverse(Proof, RevProof), 
+	checkRAND(RevProof), !,
+	checkRestricted(RevProof), !,
+	getTheoryAndRevBox(RevProof, Theory, RevBox), !,
+	checkGAP(Theory, _, [], [], RevBox).
+checkGAP(Theory, _, AncestorHypotheses, ChildHypotheses, []) :-
+	a3(Theory, AncestorHypotheses, ChildHypotheses, Context),
+	not(proveMRA(Context, [falsity], _)).
+checkGAP(Theory, _, AncestorHypotheses, ChildHypotheses, [step(H, [hypothesis], _)|Proof]) :-
+	!, checkGAP(Theory, H, AncestorHypotheses, ChildHypotheses, Proof).
+checkGAP(Theory, Hypothesis, AncestorHypotheses, ChildHypotheses, [step(_, _, _)|Proof]) :-
+	checkGAP(Theory, Hypothesis, AncestorHypotheses, ChildHypotheses, Proof).
+checkGAP(Theory, Hypothesis, AncestorHypotheses, ChildHypotheses, [box(BoxProof)|Proof]) :-
+	checkGAP(Theory, _, [Hypothesis|AncestorHypotheses], [], BoxProof),
+	BoxProof = [step(ChildHypothesis, [hypothesis], _)|_],
+	checkGAP(Theory, Hypothesis, AncestorHypotheses, [n(ChildHypothesis)|ChildHypotheses], Proof).
 
 % Checks to see if this proof is a RAND proof to start with
 % A RAND proof is of the form: [givens]*, [box], ([step:notE, step:notI]||[step:notI])
@@ -29,3 +38,20 @@ checkRestricted([step(_, [Reason|_], _)|Proof]) :-
 checkRestricted([box(SubProof)|Proof]) :-
 	checkRestricted(SubProof),
 	checkRestricted(Proof).
+	
+% Digs up the theory and first box of a proof
+getTheoryAndRevBox([step(Given, [given], _)|Proof], [Given|Theory], Box) :-
+	getTheoryAndRevBox(Proof, Theory, Box).
+getTheoryAndRevBox([box(BoxProof)|_], [], RevBoxProof) :-
+	reverseRecursive(BoxProof, RevBoxProof).
+	
+reverseRecursive(BoxProof, RevAllBoxProof) :-
+	reverse(BoxProof, RevBoxProof),
+	reverseInnerBoxes(RevBoxProof, RevAllBoxProof).
+
+reverseInnerBoxes([], []).
+reverseInnerBoxes([box(InnerBox)|RevBoxProof], [box(RevInnerBox)|RevInnerBoxProof]) :-
+	reverseRecursive(InnerBox, RevInnerBox),
+	reverseInnerBoxes(RevBoxProof, RevInnerBoxProof).
+reverseInnerBoxes([Step|RevBoxProof], [Step|RevInnerBoxProof]) :-
+	reverseInnerBoxes(RevBoxProof, RevInnerBoxProof).
