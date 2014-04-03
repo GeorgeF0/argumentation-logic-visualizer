@@ -122,6 +122,7 @@ forward(MRA, Steps, Context, Extras, Goals, Proof) :-
 	backwardProve(MRA, NewSteps, Context, Extras, Goals, Proof).
 % FALSITY INTRODUCTION-ELIMINATION: for each derived step of the form ¬a, prove a, then falsity then the goal
 falsityIE(MRA, Steps, Context, Extras, [G|Goals], [step(G, [falsityE, LineNumber], NextLineNumber), step(falsity, [falsityI, LN1, LN2], LineNumber)| Proof]) :-
+	not(G = falsity), !,
 	not(m3(step(falsity, _, _), Steps, Context)),
 	nth0(0, Extras, PastTries, RestExtras),
 	bagof(A, (m3(step(n(A), _, LN1), Steps, Context), not(m3(step(A, _, _), Steps, Context))), [X]),
@@ -131,6 +132,16 @@ falsityIE(MRA, Steps, Context, Extras, [G|Goals], [step(G, [falsityE, LineNumber
 	backwardProve(MRA, RestProof, Context, NewExtras, [X], Proof),
 	ln(Proof, LineNumber),
 	ln(LineNumber, NextLineNumber),
+	is(LN2, LineNumber - 1).
+falsityIE(MRA, Steps, Context, Extras, [_|Goals], [step(falsity, [falsityI, LN1, LN2], LineNumber)| Proof]) :-
+	not(m3(step(falsity, _, _), Steps, Context)),
+	nth0(0, Extras, PastTries, RestExtras),
+	bagof(A, (m3(step(n(A), _, LN1), Steps, Context), not(m3(step(A, _, _), Steps, Context))), [X]),
+	not(m2(X, PastTries)),
+	nth0(0, NewExtras, [X|PastTries], RestExtras),
+	backwardProve(MRA, Steps, Context, NewExtras, Goals, RestProof),
+	backwardProve(MRA, RestProof, Context, NewExtras, [X], Proof),
+	ln(Proof, LineNumber),
 	is(LN2, LineNumber - 1).
 % IMPLIES ELIMINATION: for each derived step of the form implies(a,b), prove a, derive b, then prove goal from/using b
 impliesE(MRA, Steps, Context, Extras, Goals, Proof) :-

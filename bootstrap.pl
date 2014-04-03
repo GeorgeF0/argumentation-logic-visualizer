@@ -5,4 +5,6 @@
 	[utils],
 	[prover_rules],
 	[prune],
-	[pretty_print].
+	[pretty_print],
+	[gap_checker],
+	[gap_to_arg].

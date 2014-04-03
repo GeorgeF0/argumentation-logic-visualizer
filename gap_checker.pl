@@ -7,7 +7,7 @@ checkGAP(Proof) :-
 	checkRAND(RevProof), !,
 	checkRestricted(RevProof), !,
 	getTheoryAndRevBox(RevProof, Theory, RevBox), !,
-	checkGAP(Theory, _, [], [], RevBox).
+	checkGAP(Theory, _, [], [], RevBox), !.
 checkGAP(Theory, _, AncestorHypotheses, ChildHypotheses, []) :-
 	a3(Theory, AncestorHypotheses, ChildHypotheses, Context),
 	not(proveMRA(Context, [falsity], _)).
@@ -39,7 +39,7 @@ checkRestricted([box(SubProof)|Proof]) :-
 	checkRestricted(SubProof),
 	checkRestricted(Proof).
 	
-% Digs up the theory and first box of a proof
+% Digs up the theory and first box of a proof in reverse order
 getTheoryAndRevBox([step(Given, [given], _)|Proof], [Given|Theory], Box) :-
 	getTheoryAndRevBox(Proof, Theory, Box).
 getTheoryAndRevBox([box(BoxProof)|_], [], RevBoxProof) :-
