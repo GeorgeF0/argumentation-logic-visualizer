@@ -1,0 +1,397 @@
+\documentclass[11pt,twoside,a4paper]{report}
+
+\usepackage{fullpage}
+\usepackage{amssymb}
+\usepackage{hyperref}
+\usepackage[round]{natbib}
+
+\hypersetup{
+    colorlinks=true, %set true if you want colored links
+    linktoc=all,     %set to all if you want both sections and subsections linked
+    linkcolor=blue,  %choose some color if you want links to stand out
+}
+\hypersetup{linktocpage} %in order to make only the numbers in the table of contents clickable
+
+\author{Giorgos Flourentzos}
+\title{Argumentation Logic Visualizer}
+\begin{document}
+\maketitle
+\tableofcontents
+
+\chapter{Introduction}
+
+Formal logic is a standard method of giving validity to arguments. However, formal logic trivializes in the presence of inconsistencies, thus becoming inflexible when reasoning about inconsistent theories. Additionally, the Reductio ad Absurdum rule is used freely; under this rule the derived inconsistency can be reached without necessarily using the hypothesis assumed at the beginning of the rule's application. In argumentation, this translates to reaching a conclusion with an argument that has nothing to do with the topic of the conversation.
+
+Argumentation Logic is a new argumentation framework proposed by Professor Antonis Kakas (University of Cyprus, Cyprus), Professor Paolo Mancarella (Universit\'a di Pisa, Italy) and Dr Francesca Toni (Imperial College London, United Kingdom). It is a framework based on propositional logic that allows reasoning closer to the way humans do. Argumentation Logic does not trivialize in the presence of inconsistencies.
+
+Argumentation Logic is largely based on the already established natural deduction system. The major difference however lies in the fact that it restricts the use of the Reductio ad Absurdum (known as "not introduction") rule in a way that the assumed hypothesis must be critical to the application of that rule. Argumentation Logic can be seen from an argumentative point of view, as a debate between a proponent who puts forth arguments and defends them against an opponent, who in turn tried to attack those arguments. The arguments are sets of propositional sentences. The argument of the proponent is successful and a conclusion is therefore drawn if it can be successfully defended against the attacks made by the opponent. Argumentation Logic is a recent addition to the field of logic and remains partly unexplored.
+
+The idea is to implement a simple and flexible GUI that will allow for the construction of valid propositional Argumentation Logic natural deduction proofs. In addition, the implemented software will be able to visualize the proofs as exchanges of arguments between proponent and opponent. This is an attempt to enable further research and study of Argumentation Logic as an established method for reasoning about potentially inconsistent environments in a human-like way, with potential applications in artificial intelligence.
+The project is split into seven stages which build on top of each other.
+
+\section{Stage 1: Basic Natural Deduction Proof System}
+The first stage requires a natural deduction proof system that can find the steps required to reach a goal, given the theory and the goal that must be met. The aim of this step is to provide the basis on which to build the Argumentation Logic framework.
+
+\section{Stage 2: Improving the Proof System}
+The second stage requires the natural deduction proof system to be able to produce proofs with natural deduction rules applied with variable and configurable priorities and have the ability to look for proofs of a particular maximum length. This step might not be required depending on the implementation of the proof system in the previous step. Therefore the aim of this stage is to only facilitate the implementation of the proof system and has no bearing on the exploration of Argumentation logic.
+
+\section{Stage 3: Genuine Absurdity Property}
+The third stage involves the processing of produced natural deduction proofs in order to check the presence of the Genuine Absurdity Property. This property is closely tied to the identification of natural deduction proofs that are compatible with (that is, supported by) Argumentation Logic. Compatible proofs can be visualized as arguments between two debaters as in the following step.
+
+\section{Step 4: Argumentation Logic Visualization}
+The fourth stage requires the construction of a GUI that allows the visualization of Argumentation Logic proofs as sets of arguments. The GUI can feature several extensions such as step-by-step building of an Argumentation Logic proof, saving and loading generated proofs, conversion between natural deduction and argumentation and so on.
+
+\section{Step 5: Converting Natural Deduction Proofs to Argumentation Logic Proofs}
+The fifth stage revolves around the conversion of natural deduction proofs that are unsupported by Argumentation Logic (proofs that do not follow the Genuine Absurdity Property) to compatible ones. It can be shown in the technical report on Argumentation Logic that any proof not following the Genuine Absurdity Property can be converted to one that does. The aim of this step is to allow the possibility of virtually any natural deduction proof to be visualized from an argumentative view.
+
+\section{Step 6: Re-Introduction of Disjunction and Implication Connectives}
+The sixth stage involves the introduction of the disjunction and implication connectives. It is shown in the technical report on Argumentation Logic that for consistent theories using only conjunction and negation, Propositional Logic is equivalent to Argumentation Logic. The use of disjunction and implication remain partly subject for future work. The aim of this step is to explore further this area.
+
+\section{Step 7: Paraconsistency}
+The seventh and final stage ventures into how Argumentation Logic can allow for reasoning within an inconsistent environment. The aim of this step is to probe the notion of para-consistency of Argumentation Logic.
+
+In conclusion, this project explores the premise of Argumentation Logic, a recent framework based on natural deduction of propositional logic that allows proofs to be visualized as an exchange of arguments. To aid the understanding of Argumentation Logic, a software will be created that enables the construction and visualization of proofs that adhere to this logic. At the time of writing, there is no published work in this area, and the nature of this project is investigative.
+
+\chapter{Background}
+
+\section{Argumentation Theory}
+\label{sec:argtheory}
+Recommended Reading: \citep*{argumentationinai}
+
+\subsection{What is Argumentation Theory}
+Exactly what defines an argument varies between different sources in argumentation theory. Douglas Walton defines an argument as being made of three parts: a conclusion, the premises based on which the conclusion is derived and an inference, which links the premises to the conclusion. Arguments are sets of propositions of some format and they tend to attack or defend other arguments in a conversation. They can be used in order to choose a course of action, decide for or against a decision, or find common ground between two (or more) parties. There are several packages that draw arguments as chains of attacks and defenses which will be discussed briefly in \autoref{sec:vizargtools}.
+
+Argumentation differs from the traditional approaches of inference based on deductive logic. The difference lies in that traditional approaches (such as propositional calculus) prove that the conclusion sought after does indeed derive from the given premises. The conclusion and theory are both known in advance, and a single inference is made to link the two. This is called a monological approach. On the contrary, argumentation involves a process that looks more like a dialogue (hence it is a dialogical approach) which tries to look at the pros and cons of an argument. The process involves analyzing the arguments set forth for and against the initial argument, and finding strengths and weaknesses. The final outcome is then based on the strongest argument.
+
+\subsection{Attacking Arguments}
+There are different ways to attack an argument. Asking a critical question that raises doubt about a previous argument leads to that argument being refuted unless the other party can respond with a satisfactory answer. Questioning an argument's premises or inference is another way of attack. Putting forward a counter-argument (an argument that reaches the opposite conclusion of the first argument) or arguing that the premises are irrelevant to the conclusion (this problem, introduced by the Reductio ad Absurdum rule concerns Argumentation Logic) are also valid attacks. Different views exist about what constitutes an attack and what not; for example, Krabbe suggests his own seven ways to react to an argument \citep*{reasonreclaimed}.
+
+\subsection{Types of Arguments}
+Generally, arguments belong to three different categories, based on how the inference that links the conclusion to the evidence was made: deductive, inductive and defeasible. Defeasible arguments are different from inductive in that they cannot be anticipated statistically. For example, "Adults can drive. I am an adult. Therefore, I can drive." is an example of deductive reasoning, but in a defeasible environment it could be the case that I still cannot drive because of a broken leg. Argumentation Logic, as it is based on natural deduction, involves arguments of the deductive kind.
+
+\subsection{Argumentation Example}
+An example of an argument between two parties is given below:
+
+\begin{enumerate}
+\item
+Student: Higher grades mean higher employability. Decreasing the volume of the curriculum will increase student performance and allow them to get higher marks. Therefore, we should decrease the volume of taught material.
+\item
+Director of Studies: How do you know that decreasing the volume of the material taught will improve students' marks?
+\item
+Student: Students will have more time to digest the curriculum and revise for the exams. In that way, they will achieve higher marks in the exams and overall grades.
+\item
+Director of Studies: Weakening the curriculum will make your degree less desirable at the same time, thus reducing your employability.
+\item
+Student: How do you know that our degree will become less important?
+\item
+Director of Studies: Reports we have gathered from the industry indicate that students from this university are of high demand because of their vast knowledge of material not covered in most other universities.
+\end{enumerate}
+
+The student sets the premise by stating that higher grades imply higher employability and smaller curriculum implies higher grades. His conclusion is that the taught material should be decreased. The director of studies attacks the student's argument by challenging the second premise. The student tries to defend himself by providing a concrete argument as to how a smaller curriculum can lead to better grades. The director of studies cannot attack that argument, and thus poses a different (yet relevant) argument: reducing the material offered will make the degree less attractive.  The student then attacks this argument by questioning it (the same way the director of studies questioned the student's initial argument). In the end, the director supplies facts that support his argument, leading to a counter-example that suggests that cutting down the curriculum will actually result in lower employability. The debate ends, as the student can no longer support his argument.
+
+\subsection{Relevance}
+\label{subsec:relevance}
+As briefly mentioned before, irrelevance is one type of fallacy concerning argumentation theory. Under this fallacy, a debater can put forth an argument with premises that are of no relevance to the conversation at hand, perhaps stray away into a different matter and reach a conclusion that otherwise could not be met. Alternatively, this issue could cause the conversation to lead to nowhere. This will be discussed further when explaining how Argumentation Logic restricts the use of the Reductio ad Absurdum rule in order to establish a form of relevance (as seen in \autoref{subsec:gap}).
+
+\section{Natural Deduction}
+Recommended Reading: \citep*[pp. 17-225]{languageproofandlogic}
+
+\subsection{Rules for Propositional Logic}
+The rules for propositional logic used throughout this paper are as follows:
+
+\begin{tabular}{|c|c|c|c|c|c|}
+\hline
+$\wedge I:\frac{\phi, \psi}{\phi\wedge\psi}$ &
+$\wedge E:\frac{\phi\wedge\psi}{\psi}$ &
+$\wedge E:\frac{\phi\wedge\psi}{\phi}$ &
+$\vee I:\frac{\psi}{\phi\wedge\psi}$ & 
+$\vee I:\frac{\phi}{\phi\wedge\psi}$ &
+$\vee E:\frac{\phi\vee\psi, [\phi...\chi], [\psi...\chi]}{\chi}$ \\
+\hline
+$\rightarrow I:\frac{[\phi...\psi}{\phi\rightarrow\psi}$ & 
+$\rightarrow E:\frac{\phi, \phi\rightarrow\psi}{\psi}$ &
+$\neg I:\frac{[\phi...\bot]}{\neg\phi}$ &
+$\neg E:\frac{\neg\neg\phi}{\phi}$ &
+$\bot I:\frac{\phi, \neg\phi}{\bot}$ &
+$\bot E:\frac{\bot}{\phi}$ \\
+\hline
+\end{tabular}
+
+Note: the notation $[\phi...\psi]$ means a derivation of $\psi$ with hypothesis $\phi$.
+
+\subsection{Example of Natural Deduction Proof}
+An example of a natural deduction proof can be shown below. The format of natural deduction proofs will follow the format of this example:
+
+Assume theory $T = \{\alpha\rightarrow\beta\rightarrow\neg\gamma, \neg\gamma\wedge\beta\}$ and prove $\neg\alpha$.
+
+TODO
+
+A box is used to contain the hypotheses, derivations inside which cannot be used outside. Each derivation is numbered on the left, and reasons (i.e. rules used) for each derivation are given on the right, following the rules defined in the previous section. Theory is indicated as "given", and assumptions (hypotheses) are indicated as "hypothesis" at the beginning of a sub-derivation (inner box).
+
+\section{Argumentation Logic}
+Recommended Reading: \citep*{alpaper}
+
+\subsection{Introduction}
+This section gives a brief introduction of the concepts behind Argumentation Logic, as found in the technical report. Section Exploring Argumentation Logic shows how these concepts are used to build the visualization tool.
+
+Argumentation Logic builds a bridge between argumentation theory and propositional logic. This duality is formed by combining notions from both argumentation theory and natural deduction. For consistent theories, Argumentation Logic is equivalent to propositional logic, but it also extends into a para-consistent logic for inconsistent theories. From the argumentation point of view, Argumentation Logic can be seen as arguments that are sets of propositional formulas that attack and defend against other arguments. From the propositional logic point of view, Argumentation Logic can be seen as a natural deduction system that restricts the use of the Reductio ad Absurdum rule in order to allow for relevant arguments to be used only. The rest of this section is devoted to explaining the concepts behind this new logic.
+
+\subsection{Argumentation Logic Framework}
+In order to establish the Argumentation Logic framework, the notions of "direct derivation" and "direct consistency" must first be defined:
+
+\subsubsection{Direct Derivation}
+A direct derivation for a sentence from a theory is a natural deduction derivation of that sentence from the given theory that does not contain any application of the Reductio ad Absurdum rule. If such a derivation exists, then we say that this sentence is directly derived (derived modulo RA) from the theory. For a sentence $\phi$ directly derived from theory $T$, we denote $T\vdash_{MRA} \phi$.
+For example, assume theory $T = \{\alpha\rightarrow\beta, \beta\rightarrow\delta\}$, and derive $\alpha\rightarrow\delta$:
+
+TODO
+
+This is a direct derivation as the Reductio ad Absurdum rule was not used.
+
+As another example, assume theory $T = \{\alpha\rightarrow\bot\}$ and derive $\neg\alpha$:
+
+TODO
+
+This is not a direct derivation as the Reductio ad Absurdum rule had to be used.
+
+\subsubsection{Classical and Direct Consistency/Inconsistency}
+The word "classical" is used to denote the original natural deduction entailment. The word "direct" uses the notion above. A theory is classically inconsistent if a contradiction can be derived from it in the "classical" sense. A theory is directly inconsistent if a contradiction can be derived through a direct derivation. A theory is classically or directly consistent if it is not classically or directly inconsistent, respectively.
+
+In notation, a theory $T$ is
+\begin{itemize}
+\item
+classically inconsistent if $T\vdash\bot$
+\item
+directly inconsistent if $T\vdash_{MRA}\bot$
+\item
+classically consistent if $T\nvdash\bot$
+\item
+directly consistent if $T\nvdash_{MRA}\bot$
+\end{itemize}
+
+In a sense, direct derivation capabilities form a subset of those of the classical derivation. Hence, if a theory is classically consistent then it is directly consistent too. A directly consistent theory can be classically inconsistent however, since classical derivation has one more rule for proving contradiction (namely, the Reductio ad Absurdum rule) that direct derivation does not have.
+
+As an example, consider theory $T = \{\alpha\rightarrow\beta, \neg\alpha\rightarrow\gamma, \neg\beta\wedge\neg\gamma\}$ and prove contradiction:
+
+TODO
+
+This proof requires the use of the Reductio ad Absurdum rule, without which a contradiction cannot be derived. Thus, this theory is classically inconsistent, but directly consistent.
+
+\subsubsection{Argumentation Logic Framework Definition}
+The Argumentation Logic framework relies on abstract argumentation frameworks as defined in section \nameref{sec:argtheory}. It involves a set of arguments (where each argument is a set of propositional sentences) and the attack relation between the arguments. Thus for a given theory $T$, the Argumentation Logic framework becomes
+\[\langle Args^T, Att^T\rangle\]
+where:
+\begin{itemize}
+\item
+$Args^T = \{T\cup\Sigma\}$ where $\Sigma$ is a set of propositional formulas. Hence all arguments include the starting theory $T$ and potentially more propositional formulas $\Sigma$
+\item
+$Att^T = \{(b,a) | a,b \in Args^T, a = T\cup\Delta, \Delta\neq\{\}, b = T\cup\Gamma, T\cup\Delta\cup\Gamma\vdash_{MRA}\bot\}$, that is, a set of pairs of arguments, the union of which provides ground for the direct derivation of a contradiction. In other words, $Att^T$ contains all pairs of arguments that don't agree with each other!
+\end{itemize}
+
+Since the theory is fixed for the argumentation framework, any argument $a = T\cup\Sigma$  will be referred to only by $\Sigma$. The argument $T\cup\{\}$ will thus be referred to as the empty argument. Note that in the attack relation, the attacked argument cannot be empty and apart from this exception, all attacks are reflexive.
+As an example, consider $T = \{\alpha\rightarrow\beta, \alpha\rightarrow\gamma\}$. Here, $\{a\}$ attacks (and is attacked by) $\{\neg\beta\}$ or $\{\neg\gamma\}$. For a directly inconsistent theory, all arguments are hostile to each other since a contradiction can be derived from any possible pairs of arguments (the empty argument can still not be attacked).
+
+\subsubsection{Defense Against an Attack}
+Using the Argumentation Logic framework described above, and taking any argument $a = T\cup\Delta$, an argument $d$ can be described as a defense against $a$ if any of the following is true:
+\begin{itemize}
+\item
+$d = T\cup\{\neg\phi\} or d = T\cup\{\phi\}$ for some sentence $\phi\in\Delta$ or $\neg\phi\in\Delta$ respectively
+\item
+$d = T\cup\{\}$ and $a\vdash_{MRA}\bot$
+\end{itemize}
+
+What this means is that argument $d$ can take an opposing view on one of the sentences in argument $a$ (this can be interpreted as questioning one of the premises or the conclusion of an argument in argumentation theory) or if argument $a$ is self-contradicting, then saying nothing (empty argument) still counts as a defense against that argument.
+
+\subsection{Acceptability Semantics}
+This section defines what it means for an argument to be acceptable in Argumentation Logic, as discussed in the technical report.
+
+\subsubsection{Acceptability of Arguments}
+Given an argumentation framework $\langle Args^T, Att^T\rangle$ as discussed in the previous section fixed for a consistent theory $T$, with $a,b\in Args^T$, then $a$ is acceptable with respect to $b$, denoted by $ACC^T(a,b)$, if and only if either of the following conditions is met:
+\begin{itemize}
+\item
+$a\subseteq b$
+\item
+for all $c\in Args^T$ such that $(c,a)\in Att^T$ both of the following are true:
+\begin{itemize}
+\item
+$c\nsubseteq a\cup b$
+\item
+there is an argument $d\in Args^T$ which defends against $c$ and $ACC^T(d,a\cup b)$
+\end{itemize}
+\end{itemize}
+
+Intuitively, an argument is acceptable with respect to one other one if it is a subset of it (they share the same ideas), or all of its attacking arguments are not based on the same ideas (are not subsets of the two arguments whose acceptability is under examination) and they can be successfully blocked by other acceptable arguments.
+
+\subsubsection{Non-Acceptability of Arguments}
+Similarly to the acceptability of arguments, for argumentation framework $\langle Args^T, Att^T\rangle$ fixed for a consistent theory $T$, with $a,b\in Args^T$, then $a$ is not acceptable with respect to $b$, denoted by $NACC^T(a,b)$, if and only if both of the following conditions are met:
+\begin{itemize}
+\item
+$a\nsubseteq b$
+\item
+there is an argument $c\in Args^T$ such that $(c,a)\in Att^T$ and either of the following is true:
+\begin{itemize}
+\item
+$c\subseteq a\cup b$
+\item
+for all arguments $d\in Args^T$ which defend against $c$ it is true that $NACC^T(d,a\cup b)$
+\end{itemize}
+\end{itemize}
+
+Intuitively, an argument is unacceptable if they are different and there is an attacking argument that comes from the same ideas as the arguments under examination and it cannot be defended against (by an acceptable argument). Note that non-acceptability is the exact opposite of acceptability, and so it holds that $NACC^T(a,b) = \neg ACC^T(a,b)$.
+
+\subsubsection{Example of Non-Acceptability}
+Consider theory $T = \{\alpha\wedge\beta\rightarrow\bot, \neg\beta\wedge\gamma\rightarrow\bot, \neg\gamma\wedge\delta\rightarrow\bot\}$. $NACC^T(\{a\},\{\})$ holds, because:
+\begin{itemize}
+\item
+$\{a\}\nsubseteq\{\}$, $\{\beta\}$ attacks $\{\alpha\}$ and $\{\neg\beta\}$ is the only defense against $\{\beta\}$, and so it suffices to show that $NACC^T(\{\neg\beta\}, \{\alpha\})$
+\item
+$\{\neg\beta\}\nsubseteq\{\alpha\}$, $\{\gamma\}$ attacks $\{\neg\beta\}$ and $\{\neg\gamma\}$ is the only defense against $\{\gamma\}$, and so it suffices to show that $NACC^T(\{\neg\gamma\}, \{\alpha\, \neg\beta\})$
+\item
+$\{\neg\gamma\}\nsubseteq\{\alpha, \neg\beta\}$, $\{\delta\}$ attacks $\{\neg\gamma\}$ and there is unfortunately no defense against it, thus $NACC^T(\{\neg\gamma\}, \{\alpha,\neg\beta\})$, $NACC^T(\{\neg\beta\}, \{\alpha\})$ and in turn $NACC^T(\{\alpha\}, \{\})$ all hold
+\end{itemize}
+
+\subsection{Reductio ad Absurdum, Genuine Absurdity Property and Acceptability Semantics}
+This section introduces the Genuine Absurdity Property, and relates it to the use of the Reductio ad Absurdum rule and the acceptability semantics.
+
+\subsubsection{RAND Derivations}
+Reductio ad Absurdum derivations (RAND for short) are natural deduction derivations that are enclosed by a Reductio ad Absurdum rule application. 
+
+Thus a RAND derivation of a propositional formula $\neg\phi$ is a natural deduction derivation of $\neg\phi$ which starts with a hypothesis $\phi$ and reaches a contradiction, allowing for the Reductio ad Absurdum rule to be applied in order to deduce $\neg\phi$.
+
+A sub-derivation (of a certain derivation) is a RAND sub-derivation (of that derivation) if the sub-derivation itself is a RAND derivation. Hence a tree can be formed with the RAND derivation as the root, its RAND sub-derivations as its immediate children, the RAND sub-sub-derivations as the next node level, and so on.
+
+Consider as an example, theory $T = \{\alpha\rightarrow\bot, \beta\rightarrow\bot, \neg\alpha\wedge\neg\beta\wedge\gamma\rightarrow\bot\}$ and prove $\neg\gamma$.
+
+TODO
+
+This proof can be visualized as a tree of the outer derivation of $\neg\gamma$, with children (sub-)derivations of $\neg\alpha$ and $\neg\beta$.
+
+TODO
+
+For a directly consistent theory, if $NACC^T(\{\phi\},\{\})$ holds for some $\phi$, then there is a RAND derivation of $\neg\phi$ from that theory \citep*[p. 18]{alpaper}.
+
+\subsubsection{Genuine Absurdity Property}
+\label{subsec:gap}
+For the rest of this section, theories are assumed to be expressed using conjunction and negation only. This gives rise to the following property: all sub-derivations of any derivation of a theory are RAND sub-derivations. The following notation (adapted from the technical report) can be used to represent RAND derivations:
+
+\[[\phi:\phi_1, ..., \phi_k; \neg\psi_1, ..., \neg\psi_l: \bot]\]
+where $k, l \geq 0$ and
+\begin{itemize}
+\item
+$\phi$ is the hypothesis of this derivation
+\item
+$\phi_i$ are the hypothesis of parent derivations that this derivation has access to and can make use of
+\item
+$\psi_i$ are the hypotheses of the children derivations, the negations of which can be used by this derivation
+\end{itemize}
+
+This notation can also nest derivations inside one another. From the last example with theory $T = \{\alpha\rightarrow\bot, \beta\rightarrow\bot, \neg\alpha\wedge\neg\beta\wedge\gamma\rightarrow\bot\}$ and proof of $\neg\gamma$, the RAND derivations that took place can be described as follows, using this notation:
+\[[\gamma:-;[\alpha:\gamma;-:\bot],[\beta:\gamma;-:\bot]:\bot]\]
+
+Note that the outer derivation has no inherited ancestral hypotheses, and the inner derivations (which correspond to the leaves in the tree) have no child hypotheses; therefore "-" is used to represent empty sequences in the notation.
+
+As a consequence of a RAND derivation, $T\cup\{\phi\}\cup\{\phi_1, ..., \phi_k\}\cup\{\neg\psi_1, ..., \neg\psi_l\}\vdash_{MRA}\bot$. That is to say, the theory along with the hypothesis of that derivation and the assistance of parent and child hypotheses can be used to derive a contradiction (which gives ground for the deduction of $\neg\phi$ using the Reductio ad Absurdum rule). 
+
+The Genuine Absurdity Property then states that a RAND derivation satisfies this property if the hypothesis of the derivation must be used in order to derive a contradiction. In other words, the hypothesis must be relevant and without it a contradiction cannot be established in any way. In formal notation this means that $T\cup\{\phi_1, ..., \phi_k\}\cup\{\neg\psi_1, ..., \neg\psi_l\}\nvdash_{MRA}\bot$ (note the absence of $\phi$). In addition, all RAND sub-derivations must also follow this property, making it a recursive property.
+
+In terms of argumentation, the violation of the genuine absurdity property can be thought of an argument with premises irrelevant to the conversation at hand (as was discussed in \autoref{subsec:relevance}). RAND derivations satisfying the genuine absurdity property are not guaranteed to exist, except for classically consistent theories \citep*[p. 9]{alpaper}. It can be shown that for a directly consistent theory, if there is a RAND derivation of $\neg\phi$ that fully satisfies the genuine absurdity property then $NACC^T(\{\phi\},\{\})$ holds \citep*[p. 19]{alpaper}.
+
+\subsubsection{Acceptability Semantics With Respect to Propositional Logic}
+The technical report presents a series of theorems and proofs that closely relate Argumentation Logic's acceptability semantics to propositional logic \citep*[pp. 10-11]{alpaper}. Below is a summary of properties of the notions of acceptability that demonstrate their connection to notions in propositional logic:
+\begin{itemize}
+\item
+For a classically consistent theory, and a RAND derivation of a negated formula, there exists another RAND derivation of that negated formula that fully satisfies the genuine absurdity property.
+\item
+For a classically consistent theory $T$, if $T\vdash\phi$ then both $ACC^T(\{\phi\},\{\})$ and $NACC^T(\{\neg\phi\},\{\})$ hold.
+\item
+For a classically inconsistent theory $T$ such that $NACC^T(\{\neg\phi\},\{\})$ holds, $T\vdash\phi$.
+\end{itemize}
+
+The definition of $NACC^T$-entailment is the following: For a classically consistent theory $T$, $\phi$ is $NACC^T$-entailed (written as $T\models_{NACC^T}\phi$) by $T$ if and only if $NACC^T(\{\neg\phi\},\{\})$. Hence the last connection between the acceptability semantics of Argumentation Logic and propositional logic is the following: For a classically consistent theory $T$, $T\models\phi$ if and only if $T\models_{NACC^T}\phi$. 
+This result is a direct consequence of the properties mentioned above, and in the case of inconsistent theories a natural generalization can be obtained with the addition of an extra condition defined later.
+
+\subsection{Disjunction and Implication Connectives}
+Argumentation Logic establishes an equivalence, for classically consistent theories, between itself and propositional logic, under the notion of $NACC^T$-entailment and standard entailment respectively. This equivalence however works with the conjunction and negation connectives. The relations between conjunction and negation and disjunction and implication are given by $\alpha\vee\beta \equiv \neg(\neg\alpha\wedge\neg\beta)$ and $\alpha\rightarrow\beta \equiv \neg(\alpha\wedge\neg\beta)$. In order to include the disjunction and implication connectives it must be shown that $NACC^T$-entailment can be established both ways for both relations. In other words, for disjunction, it must be shown that $\{\alpha\vee\beta\}\models_{NACC^T}\neg(\neg\alpha\wedge\neg\beta)$ and $\{\neg(\neg\alpha\wedge\neg\beta)\}\models_{NACC^T}\alpha\vee\beta$, and for implication, it must be shown that $\{\alpha\rightarrow\beta\}\models_{NACC^T}\neg(\alpha\wedge\neg\beta)$ and $\{\neg(\alpha\wedge\neg\beta)\}\models_{NACC^T}\alpha\rightarrow\beta$.
+
+Fortunately, for the disjunction, both entailments can be shown \citep*[pp. 11-12]{alpaper}. However, in the case of the implication, only $\{\alpha\rightarrow\beta\}\models_{NACC^T}\neg(\alpha\wedge\neg\beta)$ can be shown. In order for $\{\neg(\alpha\wedge\neg\beta)\}\models_{NACC^T}\alpha\rightarrow\beta$ to be possible, the attacking semantics should be changed to account for this case explicitly \citep*[pp. 12-13]{alpaper}. This topic remains a topic for future work.
+
+\subsection{Paraconsistency}
+Argumentation Logic is equivalent to propositional logic for consistent theories, under the notion of $NACC^T$-entailment and standard entailment respectively. In the case of classically inconsistent theories, Argumentation Logic define two new notions, each generalizing from the previous \citep*[pp. 13-15]{alpaper}:
+
+\subsubsection{Directly Consistent Theories}
+For a directly consistent theory $T$, $\phi$ is $AL$-entailed by $T$ (written as $T\models_{AL}\phi$ if and only if $ACC^T(\{\phi\},\{\})$ and $NACC^T(\{\neg\phi\},\{\})$. This is a generalization of the $NACC^T$-entailment for classically consistent theories, based on the argumentation perspective of an acceptable argument being successfully defended and not successfully objected against.
+
+$AL$-entailment leads to a form of para-consistency, since it does not trivialize in the case of the application of the Reductio ad Absurdum rule (as is the case with standard entailment) due to the notion of non-acceptability. However, even with this addition, $AL$-entailment is still not applicable to directly inconsistent theories.
+
+\subsubsection{Directly Inconsistent Theories}
+The notion of $AL$-entailment above does not work for directly inconsistent theories, as from Argumentation Logic's point of view, the theory is in layman's terms as wrong (inconsistent) as it can get. In terms of Argumentation Logic, if the theory is directly inconsistent (in addition to being classically inconsistent as well), then no matter what argument is put forth, it can always be attacked by the empty argument since $T\vdash_{MRA}\bot$ to begin with. 
+For this reason, the entire theory cannot be considered as a whole, and hence a new notion of entailment is established, one that makes use of maximally consistent closure sets. For theory $T$, and $Cn(T) = \{\phi| T\vdash_{MRA}\phi\}$ being the set of all direct consequences of $T$, $\phi$ is $AL+$-entailed by $T$ (written as $T\vdash_{AL+}\phi$) if and only if $T'\vdash_{AL}\phi$ for all maximally directly consistent sets $T'\subseteq Cn(T)$. For directly consistent theories $AL+$-entailment is equivalent to $AL$-entailment. 
+
+\section{Exploring Argumentation Logic}
+As briefly described in the introduction to this paper, the project tries to explore Argumentation Logic in seven steps. Much of the work to be done in the latter two stages is exploratory, hence there is no clear description of the potential findings.
+
+\subsection{Stage 1: Basic Natural Deduction Proof System}
+The first stage requires a natural deduction proof system that can find the steps required to reach a goal, given the theory and the goal that must be met. Natural deduction proofs will be generated using the proof system built in this step, in order to later on (in stage 3) check which proofs constitute valid Argumentation Logic proofs, and which can be converted to valid Argumentation Logic proofs (stage 5).
+
+\subsection{Stage 2: Improving the Proof System}
+The second stage requires the natural deduction proof system to be able to produce proofs with natural deduction rules applied with variable and configurable priorities and have the ability to look for proofs of a particular maximum length. This step might not be required depending on the implementation of the proof system in the previous step. Therefore the aim of this stage is to only facilitate the implementation of the proof system and has no bearing on the exploration of Argumentation logic.
+
+\subsection{Stage 3: Genuine Absurdity Property}
+The third stage involves the processing of produced natural deduction proofs (from stage 1) in order to check the presence of the Genuine Absurdity Property as discussed in the Argumentation Logic section before. This property is closely tied to the identification of natural deduction proofs that are compatible with (that is, supported by) Argumentation Logic. Compatible proofs can be visualized as arguments between two debaters as in the following step, which is the aim of the next stage.
+
+\subsection{Step 4: Argumentation Logic Visualization}
+The fourth stage requires the construction of a GUI that allows the visualization of Argumentation Logic proofs as sets of arguments. The proofs can originate from natural deduction proofs created automatically from stage 1 (with the help of stages 3 and 5), or constructed by the user using the GUI. The GUI can feature several extensions such as step-by-step building of an Argumentation Logic proof, saving and loading generated proofs, conversion between natural deduction and argumentation and so on. The visual representation of the arguments is subject to aesthetics, and will be decided during the implementation of this step. However, as an indication of the style of the argumentation map, the arguments will probably be displayed as a Dung graph with nodes containing the arguments (sets of propositional sentences) and attack or defense relations depicted as different styles of arrows connecting the nodes. The graph will have the theory at its root and the arguments will build from it. 
+
+\subsection{Step 5: Converting Natural Deduction Proofs to Argumentation Logic Proofs}
+The fifth stage revolves around the conversion of natural deduction proofs that are unsupported by Argumentation Logic (proofs that do not follow the Genuine Absurdity Property) to compatible ones (generated from stages 1 and 3). It can be shown in the technical report on Argumentation Logic that any proof not following the Genuine Absurdity Property can be converted to one that does for a consistent theory. The aim of this step is to allow the possibility of natural deduction proofs to be visualized from an argumentative view.
+
+\subsection{Step 6: Re-Introduction of Disjunction and Implication Connectives}
+The sixth stage involves the introduction of the disjunction and implication connectives. It is shown in the technical report on Argumentation Logic that for consistent theories using only conjunction and negation, Propositional Logic is equivalent to Argumentation Logic. The use of disjunction and implication remains partly subject for future work. The aim of this step is to explore further this area.
+
+\subsection{Step 7: Paraconsistency}
+The seventh and final stage ventures into how Argumentation Logic can allow for reasoning within an inconsistent environment. The aim of this step is to probe the notion of para-consistency of Argumentation Logic. An implementation of the notions of $AL$-entailment and $AL+$-entailment will be attempted in order to provide visual mapping of arguments coming from (directly or classically) inconsistent theories.
+
+\section{Existing Visual Argumentation Tools}
+\label{sec:vizargtools}
+There is a plethora of existing argumentation tools, many of which provide visualization of arguments. These tools range in purpose from academic and research or educational to commercial tools used in analyzing legal arguments for analyzing the rationality of arguments presented in a courtroom.
+
+No universal agreement exists on the type of argument maps that should be supported by each tool. Some tools support the Toulmin Model of Argument, which is a model proposed by Stephen Toulmin for analysing arguments in legal matters, later realized to have a wider application than just law \citep*{usesofargument}. Another popular representation format is the Wigmore chart, targeting analysis of legal evidence in trials, which is the work of John Henry Wigmore \citep*[pp. 123-144]{analysisofevidence}. According to Kadane and Schum, a Wigmore chart represents an early version of a Bayesian network \citep*[pp. 66-76]{saccoandvazetti}. However, since many of the available tools target specific applications (sometimes in domains outside of law), they opt to visualize their arguments in ways more fitting to the applications they are intended for.
+
+A conscious effort is being made to consolidate the representation of arguments into a single standard format that will allow the exchange of arguments between different applications. One of the proposed standards is the Argument Interchange Format, which is currently under construction. A short-term problem with this format is that different application-specific requirements, which result in different flavors of the format being implemented, need to be tracked in order to improve compatibility; at the same time, a long-term problem might be the time at which the standard will be cast in stone: if this happens too early, then it will probably not account for all the requirements that might emerge from different argumentation applications, however, if this happens too late, then the ramifications will be too deviant to be brought together into a standard \citep*[p. 401]{argumentationinai}. Another format already in use is the Legal Knowledge Interchange Format (LKIF), an XML schema that extends Web Ontology Language in order to represent legal concepts.
+
+A non-exhaustive list of existing argumentation (visualization) tools is given below:
+\begin{itemize}
+\item
+Araucaria
+\item
+Argkit \& Dungine
+\item
+ArguGRID
+\item
+Arguing Agents Competition (AAC)
+\item
+ASPARTIX
+\item
+Carneades
+\item
+Cohere
+\item
+Compendium
+\item
+InterLoc
+\item
+quaestio-it
+\item
+Rationale
+\end{itemize}
+
+Since AIF remains volatile at the time of this writing, and LKIF is only concerned with legal matters, neither of these formats will be used. The visualization tool produced as part of this project will use its own format to store data, and adoption of AIF might be revisited as a possible extension.
+
+\section{Implementation}
+Prolog is the lingua franca when it comes to creating proof systems, due to its in-built ability of backtracking and unification. Thus for the steps 1-3 and 5, a Prolog knowledgebase will be created in order to implement the natural deduction proof system.
+JavaScript is a great tool for creating graphs and GUIs, and will therefore be considered when building the GUI tool (step 4). JavaScript works in a browser sandboxed environment, which means that a webserver might be required in order to run the tool. The server could be implemented in any of a variety of languages ranging from JavaScript and Python, to C\# and Java. The server will need to interface with Prolog in order to run the proof system. 
+This client-server design will allow for the application to be hosted on a webserver for public use and community feedback, as well, which makes it a great way to introduce Argumentation Logic to the academia and industry alike.
+
+\bibliographystyle{plainnat}
+\bibliography{justin}
+
+\end{document}
