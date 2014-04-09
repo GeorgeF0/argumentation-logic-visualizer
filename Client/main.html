@@ -36,10 +36,13 @@
 <div class="panel panel-default" style="display:table-cell">
     <div class="panel-heading"><span class="glyphicon glyphicon-cog"></span> Workbench</div>
     <div class="panel-body">
+        <!-- TAB HEADERS -->
         <ul id="myTab" class="nav nav-tabs">
             <li class="active"><a href="#generateproof" data-toggle="tab">Generate Proof</a></li>
-            <li class=""><a href="#buildproof" data-toggle="tab">Build Proof</a></li>
+            <li><a href="#buildproof" data-toggle="tab">Build Proof</a></li>
+            <li><a href="#checkgap" data-toggle="tab">Check GAP</a> </li>
         </ul>
+        <!-- TAB BODIES -->
         <div id="myTabContent" class="tab-content">
             <div class="tab-pane fade" id="generateproof">
                 <nav class="navbar navbar-default" role="navigation" style="padding-left:15px">
@@ -66,7 +69,47 @@
                 </div>
             </div>
             <div class="tab-pane fade" id="buildproof">
-                <p>Food truck fixie locavore, accusamus mcsweeney's marfa nulla single-origin coffee squid. Exercitation +1 labore velit, blog sartorial PBR leggings next level wes anderson artisan four loko farm-to-table craft beer twee. Qui photo booth letterpress, commodo enim craft beer mlkshk aliquip jean shorts ullamco ad vinyl cillum PBR. Homo nostrud organic, assumenda labore aesthetic magna delectus mollit. Keytar helvetica VHS salvia yr, vero magna velit sapiente labore stumptown. Vegan fanny pack odio cillum wes anderson 8-bit, sustainable jean shorts beard ut DIY ethical culpa terry richardson biodiesel. Art party scenester stumptown, tumblr butcher vero sint qui sapiente accusamus tattooed echo park.</p>
+                <nav class="navbar navbar-default" role="navigation" style="padding-left:15px">
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <div class="input-group" style="margin-top:8px;margin-bottom:8px">
+                                <span class="input-group-addon"><span class="glyphicon glyphicon-book"></span></span>
+                                <input type="text" class="form-control" placeholder="Theory" id="buildprooftheory">
+                            </div>
+                        </div>
+                        <div class="col-lg-2">
+                            <div class="input-group" style="margin-top:8px;margin-bottom:8px">
+                                <span class="input-group-addon"><span class="glyphicon glyphicon-screenshot"></span></span>
+                                <input type="text" class="form-control" placeholder="Goal" id="buildproofgoal">
+                            </div>
+                        </div>
+                        <div class="col-lg-2">
+                            <button type="button" class="btn btn-default navbar-btn" id="buildproofbtn"><span class="glyphicon glyphicon-wrench"></span> Build Proof</button>
+                        </div>
+                    </div>
+                </nav>
+                <div class="well" id="proofunderconstruction">
+                    <!-- to be filled in programmatically -->
+                </div>
+                <div class="input-group" style="width:100%">
+                    <span class="input-group-addon"><span class="glyphicon glyphicon-pencil"></span></span>
+                    <input type="text" class="form-control" placeholder="Enter Command to Build Proof" disabled="disabled">
+                </div>
+            </div>
+            <div class="tab-pane fade" id="checkgap">
+                <div class="row">
+                    <div style="width:400px;height:500px;float:left;padding-left:15px;padding-bottom:15px;padding-top:15px">
+                        <div class="thumbnail" style="height:100%">
+                        </div>
+                    </div>
+                    <div style="width:400px;height:500px;float:right;padding-left:15px;padding-right:15px;padding-bottom:15px;padding-top:15px">
+                        <div class="thumbnail" style="height:100%">
+                        </div>
+                    </div>
+                    <div style="padding-left:15px;float:right;padding-top:25%">
+                        <button type="button" class="btn btn-default navbar-btn" id="checkgapbtn"><span class="glyphicon glyphicon-search"></span> Check GAP</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
