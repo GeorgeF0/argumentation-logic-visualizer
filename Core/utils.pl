@@ -21,3 +21,20 @@ ln([step(_, _, LineNumber)|_], NextLineNumber) :- !, is(NextLineNumber, LineNumb
 ln([], 0) :- !.
 % ln(current line number, next line number)
 ln(LineNumber, NextLineNumber) :- !, integer(LineNumber), is(NextLineNumber, LineNumber + 1).
+
+% Digs up the theory and first box of a proof in reverse order
+getTheoryAndRevBox([step(Given, [given], _)|Proof], [Given|Theory], Box) :-
+	getTheoryAndRevBox(Proof, Theory, Box).
+getTheoryAndRevBox([box(BoxProof)|_], [], RevBoxProof) :-
+	reverseRecursive(BoxProof, RevBoxProof).
+	
+reverseRecursive(BoxProof, RevAllBoxProof) :-
+	reverse(BoxProof, RevBoxProof),
+	reverseInnerBoxes(RevBoxProof, RevAllBoxProof).
+
+reverseInnerBoxes([], []).
+reverseInnerBoxes([box(InnerBox)|RevBoxProof], [box(RevInnerBox)|RevInnerBoxProof]) :-
+	!, reverseRecursive(InnerBox, RevInnerBox),
+	reverseInnerBoxes(RevBoxProof, RevInnerBoxProof).
+reverseInnerBoxes([Step|RevBoxProof], [Step|RevInnerBoxProof]) :-
+	reverseInnerBoxes(RevBoxProof, RevInnerBoxProof).

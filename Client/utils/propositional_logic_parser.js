@@ -74,8 +74,8 @@
 var parser = (function(){
 var parser = {trace: function trace(){},
 yy: {},
-symbols_: {"error":2,"S":3,"e":4,"EOF":5,"l":6,"c":7,"and":8,"&":9,"or":10,"|":11,"implies":12,"->":13,"not":14,"¬":15,"(":16,")":17,"_":18,"IDENT":19,",":20,";":21,"r2":22,"NUM":23,"r1":24,"hypothesis":25,"-":26,"r4":27,"|E":28,"&I":29,"|I":30,"¬I":31,"->I":32,"->E":33,"_I":34,"&E":35,"¬E":36,"_E":37,"$accept":0,"$end":1},
-terminals_: {2:"error",5:"EOF",9:"&",11:"|",13:"->",15:"¬",16:"(",17:")",18:"_",19:"IDENT",20:",",21:";",23:"NUM",25:"hypothesis",26:"-",28:"|E",29:"&I",30:"|I",31:"¬I",32:"->I",33:"->E",34:"_I",35:"&E",36:"¬E",37:"_E"},
+symbols_: {"error":2,"S":3,"e":4,"EOF":5,"l":6,"c":7,"and":8,"&":9,"or":10,"|":11,"implies":12,"->":13,"not":14,"!":15,"(":16,")":17,"_":18,"IDENT":19,",":20,";":21,"r2":22,"NUM":23,"r1":24,"hypothesis":25,"-":26,"r4":27,"|E":28,"&I":29,"|I":30,"!I":31,"->I":32,"->E":33,"_I":34,"&E":35,"!E":36,"_E":37,"$accept":0,"$end":1},
+terminals_: {2:"error",5:"EOF",9:"&",11:"|",13:"->",15:"!",16:"(",17:")",18:"_",19:"IDENT",20:",",21:";",23:"NUM",25:"hypothesis",26:"-",28:"|E",29:"&I",30:"|I",31:"!I",32:"->I",33:"->E",34:"_I",35:"&E",36:"!E",37:"_E"},
 productions_: [0,[3,2],[3,2],[3,2],[8,3],[10,3],[12,3],[14,2],[4,3],[4,1],[4,1],[4,1],[4,1],[4,1],[4,1],[6,3],[6,3],[7,8],[7,6],[7,3],[7,2],[7,2],[27,1],[22,1],[22,1],[22,1],[22,1],[22,1],[22,1],[24,1],[24,1],[24,1]],
 performAction: function anonymous(yytext, yyleng, yylineno, yy, yystate /* action[1] */, $$ /* vstack */, _$ /* lstack */
 /**/) {
@@ -89,13 +89,13 @@ case 2:return ['list', $$[$0-1]];
 break;
 case 3:return ['command', $$[$0-1]];
 break;
-case 4:this.$ = ['&', $$[$0-2], $$[$0]];
+case 4:this.$ = ['and', $$[$0-2], $$[$0]];
 break;
-case 5:this.$ = ['|', $$[$0-2], $$[$0]];
+case 5:this.$ = ['or', $$[$0-2], $$[$0]];
 break;
-case 6:this.$ = ['->', $$[$0-2], $$[$0]];
+case 6:this.$ = ['implies', $$[$0-2], $$[$0]];
 break;
-case 7:this.$ = ['¬', $$[$0]];
+case 7:this.$ = ['n', $$[$0]];
 break;
 case 8:this.$ = $$[$0-1];
 break;
@@ -107,11 +107,11 @@ case 11:this.$ = $$[$0];
 break;
 case 12:this.$ = $$[$0];
 break;
-case 13:this.$ = '_';
+case 13:this.$ = 'falsity';
 break;
 case 14:this.$ = yytext;
 break;
-case 15:this.$ = [$$[$0-2], [$$[$0]]];
+case 15:this.$ = [[$$[$0-2]], $$[$0]];
 break;
 case 16:this.$ = [$$[$0-2], $$[$0]];
 break;
@@ -125,25 +125,25 @@ case 20:this.$ = ['--'];
 break;
 case 21:this.$ = ['-', parseInt($$[$0])];
 break;
-case 22:this.$ = $$[$0];
+case 22:this.$ = 'orE';
 break;
-case 23:this.$ = $$[$0];
+case 23:this.$ = 'andI';
 break;
-case 24:this.$ = $$[$0];
+case 24:this.$ = 'orI';
 break;
-case 25:this.$ = $$[$0];
+case 25:this.$ = 'notI';
 break;
-case 26:this.$ = $$[$0];
+case 26:this.$ = 'impliesI';
 break;
-case 27:this.$ = $$[$0];
+case 27:this.$ = 'impliesE';
 break;
-case 28:this.$ = $$[$0];
+case 28:this.$ = 'falsityI';
 break;
-case 29:this.$ = $$[$0];
+case 29:this.$ = 'andE';
 break;
-case 30:this.$ = $$[$0];
+case 30:this.$ = 'notE';
 break;
-case 31:this.$ = $$[$0];
+case 31:this.$ = 'falsityE';
 break;
 }
 },
@@ -399,7 +399,7 @@ case 24:return 5;
 break;
 }
 },
-rules: [/^(?:\s+)/,/^(?:&I\b)/,/^(?:&E\b)/,/^(?:\|I\b)/,/^(?:\|E\b)/,/^(?:->I\b)/,/^(?:->E\b)/,/^(?:_I\b)/,/^(?:_E\b)/,/^(?:¬I\b)/,/^(?:¬E\b)/,/^(?:hypothesis\b)/,/^(?:[a-z][a-zA-Z0-9]*)/,/^(?:->)/,/^(?:\|)/,/^(?:&)/,/^(?:¬)/,/^(?:\()/,/^(?:\))/,/^(?:_\b)/,/^(?:,)/,/^(?:[0-9]+)/,/^(?:-)/,/^(?:;)/,/^(?:$)/],
+rules: [/^(?:\s+)/,/^(?:&I\b)/,/^(?:&E\b)/,/^(?:\|I\b)/,/^(?:\|E\b)/,/^(?:->I\b)/,/^(?:->E\b)/,/^(?:_I\b)/,/^(?:_E\b)/,/^(?:!I\b)/,/^(?:!E\b)/,/^(?:hypothesis\b)/,/^(?:[a-z][a-zA-Z0-9]*)/,/^(?:->)/,/^(?:\|)/,/^(?:&)/,/^(?:!)/,/^(?:\()/,/^(?:\))/,/^(?:_\b)/,/^(?:,)/,/^(?:[0-9]+)/,/^(?:-)/,/^(?:;)/,/^(?:$)/],
 conditions: {"INITIAL":{"rules":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24],"inclusive":true}}
 };
 return lexer;

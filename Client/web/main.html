@@ -38,7 +38,7 @@
     <div class="panel-body">
         <!-- TAB HEADERS -->
         <ul id="myTab" class="nav nav-tabs">
-            <li class="active"><a href="#generateproof" data-toggle="tab">Generate Proof</a></li>
+            <li><a href="#generateproof" data-toggle="tab">Generate Proof</a></li>
             <li><a href="#buildproof" data-toggle="tab">Build Proof</a></li>
             <li><a href="#checkgap" data-toggle="tab">Check GAP</a> </li>
         </ul>
@@ -48,15 +48,19 @@
                 <nav class="navbar navbar-default" role="navigation" style="padding-left:15px">
                     <div class="row">
                         <div class="col-lg-6">
-                            <div class="input-group" style="margin-top:8px;margin-bottom:8px">
-                                <span class="input-group-addon"><span class="glyphicon glyphicon-book"></span></span>
-                                <input type="text" class="form-control" placeholder="Theory" id="generateprooftheory">
+                            <div class="form-group has-feedback" id="generateprooftheoryfeedback">
+                                <div class="input-group" style="margin-top:8px;margin-bottom:8px">
+                                    <span class="input-group-addon"><span class="glyphicon glyphicon-book"></span></span>
+                                    <input type="text" class="form-control" placeholder="Theory" id="generateprooftheory">
+                                </div>
                             </div>
                         </div>
                         <div class="col-lg-2">
-                            <div class="input-group" style="margin-top:8px;margin-bottom:8px">
-                                <span class="input-group-addon"><span class="glyphicon glyphicon-screenshot"></span></span>
-                                <input type="text" class="form-control" placeholder="Goal" id="generateproofgoal">
+                            <div class="form-group has-feedback" id="generateproofgoalfeedback">
+                                <div class="input-group" style="margin-top:8px;margin-bottom:8px">
+                                    <span class="input-group-addon"><span class="glyphicon glyphicon-screenshot"></span></span>
+                                    <input type="text" class="form-control" placeholder="Goal" id="generateproofgoal">
+                                </div>
                             </div>
                         </div>
                         <div class="col-lg-2">
@@ -72,15 +76,19 @@
                 <nav class="navbar navbar-default" role="navigation" style="padding-left:15px">
                     <div class="row">
                         <div class="col-lg-6">
-                            <div class="input-group" style="margin-top:8px;margin-bottom:8px">
-                                <span class="input-group-addon"><span class="glyphicon glyphicon-book"></span></span>
-                                <input type="text" class="form-control" placeholder="Theory" id="buildprooftheory">
+                            <div class="form-group has-feedback" id="buildprooftheoryfeedback">
+                                <div class="input-group" style="margin-top:8px;margin-bottom:8px">
+                                    <span class="input-group-addon"><span class="glyphicon glyphicon-book"></span></span>
+                                    <input type="text" class="form-control" placeholder="Theory" id="buildprooftheory">
+                                </div>
                             </div>
                         </div>
                         <div class="col-lg-2">
-                            <div class="input-group" style="margin-top:8px;margin-bottom:8px">
-                                <span class="input-group-addon"><span class="glyphicon glyphicon-screenshot"></span></span>
-                                <input type="text" class="form-control" placeholder="Goal" id="buildproofgoal">
+                            <div class="form-group has-feedback" id="buildproofgoalfeedback">
+                                <div class="input-group" style="margin-top:8px;margin-bottom:8px">
+                                    <span class="input-group-addon"><span class="glyphicon glyphicon-screenshot"></span></span>
+                                    <input type="text" class="form-control" placeholder="Goal" id="buildproofgoal">
+                                </div>
                             </div>
                         </div>
                         <div class="col-lg-2">
@@ -91,9 +99,11 @@
                 <div class="well" id="proofunderconstruction">
                     <!-- to be filled in programmatically -->
                 </div>
-                <div class="input-group" style="width:100%">
-                    <span class="input-group-addon"><span class="glyphicon glyphicon-pencil"></span></span>
-                    <input type="text" class="form-control" placeholder="Enter Command to Build Proof" disabled="disabled">
+                <div class="form-group has-feedback" id="buildproofcommandinputfeedback">
+                    <div class="input-group" style="width:100%">
+                        <span class="input-group-addon"><span class="glyphicon glyphicon-pencil"></span></span>
+                        <input type="text" class="form-control" placeholder="Enter Command to Build Proof" disabled id="buildproofcommandinput">
+                    </div>
                 </div>
             </div>
             <div class="tab-pane fade" id="checkgap">
@@ -149,8 +159,8 @@
 
 <!-- SCRIPTS -->
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
-<script src="js/argviztool.js"></script>
 <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+<script src="js/argviztool.js"></script>
 <script src="js/propositional_logic_parser.js"></script>
 </body>
 </html>
