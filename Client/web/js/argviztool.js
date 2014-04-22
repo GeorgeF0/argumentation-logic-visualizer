@@ -1,11 +1,23 @@
 //navbar button actions
 
-$("#importbtn").click(function() {
-    alert("not yet implemented!");
+$("#importclipboardconfirm").click(function(){
+    var pastedText = $("#importclipboardtext").val();
+    try {
+        $("#importclipboardfeedback").removeClass("has-error");
+        var parsedText = JSON.parse(pastedText);
+        addAllToClipboard(parsedText);
+        $("#importclipboardtext").val("");
+        $("#importclipboardmodal").modal("hide");
+    } catch (e){
+        $("#importclipboardfeedback").addClass("has-error");
+    }
 });
 
 $("#exportbtn").click(function() {
-    alert("not yet implemented!");
+    var newWindow = window.open();
+    var newDocument = newWindow.document;
+    newDocument.write(JSON.stringify(clipboardcontents));
+    newDocument.close();
 });
 
 $("#helpbtn").click(function() {
@@ -24,13 +36,21 @@ $("#clearclipboardconfirm").click(function() {
 
 var clipboardcontents = [];
 
+function addAllToClipboard(items){
+    clipboardcontents = clipboardcontents.concat(items);
+    backupClipboard();
+    rerenderClipboard();
+}
+
 function addToClipboard(item){
     clipboardcontents.push(item);
+    backupClipboard();
     rerenderClipboard();
 }
 
 function removeFromClipboard(itemID){
     clipboardcontents.splice(itemID, 1);
+    backupClipboard();
     rerenderClipboard();
 }
 
@@ -43,20 +63,25 @@ function generateClipboardHTML(){
     var clipboardHTML = "";
     for (var i = 0; i < clipboardcontents.length; i++){
         var item = clipboardcontents[i];
-        clipboardHTML += makeThumbnail( "clip" + i, render(item));
+        clipboardHTML += render("clip" + i, item);
     }
     return clipboardHTML;
 }
 
-function render(item){
+function render(id, item){
     switch (item.type){
         case "proof":
-            return printPrologJSONProof(item[1]);
+            return makeProofThumbnail(id, printPrologJSONProof(item[1]));
+            break;
+        case "gapproved":
+            return makeGAPThumbnail(id, printPrologJSONProof(item[1]));
+            break;
     }
 }
 
 function clearClipboard(){
     clipboardcontents = [];
+    backupClipboard();
     rerenderClipboard();
 }
 
@@ -91,7 +116,7 @@ function generateProofsCallback(data){
     var placeholderHTML = "";
     for (var i = 0; i < data.length; i++){
         var proof = data[i];
-        placeholderHTML += makeThumbnail("proof" + i, printPrologJSONProof(proof));
+        placeholderHTML += makeProofThumbnail("proof" + i, printPrologJSONProof(proof));
         generatedProofs.push({type:"proof", 1:proof});
     }
     var placeholder = $("#generatedproofsplaceholder");
@@ -147,10 +172,17 @@ function generateProofs(){
         success: generateProofsCallback});
 }
 
-function makeThumbnail(id, content){
-    var templateStart = "<div draggable=\"true\" ondragstart=\"drag(event)\" style=\"width:400px;height:500px;float:left;padding-left:15px;padding-bottom:15px\" id=\"";
-    var templateMiddle = "\"><div class=\"thumbnail\" style=\"height:100%\">";
+function makeProofThumbnail(id, content){
+    var templateStart = "<div draggable=\"true\" ondragstart=\"drag(event)\" style=\"width:400px;height:500px;float:left;padding-left:15px;padding-bottom:15px;position:relative\" id=\"";
+    var templateMiddle = "\"><div class=\"thumbnail\" style=\"height:100%;white-space:nowrap;overflow:auto\">";
     var templateEnd = "</div></div>";
+    return templateStart + id + templateMiddle + content + templateEnd;
+}
+
+function makeGAPThumbnail(id, content){
+    var templateStart = "<div draggable=\"true\" ondragstart=\"drag(event)\" style=\"width:400px;height:500px;float:left;padding-left:15px;padding-bottom:15px;position:relative\" id=\"";
+    var templateMiddle = "\"><div class=\"thumbnail\" style=\"height:100%;white-space:nowrap;overflow:auto\">";
+    var templateEnd = "<img src=\"img/gap-certificate.png\" style=\"position:absolute;right:0;bottom:15px\" draggable=\"false\"></div></div>";
     return templateStart + id + templateMiddle + content + templateEnd;
 }
 
@@ -161,8 +193,10 @@ function addProofDrop(event){
         var id = match[1];
         var proof = generatedProofs[id];
         addToClipboard(proof);
-    } else if (objid.match(/proofunderconstruction/)){
-        addToClipboard({type:"proof", 1:proofUnderConstruction});
+    } else if (objid.match(/proofunderconstruction/)) {
+        addToClipboard({type: "proof", 1: proofUnderConstruction});
+    } else if (objid.match(/gapproved/)){
+        addToClipboard(gapproved);
     } else {
         console.log("attempted to add invalid object to the clipboard!");
     }
@@ -532,6 +566,47 @@ function generalValidation(command){
     return true;
 }
 
+//gap check tab
+
+gapproved = null;
+
+function gapProofDrop(event){
+    var match = event.dataTransfer.getData("Text").match(/clip(\d+)/);
+    if (match){
+        var id = match[1];
+        var proof = clipboardcontents[id];
+        if (proof.type == "proof"){
+            gapproved = proof;
+            $("#gapdroparea").html(makeProofThumbnail("invalid", printPrologJSONProof(gapproved[1])));
+        }
+    } else {
+        console.log("attempted to check GAP of a non-proof object!");
+    }
+}
+
+$("#checkgapbtn").click(function() {
+    checkGAPProperty();
+});
+
+function checkGAPProperty(){
+    if (gapproved && gapproved.type == "proof"){
+        var gapQuery = {type:"gap_query", proof:gapproved[1]};
+        $.ajax("query/checkgap", {
+            type: "POST",
+            contentType:"application/json",
+            data: JSON.stringify(gapQuery),
+            success: checkGAPPropertyCallback});
+    }
+}
+
+function checkGAPPropertyCallback(data){
+    if (data == "approved"){
+        $("#gapdroparea").html(makeGAPThumbnail("gapproved", printPrologJSONProof(gapproved[1])));
+        gapproved.type = "gapproved";
+        rerenderClipboard();
+    }
+}
+
 //utilities
 
 function flattenTheory(input){
@@ -688,6 +763,19 @@ function setUpGivens(theory){
     }
     return givens;
 }
+
+// web storage
+
+function backupClipboard(){
+    localStorage["clipboard-data"] = JSON.stringify(clipboardcontents);
+}
+
+function retrieveClipboard(){
+    return JSON.parse(localStorage["clipboard-data"] || "[]");
+}
+
+clipboardcontents = retrieveClipboard();
+rerenderClipboard();
 
 //misc
 $("#myTab a:first").tab("show");
