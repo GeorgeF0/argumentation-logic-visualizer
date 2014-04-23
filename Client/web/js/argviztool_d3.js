@@ -53,6 +53,11 @@ function doD3(container, treeData, size) {
         return d.children && d.children.length > 0 ? d.children : null;
     });
 
+    var translateCoords;
+    var translateX;
+    var translateY;
+    var scaleX;
+    var scaleY;
     function pan(domNode, direction) {
         var speed = panSpeed;
         if (panTimer) {
@@ -87,6 +92,11 @@ function doD3(container, treeData, size) {
     // define the zoomListener which calls the zoom function on the "zoom" event constrained within the scaleExtents
     var zoomListener = d3.behavior.zoom().scaleExtent([0.1, 3]).on("zoom", zoom);
 
+    var dragStarted;
+    var parentLink;
+    var links;
+    var nodePaths;
+    var nodesExit;
     function initiateDrag(d, domNode) {
         draggingNode = d;
         d3.select(domNode).select('.ghostCircle').attr('pointer-events', 'none');
@@ -138,7 +148,11 @@ function doD3(container, treeData, size) {
 
 
     // Define the drag listeners for drag/drop behaviour of nodes.
-    dragListener = d3.behavior.drag()
+    var nodes;
+    var domNode;
+    var relCoords;
+    var panTimer;
+    var dragListener = d3.behavior.drag()
         .on("dragstart", function(d) {
             if (d == root) {
                 return;
@@ -180,10 +194,10 @@ function doD3(container, treeData, size) {
                 }
             }
 
-            d.x0 += d3.event.dy;
-            d.y0 += d3.event.dx;
+            d.x0 += d3.event.dx;
+            d.y0 += d3.event.dy;
             var node = d3.select(this);
-            node.attr("transform", "translate(" + d.y0 + "," + d.x0 + ")");
+            node.attr("transform", "translate(" + d.x0 + "," + d.y0 + ")");
             updateTempConnector();
         }).on("dragend", function(d) {
             if (d == root) {
@@ -262,12 +276,12 @@ function doD3(container, treeData, size) {
             // have to flip the source coordinates since we did this for the existing connectors on the original tree
             data = [{
                 source: {
-                    x: selectedNode.y0,
-                    y: selectedNode.x0
+                    x: selectedNode.x0,
+                    y: selectedNode.y0
                 },
                 target: {
-                    x: draggingNode.y0,
-                    y: draggingNode.x0
+                    x: draggingNode.x0,
+                    y: draggingNode.y0
                 }
             }];
         }
@@ -285,10 +299,13 @@ function doD3(container, treeData, size) {
 
     // Function to center node when clicked/dropped so node doesn't get lost when collapsing/moving with large amount of children.
 
+    var scale;
+    var x;
+    var y;
     function centerNode(source) {
-        var scale = zoomListener.scale();
-        var x = -source.x0;
-        var y = -source.y0;
+        scale = zoomListener.scale();
+        x = -source.x0;
+        y = -source.y0;
         x = x * scale + viewerWidth / 2;
         y = y * scale + viewerHeight / 2;
         baseSvg.select('g').transition()
@@ -320,6 +337,7 @@ function doD3(container, treeData, size) {
         centerNode(d);
     }
 
+    var node;
     function update(source) {
         // Compute the new height, function counts total children of root node and sets tree height accordingly.
         // This prevents the layout looking squashed when new nodes are made visible or looking sparse when nodes are removed
@@ -348,7 +366,7 @@ function doD3(container, treeData, size) {
 
 
         // Update the nodes…
-        var node = svgGroup.selectAll("g.node")
+        node = svgGroup.selectAll("g.node")
             .data(nodes, function(d) {
                 return d.id || (d.id = ++i);
             });
@@ -545,7 +563,7 @@ flare = {
             ]
         }
     ]
-}
+};
 
 flare2 = {
     "name": "{a}",
@@ -629,4 +647,4 @@ flare2 = {
             ]
         }
     ]
-}
+};
