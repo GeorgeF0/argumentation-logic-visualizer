@@ -12,6 +12,18 @@
     stroke-width: 1.5px;
 }
 
+.node circle.att {
+    fill: #fff;
+    stroke: firebrick;
+    stroke-width: 1.5px;
+}
+
+.node circle.def {
+    fill: #fff;
+    stroke: forestgreen;
+    stroke-width: 1.5px;
+}
+
 .node text {
     font-size:10px;
     font-family:sans-serif;
@@ -20,6 +32,18 @@
 .link {
     fill: none;
     stroke: #ccc;
+    stroke-width: 1.5px;
+}
+
+.link.att {
+    fill: none;
+    stroke: firebrick;
+    stroke-width: 1.5px;
+}
+
+.link.def {
+    fill: none;
+    stroke: forestgreen;
     stroke-width: 1.5px;
 }
 

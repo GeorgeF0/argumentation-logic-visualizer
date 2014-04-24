@@ -1,5 +1,5 @@
 // Code adapted from: http://bl.ocks.org/robschmuecker/7880033
-function doD3(container, treeData, size) {
+function doD3(container, treeData, size, draggable) {
 
     // Calculate total nodes, max label length
     var totalNodes = 0;
@@ -364,24 +364,31 @@ function doD3(container, treeData, size) {
 
         // Set widths between levels based on maxLabelLength.
 
-
         // Update the nodes…
         node = svgGroup.selectAll("g.node")
             .data(nodes, function(d) {
                 return d.id || (d.id = ++i);
             });
 
+        if (draggingNode){
+            node.filter(function(d){return d.id == draggingNode.id;})
+                .selectAll(".nodeCircle")
+                .attr("class", function(d) {return "nodeCircle " + (d.depth % 2? "att": "def");});
+        }
+
         // Enter any new nodes at the parent's previous position.
         var nodeEnter = node.enter().append("g")
-            .call(dragListener)
             .attr("class", "node")
             .attr("transform", function(d) {
                 return "translate(" + source.x0 + "," + source.y0 + ")";
             })
             .on('click', click);
 
+        if (draggable) nodeEnter.call(dragListener);
+
         nodeEnter.append("circle")
             .attr('class', 'nodeCircle')
+            .attr("class", function(d) {return "nodeCircle " + (d.depth % 2? "att": "def");})
             .attr("r", 0)
             .style("fill", function(d) {
                 return d._children ? "lightsteelblue" : "#fff";
@@ -498,6 +505,7 @@ function doD3(container, treeData, size) {
         nodes.forEach(function(d) {
             d.x0 = d.x;
             d.y0 = d.y;
+
         });
     }
 
