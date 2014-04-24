@@ -100,7 +100,7 @@ function doD3(container, treeData, size) {
     function initiateDrag(d, domNode) {
         draggingNode = d;
         d3.select(domNode).select('.ghostCircle').attr('pointer-events', 'none');
-        d3.selectAll('.ghostCircle').attr('class', 'ghostCircle show');
+        baseSvg.selectAll('.ghostCircle').attr('class', 'ghostCircle show');
         d3.select(domNode).attr('class', 'node activeDrag');
 
         svgGroup.selectAll("g.node").sort(function(a, b) { // select the parent and sort the path's
@@ -172,18 +172,18 @@ function doD3(container, treeData, size) {
             }
 
             // get coords of mouseEvent relative to svg container to allow for panning
-            relCoords = d3.mouse($('svg').get(0));
+            relCoords = d3.mouse($(container + " svg").get(0));
             if (relCoords[0] < panBoundary) {
                 panTimer = true;
                 pan(this, 'left');
-            } else if (relCoords[0] > ($('svg').width() - panBoundary)) {
+            } else if (relCoords[0] > ($(container + " svg").width() - panBoundary)) {
 
                 panTimer = true;
                 pan(this, 'right');
             } else if (relCoords[1] < panBoundary) {
                 panTimer = true;
                 pan(this, 'up');
-            } else if (relCoords[1] > ($('svg').height() - panBoundary)) {
+            } else if (relCoords[1] > ($(container + " svg").height() - panBoundary)) {
                 panTimer = true;
                 pan(this, 'down');
             } else {
@@ -230,7 +230,7 @@ function doD3(container, treeData, size) {
 
     function endDrag() {
         selectedNode = null;
-        d3.selectAll('.ghostCircle').attr('class', 'ghostCircle');
+        baseSvg.selectAll('.ghostCircle').attr('class', 'ghostCircle');
         d3.select(domNode).attr('class', 'node');
         // now restore the mouseover event or we won't be able to drag a 2nd time
         d3.select(domNode).select('.ghostCircle').attr('pointer-events', '');
