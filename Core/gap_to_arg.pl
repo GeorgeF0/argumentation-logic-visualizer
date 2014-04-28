@@ -10,9 +10,22 @@ getDefence([step(Hypothesis, [hypothesis], _)|Proof], Theory, You, Target, [[[Hy
 	getAttack(Proof, [Hypothesis|Theory], You, Nodes, AttDefs).
 % Makes a node and attack relation against given defence (and handles its subtree as well)
 getAttack(Proof, Ignore, N, Nodes, AttDefs) :-
-	reverse(Proof, [step(falsity, [falsityI, _, LN], _)|_]),
-	m2(step(_, [andI|_], LN), Proof),
-	findAttackComponents(Proof, Ignore, LN, Components),
+	reverse(Proof, RevProof),
+	(
+		RevProof = [step(falsity, [falsityI, _, LN], _)|_];
+		
+		RevProof = [step(falsity, [check, _], _), step(falsity, [falsityI, _, LN], _)|_]
+	),
+	(
+		m2(step(_, [andI|_], LN), Proof),
+		findAttackComponents(Proof, Ignore, LN, Components), !;
+		
+		m2(step(X, _, LN), Proof),
+		getAttackComponent(X, LN, Ignore, Proof, Components), !;
+		
+		not(m2(step(_, _, LN), Proof)),
+		Components = []
+	),
 	makeAttackNode(Components, Attack),
 	Ignore = [_|Theory],
 	findall([AttComponent, DefAgainstAtt], m2([AttComponent, DefAgainstAtt], Components), DefendedAgainstComponents),

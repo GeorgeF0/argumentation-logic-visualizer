@@ -57,6 +57,7 @@ function removeFromClipboard(itemID){
 function rerenderClipboard(){
     var clipboard = $("#clipboard");
     clipboard.html(generateClipboardHTML());
+    drawArgThumbnails();
 }
 
 function generateClipboardHTML(){
@@ -75,6 +76,9 @@ function render(id, item){
             break;
         case "gapproved":
             return makeGAPThumbnail(id, printPrologJSONProof(item[1]));
+            break;
+        case "arg":
+            return makeArgThumbnail(id, printPrologJSONArg(item[1]));
             break;
     }
 }
@@ -101,6 +105,24 @@ function deleteDrop(event){
 
 function allowDrop(event){
     event.preventDefault();
+}
+
+function addProofDrop(event){
+    var objid = event.dataTransfer.getData("Text");
+    var match;
+    if (match = objid.match(/proof(\d+)/)){
+        var id = match[1];
+        var proof = generatedProofs[id];
+        addToClipboard(proof);
+    } else if (objid.match(/proofunderconstruction/)) {
+        addToClipboard({type: "proof", 1: proofUnderConstruction});
+    } else if (objid.match(/gapproved/)) {
+        addToClipboard(gapproved);
+    } else if (objid.match(/argviz/)) {
+        addToClipboard(proofToBeVisualized);
+    } else {
+        console.log("attempted to add invalid object to the clipboard!");
+    }
 }
 
 //generate proofs tab
@@ -170,36 +192,6 @@ function generateProofs(){
         contentType:"application/json",
         data: JSON.stringify(proofQuery),
         success: generateProofsCallback});
-}
-
-function makeProofThumbnail(id, content){
-    var templateStart = "<div draggable=\"true\" ondragstart=\"drag(event)\" style=\"width:400px;height:500px;float:left;padding-left:15px;padding-bottom:15px;position:relative\" id=\"";
-    var templateMiddle = "\"><div class=\"thumbnail\" style=\"height:100%;white-space:nowrap;overflow:auto\">";
-    var templateEnd = "</div></div>";
-    return templateStart + id + templateMiddle + content + templateEnd;
-}
-
-function makeGAPThumbnail(id, content){
-    var templateStart = "<div draggable=\"true\" ondragstart=\"drag(event)\" style=\"width:400px;height:500px;float:left;padding-left:15px;padding-bottom:15px;position:relative\" id=\"";
-    var templateMiddle = "\"><div class=\"thumbnail\" style=\"height:100%;white-space:nowrap;overflow:auto\">";
-    var templateEnd = "<img src=\"img/gap-certificate.png\" style=\"position:absolute;right:0;bottom:15px\" draggable=\"false\"></div></div>";
-    return templateStart + id + templateMiddle + content + templateEnd;
-}
-
-function addProofDrop(event){
-    var objid = event.dataTransfer.getData("Text");
-    var match;
-    if (match = objid.match(/proof(\d+)/)){
-        var id = match[1];
-        var proof = generatedProofs[id];
-        addToClipboard(proof);
-    } else if (objid.match(/proofunderconstruction/)) {
-        addToClipboard({type: "proof", 1: proofUnderConstruction});
-    } else if (objid.match(/gapproved/)){
-        addToClipboard(gapproved);
-    } else {
-        console.log("attempted to add invalid object to the clipboard!");
-    }
 }
 
 //build proof tab
@@ -607,6 +599,47 @@ function checkGAPPropertyCallback(data){
     }
 }
 
+// arg view (visualize gap proof) tab
+
+proofToBeVisualized = null;
+
+function argProofDrop(event){
+    var match = event.dataTransfer.getData("Text").match(/clip(\d+)/);
+    if (match){
+        var id = match[1];
+        var proof = clipboardcontents[id];
+        if (proof.type == "gapproved"){
+            proofToBeVisualized = proof;
+            $("#argdroparea").html(makeGAPThumbnail("invalid", printPrologJSONProof(proofToBeVisualized[1])));
+            $("#argdragarea").html(makeEmptyThumbnail());
+        }
+    } else {
+        console.log("attempted to visualize a non-(gap-proof) object!");
+    }
+}
+
+$("#visualizeargbtn").click(function() {
+    visualizeGAPProof();
+});
+
+function visualizeGAPProof(){
+    if (proofToBeVisualized && proofToBeVisualized.type == "gapproved"){
+        var argViewQuery = {type:"arg_view_query", proof:proofToBeVisualized[1]};
+        $.ajax("query/visualizegap", {
+            type: "POST",
+            contentType:"application/json",
+            data: JSON.stringify(argViewQuery),
+            success: visualizeGAPProofCallback});
+    }
+}
+
+function visualizeGAPProofCallback(data){
+    var d3NodeData = printPrologJSONArg(data);
+    proofToBeVisualized = {type:"arg", 1:data};
+    $("#argdragarea").html(makeArgThumbnail("argviz", d3NodeData, "argvizdrawarea"));
+    drawArgThumbnails();
+}
+
 //utilities
 
 function flattenTheory(input){
@@ -764,6 +797,82 @@ function setUpGivens(theory){
     return givens;
 }
 
+function printPrologJSONFormulaSet(input){
+    var output = "{";
+    for (var i = 0; i < input.length - 1; i++){
+        output += printPrologJSONFormula(input[i]) + ", ";
+    }
+    output += printPrologJSONFormula(input[i]) + "}";
+    return output;
+}
+
+function printPrologJSONArg(input){
+    var nodes = input[0];
+    var attacksDefenses = input[1];
+    var d3Nodes = [];
+    for (var i = 0; i < nodes.length; i++){
+        var node = nodes[i];
+        var nodeName = printPrologJSONFormulaSet(node[0]);
+        var prologNodeID = node[1];
+        d3Nodes.push({name:nodeName, prologNodeID:prologNodeID, children:[]});
+    }
+    function getByPrologID(requiredPrologNodeID){
+        return function(d3Node) {
+            return d3Node.prologNodeID == requiredPrologNodeID;
+        };
+    }
+    for (i = 0; i < attacksDefenses.length; i++){
+        var attack = attacksDefenses[i];
+        var attacker = d3Nodes.find(getByPrologID(attack[0]));
+        var attacked = d3Nodes.find(getByPrologID(attack[1]));
+        attacked.children.push(attacker);
+    }
+    return d3Nodes.find(getByPrologID(1));
+}
+
+function makeProofThumbnail(id, content){
+    var templateStart = "<div draggable=\"true\" ondragstart=\"drag(event)\" style=\"width:400px;height:500px;float:left;padding-left:15px;padding-bottom:15px;position:relative\" id=\"";
+    var templateMiddle = "\"><div class=\"thumbnail\" style=\"height:100%;white-space:nowrap;overflow:auto\">";
+    var templateEnd = "</div></div>";
+    return templateStart + id + templateMiddle + content + templateEnd;
+}
+
+function makeGAPThumbnail(id, content){
+    var templateStart = "<div draggable=\"true\" ondragstart=\"drag(event)\" style=\"width:400px;height:500px;float:left;padding-left:15px;padding-bottom:15px;position:relative\" id=\"";
+    var templateMiddle = "\"><div class=\"thumbnail\" style=\"height:100%;white-space:nowrap;overflow:auto\">";
+    var templateEnd = "<img src=\"img/gap-certificate.png\" style=\"position:absolute;right:0;bottom:15px\" draggable=\"false\"></div></div>";
+    return templateStart + id + templateMiddle + content + templateEnd;
+}
+
+function makeArgThumbnail(id, data, renderID){
+    renderID = renderID || (id + "draw");
+    var templateStart = "<div draggable=\"true\" ondragstart=\"drag(event)\" style=\"width:400px;height:500px;float:left;padding-left:15px;padding-bottom:15px;position:relative\" id=\"";
+    var templateMiddle1 = "\"><div class=\"thumbnail\" style=\"height:100%;white-space:nowrap;overflow:auto\">";
+    var templateMiddle2 = "<div id=\"";
+    var templateEnd = "\"></div></div></div>";
+    addToDrawQueue(renderID, data);
+    return templateStart + id + templateMiddle1 + data.name + templateMiddle2 + renderID + templateEnd;
+}
+
+function makeEmptyThumbnail(){
+    return "<div style=\"width:400px;height:500px;float:left;padding-left:15px;padding-bottom:15px;position:relative\"><div class=\"thumbnail\" style=\"height:100%;white-space:nowrap;overflow:auto\"></div></div>";
+}
+
+// draw arg thumbnails
+
+argThumbnailDrawQueue = [];
+
+function drawArgThumbnails(){
+    while (argThumbnailDrawQueue.length > 0){
+        var argToDraw = argThumbnailDrawQueue.pop();
+        doD3("#" + argToDraw[0], argToDraw[1], {width:375, height:450});
+    }
+}
+
+function addToDrawQueue(container, data){
+    argThumbnailDrawQueue.push([container, data]);
+}
+
 // web storage
 
 function backupClipboard(){
@@ -774,8 +883,40 @@ function retrieveClipboard(){
     return JSON.parse(localStorage["clipboard-data"] || "[]");
 }
 
+//misc - init
+$("#myTab a:first").tab("show");
+
+//polyfill from Mozilla for Array.find()
+//taken from https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/find
+if (!Array.prototype.find) {
+    Object.defineProperty(Array.prototype, 'find', {
+        enumerable: false,
+        configurable: true,
+        writable: true,
+        value: function(predicate) {
+            if (this == null) {
+                throw new TypeError('Array.prototype.find called on null or undefined');
+            }
+            if (typeof predicate !== 'function') {
+                throw new TypeError('predicate must be a function');
+            }
+            var list = Object(this);
+            var length = list.length >>> 0;
+            var thisArg = arguments[1];
+            var value;
+
+            for (var i = 0; i < length; i++) {
+                if (i in list) {
+                    value = list[i];
+                    if (predicate.call(thisArg, value, i, list)) {
+                        return value;
+                    }
+                }
+            }
+            return undefined;
+        }
+    });
+}
+
 clipboardcontents = retrieveClipboard();
 rerenderClipboard();
-
-//misc
-$("#myTab a:first").tab("show");
