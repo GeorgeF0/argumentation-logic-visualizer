@@ -93,6 +93,35 @@ The student sets the premise by stating that higher grades imply higher employab
 \label{subsec:relevance}
 As briefly mentioned before, irrelevance is one type of fallacy concerning argumentation theory. Under this fallacy, a debater can put forth an argument with premises that are of no relevance to the conversation at hand, perhaps stray away into a different matter and reach a conclusion that otherwise could not be met. Alternatively, this issue could cause the conversation to lead to nowhere. This will be discussed further when explaining how Argumentation Logic restricts the use of the Reductio ad Absurdum rule in order to establish a form of relevance (as seen in \autoref{subsec:gap}).
 
+\subsection{Abstract Argumentation Framework}
+\label{subsec:abrstrargframework}
+An argumentation framework is a framework that is established in order to allow for formal study of argumentation theory. Perhaps the most basic argumentation framework is the widely known abstract argumentation framework \citep*{dung95}. This is a very simple framework that is defined by a set containing the arguments set forth by a party and the attack relation, a binary relation that defines which argument in the set attacks which.
+
+In formal notation, an abstract argumentation framework is usually given by the tuple
+\[\langle Args, Att\rangle\]
+where:
+\begin{itemize}
+\item
+Args is the set of all possible arguments that are relevant to the subject modeled by the argumentation framework
+\item
+Att is the binary relation $Args\times Args$ where a $(a, b)\in Att$ means that argument $a$ attacks argument $b$.
+\end{itemize}
+
+For example consider the small abstract argumentation framework that models the possibility of going hiking if it is raining. Assume for this example that going hiking is not possible if it is raining, unless a raincoat is at hand. Additionally, not going hiking on a beautiful sunny day is out of the question, unless of course it happens to be very muddy (from the rain the night before).
+
+Our arguments can be $c$ for having a raincoat, $r$ to indicate that it is raining, $h$ for deciding to go on a hike, $h'$ for deciding against hiking, $s$ for being sunny and finally $m$ for being muddy. Thus $Args = \{c, r, h, h', s, m\}$.
+
+In this framework, argument $r$ attacks argument $h$ (rain does not allow hiking), and argument $c$ attacks argument $r$ (having a raincoat guards against the rain). Also, $s$ attacks $h'$ (as it would be a shame to not go hiking on a sunny day) and $m$ attacks $s$ (since a lot of mud will incur a lot of hand-washing later on). Arguably, $h$ attacks $h'$ and vice-versa, as the two arguments are mutually exclusive. Thus $Att = \{(r, h), (c, r), (s, h'), (m, s), (h, h'), (h', h)\}$.
+
+The abstract argumentation framework resulting from this example will then be of the form $\langle Args, Att\rangle$.
+
+There are very many extensions to Dung's abstract argumentation framework for different reasons, such as aiming to cover limitations of this framework or tailoring it to better fit particular domains. Examples of extensions of this framework are the abstract bipolar argumentation framework \citep*{bipolarAA}, assumption-based argumentation \citep*{aba}, logic-based argumentation frameworks \citep*{logicAA} and value-based argumentation frameworks \citep*{valueAA}.
+
+It will be seen later on in \autoref{subsec:alfdef} that Argumentation Logic establishes its own framework by building directly on top of an abstract argumentation framework.
+
+\subsection{Visualization of Abstract Argumentation Framework}
+TODO
+
 \section{Natural Deduction}
 Recommended Reading: \citep*[pp. 17-225]{languageproofandlogic}
 
@@ -124,7 +153,27 @@ An example of a natural deduction proof can be shown below. The format of natura
 
 Assume theory $T = \{\alpha\rightarrow\beta\rightarrow\neg\gamma, \neg\gamma\wedge\beta\}$ and prove $\neg\alpha$.
 
-TODO
+\[\vbox{\offinterlineskip\halign{
+&\tabskip=1.5em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\tabskip=0em\cr
+%
+1&\alpha\rightarrow\beta\rightarrow\gamma&\mbox{given}\cr
+2&\neg\gamma\wedge\beta&\mbox{given}\cr
+%
+\multispan3\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&3&\alpha&\mbox{hypothesis}&\cr
+&4&\beta\rightarrow\neg\gamma&\rightarrow E(1,3)&\cr
+&5&\beta&\wedge E(2)&\cr
+&6&\gamma&\rightarrow E(1,5)&\cr
+&7&\neg\gamma&\wedge E(2)&\cr
+&8&\bot&\bot I(6,7)&\cr
+%
+\noalign{\hrule}}}\,\cr
+%
+9&\neg\alpha&\neg I(3,8)\cr
+}}\]
 
 A box is used to contain the hypotheses, derivations inside which cannot be used outside. Each derivation is numbered on the left, and reasons (i.e. rules used) for each derivation are given on the right, following the rules defined in the previous section. Theory is indicated as "given", and assumptions (hypotheses) are indicated as "hypothesis" at the beginning of a sub-derivation (inner box).
 
@@ -143,13 +192,45 @@ In order to establish the Argumentation Logic framework, the notions of "direct 
 A direct derivation for a sentence from a theory is a natural deduction derivation of that sentence from the given theory that does not contain any application of the Reductio ad Absurdum rule. If such a derivation exists, then we say that this sentence is directly derived (derived modulo RA) from the theory. For a sentence $\phi$ directly derived from theory $T$, we denote $T\vdash_{MRA} \phi$.
 For example, assume theory $T = \{\alpha\rightarrow\beta, \beta\rightarrow\delta\}$, and derive $\alpha\rightarrow\delta$:
 
-TODO
+\[\vbox{\offinterlineskip\halign{
+&\tabskip=1.5em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\tabskip=0em\cr
+%
+1&\alpha\rightarrow\beta&\mbox{given}\cr
+2&\beta\rightarrow\delta&\mbox{given}\cr
+%
+\multispan3\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&3&\alpha&\mbox{hypothesis}&\cr
+&4&\beta&\rightarrow E(1,3)&\cr
+&5&\delta&\rightarrow E(2,4)&\cr
+%
+\noalign{\hrule}}}\,\cr
+%
+9&\alpha\rightarrow\delta&\neg I(3,5)\cr
+}}\]
 
 This is a direct derivation as the Reductio ad Absurdum rule was not used.
 
 As another example, assume theory $T = \{\alpha\rightarrow\bot\}$ and derive $\neg\alpha$:
 
-TODO
+\[\vbox{\offinterlineskip\halign{
+&\tabskip=1.5em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\tabskip=0em\cr
+%
+1&\alpha\rightarrow\bot&\mbox{given}\cr
+%
+\multispan3\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&3&\alpha&\mbox{hypothesis}&\cr
+&4&\bot&\rightarrow E(1,2)&\cr
+%
+\noalign{\hrule}}}\,\cr
+%
+9&\neg\alpha&\neg I(2,3)\cr
+}}\]
 
 This is not a direct derivation as the Reductio ad Absurdum rule had to be used.
 
@@ -172,12 +253,35 @@ In a sense, direct derivation capabilities form a subset of those of the classic
 
 As an example, consider theory $T = \{\alpha\rightarrow\beta, \neg\alpha\rightarrow\gamma, \neg\beta\wedge\neg\gamma\}$ and prove contradiction:
 
-TODO
+\[\vbox{\offinterlineskip\halign{
+&\tabskip=1.5em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\tabskip=0em\cr
+%
+1&\alpha\rightarrow\beta&\mbox{given}\cr
+2&\neg\alpha\rightarrow\gamma&\mbox{given}\cr
+3&\neg\beta\wedge\neg\gamma&\mbox{given}\cr
+%
+\multispan3\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&4&\alpha&\mbox{hypothesis}&\cr
+&5&\beta&\rightarrow E(1,4)&\cr
+&6&\neg\beta&\wedge E(3)&\cr
+&7&\bot&\bot I(5,6)&\cr
+%
+\noalign{\hrule}}}\,\cr
+%
+8&\neg\alpha&\neg I(4,7)\cr
+9&\gamma&\rightarrow E(2,8)\cr
+10&\neg\gamma&\wedge E(3)\cr
+11&\bot&\bot I(9,10)\cr
+}}\]
 
 This proof requires the use of the Reductio ad Absurdum rule, without which a contradiction cannot be derived. Thus, this theory is classically inconsistent, but directly consistent.
 
 \subsubsection{Argumentation Logic Framework Definition}
-The Argumentation Logic framework relies on abstract argumentation frameworks as defined in section \nameref{sec:argtheory}. It involves a set of arguments (where each argument is a set of propositional sentences) and the attack relation between the arguments. Thus for a given theory $T$, the Argumentation Logic framework becomes
+\label{subsec:alfdef}
+The Argumentation Logic framework relies on Dung's abstract argumentation framework as defined in \autoref{subsec:abrstrargframework}. It involves a set of arguments (where each argument is a set of propositional sentences) and the attack relation between the arguments. Thus for a given theory $T$, the Argumentation Logic framework becomes
 \[\langle Args^T, Att^T\rangle\]
 where:
 \begin{itemize}
@@ -261,7 +365,48 @@ A sub-derivation (of a certain derivation) is a RAND sub-derivation (of that der
 
 Consider as an example, theory $T = \{\alpha\rightarrow\bot, \beta\rightarrow\bot, \neg\alpha\wedge\neg\beta\wedge\gamma\rightarrow\bot\}$ and prove $\neg\gamma$.
 
-TODO
+\[\vbox{\offinterlineskip\halign{
+&\tabskip=1.5em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\tabskip=0em\cr
+%
+1&\alpha\rightarrow\bot&\mbox{given}\cr
+2&\beta\rightarrow\bot&\mbox{given}\cr
+3&\neg\alpha\wedge\neg\beta\wedge\gamma\rightarrow\bot&\mbox{given}\cr
+%
+\multispan3\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&4&\gamma&\mbox{hypothesis}&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&5&\alpha&\mbox{hypothesis}&\cr
+&6&\bot&\rightarrow E(1,5)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&7&\neg\alpha&\neg I(5,6)&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&8&\beta&\mbox{hypothesis}&\cr
+&9&\bot&\rightarrow E(2,8)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&10&\neg\beta&\neg I(8,9)&\cr
+&11&\neg\alpha\wedge\neg\beta&\wedge I(7,10)&\cr
+&12&\neg\alpha\wedge\neg\beta\wedge\gamma&\wedge I(4,11)&\cr
+&13&\bot&\bot I(4,12)&\cr
+%
+\noalign{\hrule}}}\,\cr
+%
+14&\neg\gamma&\neg I(4,13)\cr
+}}\]
 
 This proof can be visualized as a tree of the outer derivation of $\neg\gamma$, with children (sub-)derivations of $\neg\alpha$ and $\neg\beta$.
 
@@ -329,13 +474,13 @@ For this reason, the entire theory cannot be considered as a whole, and hence a 
 \section{Exploring Argumentation Logic}
 As briefly described in the introduction to this paper, the project tries to explore Argumentation Logic in seven steps. Much of the work to be done in the latter two stages is exploratory, hence there is no clear description of the potential findings.
 
-\subsection{Stage 1: Basic Natural Deduction Proof System}
-The first stage requires a natural deduction proof system that can find the steps required to reach a goal, given the theory and the goal that must be met. Natural deduction proofs will be generated using the proof system built in this step, in order to later on (in stage 3) check which proofs constitute valid Argumentation Logic proofs, and which can be converted to valid Argumentation Logic proofs (stage 5).
+\subsection{Step 1: Basic Natural Deduction Proof System}
+The first stage requires a natural deduction proof system that can find the steps required to reach a goal, given the theory and the goal that must be met. Natural deduction proofs will be generated using the proof system built in this step, in order to later on (in step 3) check which proofs constitute valid Argumentation Logic proofs, and which can be converted to valid Argumentation Logic proofs (step 5).
 
-\subsection{Stage 2: Improving the Proof System}
+\subsection{Step 2: Improving the Proof System}
 The second stage requires the natural deduction proof system to be able to produce proofs with natural deduction rules applied with variable and configurable priorities and have the ability to look for proofs of a particular maximum length. This step might not be required depending on the implementation of the proof system in the previous step. Therefore the aim of this stage is to only facilitate the implementation of the proof system and has no bearing on the exploration of Argumentation logic.
 
-\subsection{Stage 3: Genuine Absurdity Property}
+\subsection{Step 3: Genuine Absurdity Property}
 The third stage involves the processing of produced natural deduction proofs (from stage 1) in order to check the presence of the Genuine Absurdity Property as discussed in the Argumentation Logic section before. This property is closely tied to the identification of natural deduction proofs that are compatible with (that is, supported by) Argumentation Logic. Compatible proofs can be visualized as arguments between two debaters as in the following step, which is the aim of the next stage.
 
 \subsection{Step 4: Argumentation Logic Visualization}
