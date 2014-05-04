@@ -38,3 +38,11 @@ reverseInnerBoxes([box(InnerBox)|RevBoxProof], [box(RevInnerBox)|RevInnerBoxProo
 	reverseInnerBoxes(RevBoxProof, RevInnerBoxProof).
 reverseInnerBoxes([Step|RevBoxProof], [Step|RevInnerBoxProof]) :-
 	reverseInnerBoxes(RevBoxProof, RevInnerBoxProof).
+
+% Digs up the step specified by the given line number
+getStep(LN, [step(X, Y, LN)|_], step(X, Y, LN)) :- !.
+getStep(LN, [step(_, _, _)|Proof], Step) :-
+	getStep(LN, Proof, Step).
+getStep(LN, [box(BoxProof)|Proof], Step) :-
+	getStep(LN, BoxProof, Step), !;
+	getStep(LN, Proof, Step).
