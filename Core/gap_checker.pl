@@ -5,8 +5,9 @@
 checkGAP(Proof) :- 
 	reverse(Proof, RevProof), 
 	checkRAND(RevProof), !,
-	checkRestricted(RevProof), !,
+	checkRestrictedRules(RevProof), !,
 	getTheoryAndRevBox(RevProof, Theory, RevBox), !,
+	checkRestrictedTheory(Theory), !,
 	checkGAP(Theory, _, [], [], RevBox), !.
 checkGAP(Theory, _, AncestorHypotheses, ChildHypotheses, []) :-
 	a3(Theory, AncestorHypotheses, ChildHypotheses, Context),
@@ -30,11 +31,22 @@ checkRAND(box, [step(_, [notI|_], _), step(_, [notE, _], _)]).
 
 % Checks to see if the proof consists of ruleset defined over argumentation logic
 validRules([andI, andE, notI, notE, falsityI, falsityE, given, check, hypothesis]).
-checkRestricted([]).
-checkRestricted([step(_, [Reason|_], _)|Proof]) :- 
+checkRestrictedRules([]).
+checkRestrictedRules([step(_, [Reason|_], _)|Proof]) :- 
 	validRules(ValidRules), 
 	m2(Reason, ValidRules), 
-	checkRestricted(Proof).
-checkRestricted([box(SubProof)|Proof]) :-
-	checkRestricted(SubProof),
-	checkRestricted(Proof).
+	checkRestrictedRules(Proof).
+checkRestrictedRules([box(SubProof)|Proof]) :-
+	checkRestrictedRules(SubProof),
+	checkRestrictedRules(Proof).
+checkRestrictedTheory([]).
+checkRestrictedTheory([Given|Theory]) :-
+	checkRestrictedFormula(Given),
+	checkRestrictedTheory(Theory).
+checkRestrictedFormula(X) :- 
+	atom(X).
+checkRestrictedFormula(and(X, Y)) :-
+	checkRestrictedFormula(X),
+	checkRestrictedFormula(Y).
+checkRestrictedFormula(n(X)) :-
+	checkRestrictedFormula(X).
