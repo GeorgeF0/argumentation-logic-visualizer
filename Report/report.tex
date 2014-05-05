@@ -171,6 +171,7 @@ There are very many extensions to Dung's abstract argumentation framework for di
 It will be seen later on in \autoref{subsec:alfdef} that Argumentation Logic establishes its own framework by building directly on top of an abstract argumentation framework.
 
 \subsection{Visualization of Abstract Argumentation Framework}
+\label{subsec:aafviz}
 An abstract argumentation framework can be seen from a graphical point of view. The arguments $Args$ form nodes in a graph, and the attack relation $Att$ forms the edges. The above example, with $\langle Args, Att\rangle$ (where $Args = \{c, r, h, h', s, m\}$ and $Att = \{(r, h), (c, r), (s, h'), (m, s), (h, h'), (h', h)\}$), can be visualized in \autoref{fig:aafviz}.
 
 \begin{figure}
@@ -194,6 +195,7 @@ forestyle
 Recommended Reading: \citep*[pp. 17-225]{languageproofandlogic}
 
 \subsection{Rules for Propositional Logic}
+\label{subsec:logicrules}
 The rules for propositional logic used throughout this paper are as follows:
 
 \begin{tabular}{|c|c|c|c|c|c|}
@@ -363,6 +365,7 @@ Since the theory is fixed for the argumentation framework, any argument $a = T\c
 As an example, consider $T = \{\alpha\rightarrow\beta, \alpha\rightarrow\gamma\}$. Here, $\{a\}$ attacks (and is attacked by) $\{\neg\beta\}$ or $\{\neg\gamma\}$. For a directly inconsistent theory, all arguments are hostile to each other since a contradiction can be derived from any possible pair of arguments (the empty argument can still not be attacked).
 
 \subsubsection{Defense Against an Attack}
+\label{subsec:alfdef2}
 Using the Argumentation Logic framework described above, and taking any argument $a = T\cup\Delta$, an argument $d$ can be described as a defense against $a$ if any of the following is true:
 \begin{itemize}
 \item
@@ -810,7 +813,7 @@ Child proofs however must be checked for the Genuine Absurdity Property as well 
 
 At the end of the current context, when all the child hypotheses have been gathered and checked that they follow the property, the algorithm checks that the property holds for this context as well. This is done by the clause on line 1. The predicate \lstinline$a3/4$ ("append 3 lists") on line 2 merges the theory, ancestor hypotheses and child hypotheses gathered so far into one bundle, and calls for the theorem prover to try and prove a contradiction while purposely excluding the hypothesis of the current context from the bundle (line 3). That is, the theorem prover is given the task of proving $T\cup\{\phi_1, ..., \phi_k\}\cup\{\neg\psi_1, ..., \neg\psi_l\}\vdash_{MRA}\bot$. If it succeeds, then the Genuine Absurdity Theory does not hold. If it fails, then so far the property holds.
 
-\section{Example Walk-Through}
+\section{Example Walkthrough}
 This example will focus on the \lstinline$checkGAP/5$ predicate shown in \autoref{lst:gapgapcheck}. Consider a proof with theory $\{\neg(\beta\wedge\alpha), \neg(\neg\beta\wedge\gamma), \neg(\alpha\wedge\neg\beta\wedge\neg\gamma)\}$ and goal $\neg\alpha$. The proof is given below: 
 
 \[\vbox{\offinterlineskip\halign{
@@ -933,7 +936,675 @@ It is worth noting that for the algorithm to work, the theorem prover must retur
 
 \chapter{Visualization of Genuine Absurdity Property Proofs}
 \label{chap:viz}
-TODO
+The Argumentation Logic paper does not provide a formal algorithm for visualizing proofs but rather the idea that proofs having the Genuine Absurdity Property can be seen from an argumentative point of view and any abstract argumentation framework can be visualized as shown previously in \autoref{subsec:aafviz}, where an example was given by \autoref{fig:aafviz}. This chapter documents the attempt to provide an algorithm for the visualization of proofs.
+
+\section{Assumptions Made by Algorithm}
+The algorithm provided here assumes that the proofs supplied all follow the Genuine Absurdity Property. This property ensures that arguments made in the (corresponding argumentation framework of the) proof are relevant. It might be possible to visualize proofs that do not have this property.
+
+A consequence of this assumption is that the formulas in the proofs consist of conjunctions and negations only, as the Genuine Absurdity Property is defined only for proofs consisting of those constructs.
+
+\section{Description of Algorithm}
+\label{sec:vizalg}
+In a nutshell, the algorithm moves around the proof in a backwards, $\neg I$-rule's-contradiction-driven approach. It assumes that the hypothesis in the outer box forms the initial argument. At the end of the box, where the contradiction is established, clues can be found as to what the attacks were. Recall from \autoref{subsec:logicrules} that the $\bot I$ rule points to two formulas in the proof of the form $A$ and $\neg A$. Formula $A$ will be either a conjunction of smaller formulas or just one atom. The negated formulas or (negated) atoms form the attack. Naturally, the defenses are the negations of each of those formulas or atoms which will be hypotheses inside boxes which lead to more contradictions recursively. The algorithm repeats itself recursively, until the attacks gathered from the contradictions only form part of the theory or previous hypotheses (defenses higher up the chain).
+
+The algorithm's function will now be demonstrated with the aid of an example. Consider 
+the following proof:
+
+\[\vbox{\offinterlineskip\halign{
+&\tabskip=1.5em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\tabskip=0em\cr
+%
+1&\neg(\beta\wedge\alpha)&\mbox{given}\cr
+2&\neg(\neg\beta\wedge\gamma)&\mbox{given}\cr
+3&\neg(\alpha\wedge\neg\beta\wedge\neg\gamma)&\mbox{given}\cr
+%
+\multispan3\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&4&\alpha&\mbox{hypothesis}&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&5&\beta&\mbox{hypothesis}&\cr
+&6&\beta\wedge\alpha&\wedge I(5,4)&\cr
+&7&\bot&\bot I(1,6)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&8&\neg\beta&\neg I(5,7)&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&9&\gamma&\mbox{hypothesis}&\cr
+&10&\neg\beta\wedge\gamma&\wedge I(8,9)&\cr
+&11&\bot&\bot I(2,10)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&12&\neg\gamma&\neg I(9,11)&\cr
+&13&\alpha\wedge\neg\beta&\wedge I(4,8)&\cr
+&14&\alpha\wedge\neg\beta\wedge\neg\gamma&\wedge I(13,12)&\cr
+&15&\bot&\bot I(3,14)&\cr
+%
+\noalign{\hrule}}}\,\cr
+%
+16&\neg\alpha&\neg I(4,15)\cr
+}}\]
+
+The initial argument will be found at the top of the outer-most box - the hypothesis $\alpha$. The attacks can be found from the contradiction at the bottom, from line 15. The reasons from the contradiction are lines 3 and 14, which are of the form $\neg A$ and $A$ respectively, where $A = \alpha\wedge\neg\beta\neg\gamma$. $A$ is a conjunction of (negated) atoms, and so the attack against $\alpha$ will be $\{\neg\beta, \neg\gamma\}$. Note that $\alpha$ in $A$ was ignored because it is the argument being attacked itself. The attacks were derived at lines 8 and 12. This is known because the conjunction $A$ is accompanied by the line numbers of its constituents. The defense against $\neg\beta$ and $\neg\gamma$ can be found in the two respective sub-derivations where their negations are assumed. 
+
+$\beta$ is the defense against $\neg\beta$, and at the bottom of the first inner box the attack(s) against it can be found. The conjunction consists of itself and $\alpha$, which is a previous defense. So, after ignoring the hypothesis itself, $\alpha$ remains as the attack. Because this attack was used previously as a defense, it makes no sense to try and defend against it. Thus this part of the algorithm ends here.
+
+$\gamma$ is the defense against $\neg\gamma$, and at the bottom of the second inner box the attack(s) against it can be found. The conjunction here consists of itself and $\neg\beta$. The defense against it and the attack against that can be found in the first inner box and so this part of the algorithm repeats as before.
+
+At the end, the following abstract argumentation framework is extracted, which is drawn in \autoref{fig:vizex}:
+\begin{itemize}
+\item
+arguments: $\{\{\alpha\}, \{\neg\beta, \neg\gamma\}, \{\beta\}, \{\neg\beta\}, \{\gamma\}\}$
+\item
+attacks: $\{(\{\neg\beta, \neg\gamma\}, \{\alpha\}), (\{\beta\}, \{\neg\beta, \neg\gamma\}), (\{\gamma\}, \{\neg\beta, \neg\gamma\}), (\{\neg\beta\}, \{\gamma\}), (\{\beta\}, \{\neg\beta\})\}$
+\end{itemize}
+
+\begin{figure}
+\centerline{\begin{forest}
+forestyle
+[,tikz={\node[pos=0,font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{$\{\alpha\}$};}
+	[,edge label={node[font=\sffamily,anchor=west,xshift=8pt,yshift=1pt]{\color{black}$\{\neg\beta, \neg\gamma\}$}}
+		[,edge label={node[font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{\color{black}$\{\beta\}$}}
+			[,edge label={node[font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{\color{black}$\{\alpha\}$}}]
+		]
+		[,edge label={node[font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{\color{black}$\{\gamma\}$}}
+			[,edge label={node[font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{\color{black}$\{\neg\beta\}$}}
+				[,edge label={node[font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{\color{black}$\{\beta\}$}}
+					[,edge label={node[font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{\color{black}$\{\alpha\}$}}]
+				]
+			]
+		]
+	]
+]
+\end{forest}}
+\caption{Visualization of the proof of example in \autoref{sec:vizalg}\label{fig:vizex}}
+\end{figure}
+
+\section{Observations and Remarks}
+It may be obvious by now that a certain mapping can be established between the hypotheses and contradictions and defenses and attacks. A hypothesis in the proof always represents a defense from the argumentation point of view, and the individual atoms, negated atoms and negated subformulas whose conjunction (along with the negation of their conjunction) forms the contradiction represent the attack from the argumentation point of view. Some of these atoms, negated atoms and formulas can be traced back to conclusions of $\neg I$ rules, thus it can be said that conclusions of $\neg I$ rules (ie the results of the boxes) form some part of an attack.
+
+When using this algorithm, there is always one attack per argument, but there can be many defenses. Each defense is the negation of an atom of an attack (argument). Both the attacks and defenses follow their respective definitions as described in the original paper and in \autoref{subsec:alfdef} and \autoref{subsec:alfdef2}.
+
+When considering the formulas of the conjunction that constitutes an attack, all formulas that are part of the theory or the argument under attack are ignored. Absence of any remaining formulas signifies an attack by the empty set. This is shown by the last two examples in \autoref{sec:vizex}.
+
+Although the argumentation framework shown in \autoref{fig:vizex} could have been drawn so that argument $\{\beta\}$ on the left side of the ramification attacks $\{\neg\beta\}$ on the right, the algorithm repeats the whole branch in the drawing. The choice was merely based on visual appearance and on the fact that trees can be formed this way. The algorithm could be made instead to draw an attack from $\{\beta\}$ on the left branch to $\{\gamma\}$ on the right.
+
+\section{Details of Implementation}
+The algorithm first starts by reversing the proof so that it is in ascending order (opposite of the output by the theorem prover in \autoref{chap:prover}). \autoref{lst:argviz1} shows that after reversing the proof, the algorithm calls the \lstinline$getDefence/7$ predicate, which is responsible for producing the defense node as well as handling its subtree (which on the top level is the entire tree).
+
+The \lstinline$getDefence/7$ (line 7 of the code) predicate adds the hypothesis of the box in the argumentation framework under construction and then calls \lstinline$getAttack/6$ which returns the attack and its subtree.
+
+The \lstinline$getAttack/6$ (line 10 of the code) looks at the bottom of the box and finds the contradiction that will indicate what the attacks are (lines 11 to 16). If the contradiction is due to a conjunction of formulas then the individual components are found (line 19). If there is only one component (there is no conjunction) it is retrieved by line 22. If the contradiction was reached just by using the hypothesis itself, then the attack has no special components which makes it an empty set attack (line 25). A node is then made from the components for the argumentation framework that is being built (line 27) and then all components that were attempted to defend against are gathered. For each of those components, their respective subtrees are gathered (line 31) and finally all the new nodes and attacks between them are put together and returned (lines 32, 33). The predicate \lstinline$m2/2$ on lines 18, 21, 24 and 29 acts as an alias to the standard \lstinline$member/2$ Prolog predicate.
+
+\begin{lstlisting}[caption={First part of the proof visualization algorithm},label=lst:argviz1]
+% Converts a GAP proof to its argumentation representation
+convertGAPToArg(Proof, [Nodes, AttDefs]) :-
+	reverse(Proof, RevProof),
+	getTheoryAndRevBox(RevProof, Theory, Box),
+	getDefence(Box, Box, Theory, 1, 0, Nodes, [_|AttDefs]), !.
+% Makes a node and defence relation against given attack (and handles its subtree as well)
+getDefence([step(Hypothesis, [hypothesis], _)|Proof], WholeProof, Theory, You, Target, [[[Hypothesis], You]|Nodes], [[You, Target]|AttDefs]) :-
+	getAttack(Proof, WholeProof, [Hypothesis|Theory], You, Nodes, AttDefs).
+% Makes a node and attack relation against given defence (and handles its subtree as well)
+getAttack(Proof, WholeProof, Ignore, N, Nodes, AttDefs) :-
+	reverse(Proof, RevProof),
+	(
+		RevProof = [step(falsity, [falsityI, _, LN], _)|_];
+		
+		RevProof = [step(falsity, [check, _], _), step(falsity, [falsityI, _, LN], _)|_]
+	),
+	(
+		m2(step(_, [andI|_], LN), Proof),
+		findAttackComponents(Proof, WholeProof, Ignore, LN, Components), !;
+		
+		m2(step(X, _, LN), Proof),
+		getAttackComponent(X, LN, Ignore, Proof, WholeProof, Components), !;
+		
+		not(m2(step(_, _, LN), Proof)),
+		Components = []
+	),
+	makeAttackNode(Components, Attack),
+	Ignore = [_|Theory],
+	findall([AttComponent, DefAgainstAtt], m2([AttComponent, DefAgainstAtt], Components), DefendedAgainstComponents),
+	ln(N, NextN), ln(NextN, NextNextN),
+	getDefences(WholeProof, Theory, NextNextN, NextN, DefendedAgainstComponents, DNodes, DAttDefs),
+	Nodes = [[Attack, NextN]|DNodes],
+	AttDefs = [[NextN, N]|DAttDefs].
+\end{lstlisting}
+
+The predicate \lstinline$getDefences/7$ as shown in \autoref{lst:argviz2} is responsible for gathering all defenses and their subtrees. For each defense, it calls \lstinline$getDefence/7$ and it ensures that the nodes returned have different labels from the other defenses. The nodes and attack relations are then merged and returned. The predicate \lstinline$a2/3$ on lines 7 and 8 acts as an alias to the standard \lstinline$append/3$ Prolog predicate.
+
+\begin{lstlisting}[caption={Second part of the proof visualization algorithm},label=lst:argviz2]
+% Gathers all defences against an attack (and their subtrees)
+getDefences(WholeProof, Theory, You, Target, [[_, Box]|Components], Nodes, AttDefs) :-
+	getDefence(Box, WholeProof, Theory, You, Target, DNodes, DAttDefs),
+	reverse(DNodes, [[_, LastId]|_]),
+	ln(LastId, NewYou),
+	getDefences(WholeProof, Theory, NewYou, Target, Components, DsNodes, DsAttDefs),
+	a2(DNodes, DsNodes, Nodes),
+	a2(DAttDefs, DsAttDefs, AttDefs).
+getDefences(_, _, _, _, [], [], []).
+\end{lstlisting}
+
+The predicates \lstinline$findAttackComponents/5$ and \lstinline$getAttackComponent/6$ as shown in \autoref{lst:argviz3} work closely together in order to breakdown the conjunction of attack components. Conjunctions are gradually broken down into individual smaller parts (lines 9-15), until all that remains is atoms, negated atoms and negated formulas. If the attack component is part of the theory or the current hypothesis, it is ignored (line 17). If, on the other hand, it is a previous hypothesis (in other words a previous defense used earlier), then it is added as a terminal attack (an attack that cannot be defended against) (line 18). Alternatively, the attack component forms an attack that was attempted to defend against, and is returned along with the box containing the defense attempt (line 19). The individual components are then placed in one list and are returned (line 13). The predicate \lstinline$m2/2$ on lines 10 and 17 acts as an alias to the standard \lstinline$member/2$ Prolog predicate. The predicate \lstinline$a2/3$ on line 13 acts as an alias to the standard \lstinline$append/3$ Prolog predicate.
+
+\begin{lstlisting}[caption={Third part of the proof visualization algorithm},label=lst:argviz3]
+% Breaks down an attack into individual components and the defence attempts against them
+% returns a list of a mixture of:
+% [A] (for part of the attack used as defences up the tree - there's no way to attack them)
+% [A, defAgainstA] (for part of the attack that was attempted to defend against, plus the box of the proof that does so)
+% example: given attack a&b&¬c&d returns [[a], [[b], [...]], [[¬c], [...]]],
+% assuming a was used as a defence above (you cannot defend against your defence, so this is a terminal part of the attack),
+% there was an attempt to defend against b and ¬c (given by the parts of the proof [...]),
+% and d was part of the theory hence there's no defence against that
+findAttackComponents(Proof, WholeProof, Ignore, LN, Components) :-
+	m2(step(and(A, B), [andI, LN1, LN2], LN), Proof),
+	getAttackComponent(A, LN1, Ignore, Proof, WholeProof, Components1),
+	getAttackComponent(B, LN2, Ignore, Proof, WholeProof, Components2),
+	a2(Components1, Components2, Components).
+getAttackComponent(and(_, _), LN, Ignore, Proof, WholeProof, Components) :-
+	!, findAttackComponents(Proof, WholeProof, Ignore, LN, Components).
+getAttackComponent(A, LN, Ignore, _, WholeProof, Component) :-
+	m2(A, Ignore), Component = [], !;
+	getStep(LN, WholeProof, step(A, [hypothesis], LN)), Component = [[A]], !;
+	getBox(LN, WholeProof, _, Box), Component = [[A, Box]].
+\end{lstlisting}
+
+\section{Example Walkthough}
+The example will revolve around the example proof given in \autoref{sec:vizalg}. The algorithm changes the format of the proof so that steps are in increasing order, in the same way as the proof would be printed on paper. The outer box is selected and \lstinline$getDefence/7$ is called upon to return the entire tree (lines 3-5 of \autoref{lst:argviz3}).
+
+The predicate \lstinline$getDefence/7$ automatically creates and adds a node for the defense $\alpha$, the hypothesis of the outer box. It then assigns the duty of creating the rest of the tree to \lstinline$getAttack/6$ (line 8). Note that it adds the hypothesis to the ignore list.
+
+This predicate looks at the bottom of the proof (line 15 of the proof, line 13 of the code) and then picks up the conjunction of components $\alpha\wedge\neg\beta\wedge\neg\gamma$ (line 14 of the proof, line 18 of the code). The predicate \lstinline$findAttackComponents/5$ is called to find and return the attack components.
+
+\lstinline$findAttackComponents/5$ splits the conjunction in two parts, namely $\alpha$ and $\neg\beta\wedge\neg\gamma$ (line 10 of \autoref{lst:argviz3}). \lstinline$getAttackComponent/6$ is called on both parts.
+
+For the first call, \lstinline$getAttackComponent/6$ realizes that the component $\alpha$ is an atom, and that it is included in the ignore list. Thus it returns empty-handed (line 17 of the code).
+
+For the second call, \lstinline$getAttackComponent/6$ realizes that the component is actually another conjunction and calls \lstinline$findAttackComponents/5$ to split the conjunction into individual parts (line 15). The two parts are $\neg\beta$ and $\neg\gamma$. \lstinline$getAttackComponent/6$ is called on both parts.
+
+\lstinline$getAttackComponent/6$ realizes that $\neg\beta$ is a negated atom and is not e member of the ignore list nor it is a previous defense. This means that an attempt to defend against it must have been done. Thus the component itself, along with its accompanying attempted defense box (lines 5-7 in the proof, line 19 in the code) are returned.
+
+Similarly for the case of $\neg\gamma$, the component itself along with its box (lines 9-11 in the proof) are returned. The components find their way back to the first call of \lstinline$findAttackComponents/5$ which returns them in a single list back to \lstinline$getAttack/6$ (line 19 in \autoref{lst:argviz1}).
+
+Continuing on line 27, the attack node $\{\neg\beta, \neg\gamma\}$ is made, and from the components of the attack, all that were attempted to be defended against are gathered (line 29). In this case there were attempts at defending against both $\neg\beta$ and $\neg\gamma$. \lstinline$getDefences/7$ is called to return the subtrees of the two attack components.
+
+\lstinline$getDefences/7$ is a recursive predicate that finds the defenses (and the rest of the subtree) for each attack component. It also handles the labels for the subtrees so that they don't use the same identifiers. Note that the hypothesis $\alpha$ has been dropped from the ignore list.
+
+\lstinline$getDefence/7$ is called in order to find the defense against $\neg\beta$. This is where the algorithm repeats all the steps of the walkthrough so far again, though this time the hypothesis is $\beta$. The major difference is that \lstinline$getAttackComponent/6$ will ignore the $\beta$ attack component (line 6 of the proof) but it will accept $\alpha$ as an attack that was previously used as a defense, making it a terminal component (ie there is no defending against that).
+
+Similarly for $\neg\gamma$, the procedure is repeated and the results bubble back up to \lstinline$getDefences/7$, where those results are merged with the results of the defense attempt against $\neg\beta$ (lines 7-8 of \autoref{lst:argviz2}). The results that this predicate returns are merged with the attack node $\{\neg\beta, \neg\gamma\}$ from line 27 of \autoref{lst:argviz1} in order to produce the entire subtree of the attack $\{\neg\beta, \neg\gamma\}$ against $\alpha$ (lines 32-33). The results are then pushed upwards and the end result is the tree shown in \autoref{fig:vizex}.
+
+\section{Visualization Examples}
+\label{sec:vizex}
+This section illustrates the function of the algorithm with more examples. For each example, the proof is given alongside its visual representation according to the visualization algorithm.
+
+\begin{figure}[thp]
+\begin{minipage}[c]{.5\linewidth}
+\[\vbox{\offinterlineskip\halign{
+&\tabskip=1.5em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\tabskip=0em\cr
+%
+1&\neg(\beta\wedge\alpha)&\mbox{given}\cr
+2&\neg(\alpha\wedge\gamma)&\mbox{given}\cr
+3&\neg(\alpha\wedge\neg\beta\wedge\neg\gamma)&\mbox{given}\cr
+%
+\multispan3\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&4&\alpha&\mbox{hypothesis}&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&5&\beta&\mbox{hypothesis}&\cr
+&6&\beta\wedge\alpha&\wedge I(5,4)&\cr
+&7&\bot&\bot I(1,6)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&8&\neg\beta&\neg I(5,7)&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&9&\gamma&\mbox{hypothesis}&\cr
+&10&\alpha\wedge\gamma&\wedge I(4,9)&\cr
+&11&\bot&\bot I(2,10)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&12&\neg\gamma&\neg I(9,11)&\cr
+&13&\alpha\wedge\neg\beta&\wedge I(4,8)&\cr
+&14&\alpha\wedge\neg\beta\wedge\neg\gamma&\wedge I(13,12)&\cr
+&15&\bot&\bot I(3,14)&\cr
+%
+\noalign{\hrule}}}\,\cr
+%
+16&\neg\alpha&\neg I(4,15)\cr
+}}\]
+\end{minipage}%
+\begin{minipage}[c]{.5\linewidth}
+\centerline{\begin{forest}
+forestyle
+[,tikz={\node[pos=0,font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{$\{\alpha\}$};}
+	[,edge label={node[font=\sffamily,anchor=west,xshift=8pt,yshift=1pt]{\color{black}$\{\neg\beta, \neg\gamma\}$}}
+		[,edge label={node[font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{\color{black}$\{\beta\}$}}
+			[,edge label={node[font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{\color{black}$\{\alpha\}$}}]
+		]
+		[,edge label={node[font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{\color{black}$\{\gamma\}$}}
+			[,edge label={node[font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{\color{black}$\{\alpha\}$}}]
+		]
+	]
+]
+\end{forest}}
+\end{minipage}%
+\caption{Visualization example of 2-level boxes}
+\end{figure}
+
+\begin{figure}[thp]
+\begin{minipage}[c]{.5\linewidth}
+\[\vbox{\offinterlineskip\halign{
+&\tabskip=1.5em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\tabskip=0em\cr
+%
+1&\neg(\alpha\wedge\beta)&\mbox{given}\cr
+2&\neg\neg\beta&\mbox{given}\cr
+%
+\multispan3\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&3&\alpha&\mbox{hypothesis}&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&4&\neg\beta&\mbox{hypothesis}&\cr
+&5&\bot&\bot I(2,4)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&6&\neg\neg\beta&\neg I(4,5)&\cr
+&7&\beta&\neg E(6)&\cr
+&8&\alpha\wedge\beta&\wedge I(3,7)&\cr
+&9&\bot&\bot I(1,8)&\cr
+%
+\noalign{\hrule}}}\,\cr
+%
+10&\neg\alpha&\neg I(3,9)\cr
+}}\]
+\end{minipage}%
+\begin{minipage}[c]{.5\linewidth}
+\centerline{\begin{forest}
+forestyle
+[,tikz={\node[pos=0,font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{$\{\alpha\}$};}
+	[,edge label={node[font=\sffamily,anchor=west,xshift=8pt,yshift=1pt]{\color{black}$\{\beta\}$}}
+		[,edge label={node[font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{\color{black}$\{\neg\beta\}$}}
+			[,edge label={node[font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{\color{black}$\{\}$}}]
+		]
+	]
+]
+\end{forest}}
+\end{minipage}%
+\caption{Visualization example of empty set attack}
+\end{figure}
+
+\begin{figure}[thp]
+\begin{minipage}[c]{.5\linewidth}
+\[\vbox{\offinterlineskip\halign{
+&\tabskip=1.5em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\tabskip=0em\cr
+%
+1&\neg(\alpha\wedge\beta)&\mbox{given}\cr
+2&\neg(\alpha\wedge\gamma)&\mbox{given}\cr
+3&\neg(\alpha\wedge\delta)&\mbox{given}\cr
+4&\neg(\alpha\wedge\neg\beta\wedge\neg\gamma)&\mbox{given}\cr
+%
+\multispan3\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&5&\alpha&\mbox{hypothesis}&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&6&\beta&\mbox{hypothesis}&\cr
+&7&\alpha\wedge\beta&\wedge I(5,6)&\cr
+&8&\bot&\bot I(1,7)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&9&\neg\beta&\neg I(6,8)&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&10&\delta&\mbox{hypothesis}&\cr
+&11&\alpha\wedge\delta&\wedge I(5,10)&\cr
+&12&\bot&\bot I(3,11)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&13&\neg\delta&\neg I(10,12)&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&14&\gamma&\mbox{hypothesis}&\cr
+&15&\alpha\wedge\gamma&\wedge I(5,14)&\cr
+&16&\bot&\bot I(2,15)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&17&\neg\gamma&\neg I(14,16)&\cr
+&18&\alpha\wedge\neg\beta&\wedge I(5,9)&\cr
+&19&\alpha\wedge\neg\beta\wedge\neg\gamma&\wedge I(18,17)&\cr
+&20&\bot&\bot I(4,19)&\cr
+%
+\noalign{\hrule}}}\,\cr
+%
+21&\neg\alpha&\neg I(5,20)\cr
+}}\]
+\end{minipage}%
+\begin{minipage}[c]{.5\linewidth}
+\centerline{\begin{forest}
+forestyle
+[,tikz={\node[pos=0,font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{$\{\alpha\}$};}
+	[,edge label={node[font=\sffamily,anchor=west,xshift=8pt,yshift=1pt]{\color{black}$\{\neg\beta, \neg\gamma\}$}}
+		[,edge label={node[font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{\color{black}$\{\beta\}$}}
+			[,edge label={node[font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{\color{black}$\{\alpha\}$}}]
+		]
+		[,edge label={node[font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{\color{black}$\{\gamma\}$}}
+			[,edge label={node[font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{\color{black}$\{\alpha\}$}}]
+		]
+	]
+]
+\end{forest}}
+\end{minipage}%
+\caption{Visualization example of ignored successful defense}
+\end{figure}
+
+\begin{figure}[thp]
+\begin{minipage}[c]{.5\linewidth}
+\[\vbox{\offinterlineskip\halign{
+&\tabskip=1.5em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\tabskip=0em\cr
+%
+1&\neg(\neg\alpha\wedge\delta)&\mbox{given}\cr
+2&\neg(\alpha\wedge\neg\beta)&\mbox{given}\cr
+3&\neg(\alpha\wedge\gamma)&\mbox{given}\cr
+4&\neg(\alpha\wedge\beta\wedge\neg\gamma)&\mbox{given}\cr
+%
+\multispan3\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&5&\delta&\mbox{hypothesis}&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&6&\alpha&\mbox{hypothesis}&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&7&\neg\beta&\mbox{hypothesis}&\cr
+&8&\alpha\wedge\neg\beta&\wedge I(6,7)&\cr
+&9&\bot&\bot I(2,8)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&10&\beta&\neg I(7,9)&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&11&\gamma&\mbox{hypothesis}&\cr
+&12&\alpha\wedge\gamma&\wedge I(6,11)&\cr
+&13&\bot&\bot I(3,12)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&14&\neg\gamma&\neg I(11,13)&\cr
+&15&\alpha\wedge\beta&\wedge I(6,10)&\cr
+&16&\alpha\wedge\beta\wedge\neg\gamma&\wedge I(15,14)&\cr
+&17&\bot&\bot I(4,17)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&18&\neg\alpha&\neg I(6,17)&\cr
+&19&\neg\alpha\wedge\delta&\wedge I(18,5)&\cr
+&20&\bot&\neg I(1,19)&\cr
+%
+\noalign{\hrule}}}\,\cr
+%
+21&\neg\delta&\neg I(5,20)\cr
+}}\]
+\end{minipage}%
+\begin{minipage}[c]{.5\linewidth}
+\centerline{\begin{forest}
+forestyle
+[,tikz={\node[pos=0,font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{$\{\delta\}$};}
+	[,edge label={node[font=\sffamily,anchor=west,xshift=8pt,yshift=1pt]{\color{black}$\{\neg\alpha\}$}}
+		[,edge label={node[font=\sffamily,anchor=west,xshift=8pt,yshift=1pt]{\color{black}$\{\alpha\}$}}
+			[,edge label={node[font=\sffamily,anchor=west,xshift=8pt,yshift=1pt]{\color{black}$\{\beta, \neg\gamma\}$}}
+				[,edge label={node[font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{\color{black}$\{\neg\beta\}$}}
+					[,edge label={node[font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{\color{black}$\{\alpha\}$}}]
+				]
+				[,edge label={node[font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{\color{black}$\{\gamma\}$}}
+					[,edge label={node[font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{\color{black}$\{\alpha\}$}}]
+				]
+			]
+		]
+	]
+]
+\end{forest}}
+\end{minipage}%
+\caption{Visualization example of 3-level boxes}
+\end{figure}
+
+\begin{figure}[thp]
+\begin{minipage}[c]{.5\linewidth}
+\[\vbox{\offinterlineskip\halign{
+&\tabskip=1.5em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\tabskip=0em\cr
+%
+1&\gamma&\mbox{given}\cr
+2&\neg(\alpha\wedge\beta\wedge\gamma)&\mbox{given}\cr
+3&\neg(\alpha\wedge\neg\beta)&\mbox{given}\cr
+%
+\multispan3\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&4&\alpha&\mbox{hypothesis}&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&5&\neg\beta&\mbox{hypothesis}&\cr
+&6&\alpha\wedge\neg\beta&\wedge I(4,5)&\cr
+&7&\bot&\bot I(3,6)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&8&\neg\neg\beta&\neg I(5,7)&\cr
+&9&\beta&\neg E(8)&\cr
+&10&\alpha\wedge\beta&\wedge I(4,9)&\cr
+&11&\alpha\wedge\beta\wedge\gamma&\wedge I(10,1)&\cr
+&12&\bot&\bot I(2,11)&\cr
+%
+\noalign{\hrule}}}\,\cr
+%
+13&\neg\alpha&\neg I(4,12)\cr
+}}\]
+\end{minipage}%
+\begin{minipage}[c]{.5\linewidth}
+\centerline{\begin{forest}
+forestyle
+[,tikz={\node[pos=0,font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{$\{\alpha\}$};}
+	[,edge label={node[font=\sffamily,anchor=west,xshift=8pt,yshift=1pt]{\color{black}$\{\beta\}$}}
+		[,edge label={node[font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{\color{black}$\{\neg\beta\}$}}
+			[,edge label={node[font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{\color{black}$\{\alpha\}$}}]
+		]
+	]
+]
+\end{forest}}
+\end{minipage}%
+\caption{Visualization example of theory attack}
+\end{figure}
+
+\begin{figure}[thp]
+\begin{minipage}[c]{.5\linewidth}
+\[\vbox{\offinterlineskip\halign{
+&\tabskip=1.5em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\tabskip=0em\cr
+%
+1&\neg(\neg\alpha\wedge\delta\wedge\epsilon)&\mbox{given}\cr
+2&\neg(\alpha\wedge\neg\beta)&\mbox{given}\cr
+3&\neg(\alpha\wedge\gamma)&\mbox{given}\cr
+4&\neg(\alpha\wedge\beta\wedge\neg\gamma)&\mbox{given}\cr
+5&\neg(\neg\delta\wedge\epsilon)&\mbox{given}\cr
+6&\neg(\zeta\wedge\eta)&\mbox{given}\cr
+7&\neg(\zeta\wedge\neg\eta\wedge\neg\epsilon)&\mbox{given}\cr
+%
+\multispan3\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&8&\zeta&\mbox{hypothesis}&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&9&\epsilon&\mbox{hypothesis}&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&10&\alpha&\mbox{hypothesis}&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&11&\neg\beta&\mbox{hypothesis}&\cr
+&12&\alpha\wedge\neg\beta&\wedge I(10,11)&\cr
+&13&\bot&\bot I(2,12)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&14&\beta&\neg I(11,13)&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&15&\gamma&\mbox{hypothesis}&\cr
+&16&\alpha\wedge\gamma&\wedge I(10,15)&\cr
+&17&\bot&\bot I(3,16)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&18&\neg\gamma&\neg I(15,17)&\cr
+&19&\alpha\wedge\beta&\wedge I(10,14)&\cr
+&20&\alpha\wedge\beta\wedge\neg\gamma&\wedge I(19,18)&\cr
+&21&\bot&\bot I(4,20)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&22&\neg\alpha&\neg I(10,21)&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&23&\neg\delta&\mbox{hypothesis}&\cr
+&24&\neg\delta\wedge\epsilon&\wedge I(23,9)&\cr
+&25&\bot&\bot I(5,24)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&26&\delta&\neg I(23,25)&\cr
+&27&\neg\alpha\wedge\delta&\wedge I(22,26)&\cr
+&28&\neg\alpha\wedge\delta\wedge\epsilon&\wedge I(27,9)&\cr
+&29&\bot&\bot I(1,28)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&30&\neg\epsilon&\neg I(9,29)&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&31&\eta&\mbox{hypothesis}&\cr
+&32&\zeta\wedge\eta&\wedge I(8,31)&\cr
+&33&\bot&\bot I(6,32)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&34&\neg\eta&\neg I(31,33)&\cr
+&35&\zeta\wedge\neg\eta&\wedge I(8,34)&\cr
+&36&\zeta\wedge\neg\eta\wedge\neg\epsilon&\wedge I(35,30)&\cr
+&37&\bot&\bot I(7,36)&\cr
+%
+\noalign{\hrule}}}\,\cr
+%
+38&\neg\zeta&\neg I(8,37)\cr
+}}\]
+\end{minipage}%
+\begin{minipage}[c]{.5\linewidth}
+\centerline{\begin{forest}
+forestyle
+[,tikz={\node[pos=0,font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{$\{\zeta\}$};}
+	[,edge label={node[font=\sffamily,anchor=west,xshift=8pt,yshift=1pt]{\color{black}$\{\neg\epsilon, \neg\eta\}$}}
+		[,edge label={node[font=\sffamily,anchor=west,xshift=8pt,yshift=1pt]{\color{black}$\{\epsilon\}$}}
+			[,edge label={node[font=\sffamily,anchor=west,xshift=8pt,yshift=1pt]{\color{black}$\{\neg\alpha, \delta\}$}}
+				[,edge label={node[font=\sffamily,anchor=west,xshift=8pt,yshift=1pt]{\color{black}$\{\alpha\}$}}
+					[,edge label={node[font=\sffamily,anchor=west,xshift=8pt,yshift=1pt]{\color{black}$\{\beta, \neg\gamma\}$}}
+						[,edge label={node[font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{\color{black}$\{\neg\beta\}$}}
+							[,edge label={node[font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{\color{black}$\{\alpha\}$}}]
+						]
+						[,edge label={node[font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{\color{black}$\{\gamma\}$}}
+							[,edge label={node[font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{\color{black}$\{\alpha\}$}}]
+						]
+					]
+				]
+				[,edge label={node[font=\sffamily,anchor=west,xshift=8pt,yshift=1pt]{\color{black}$\{\neg\delta\}$}}
+					[,edge label={node[font=\sffamily,anchor=west,xshift=8pt,yshift=1pt]{\color{black}$\{\epsilon\}$}}]
+				]
+			]
+		]
+		[,edge label={node[font=\sffamily,anchor=west,xshift=8pt,yshift=1pt]{\color{black}$\{\eta\}$}}
+			[,edge label={node[font=\sffamily,anchor=west,xshift=8pt,yshift=1pt]{\color{black}$\{\zeta\}$}}]
+		]
+	]
+]
+\end{forest}}
+\end{minipage}%
+\caption{Visualization example of 4-level boxes}
+\end{figure}
 
 \chapter{Server Module}
 \label{chap:server}
