@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html>
+<html style="height:100%">
 <head lang="en">
     <meta charset="UTF-8">
     <title>Argumentation Logic Visualizer</title>
     <link href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet">
-    <link href="css/d3.css" rel="stylesheet">
+    <link href="cssss/d3.css" rel="stylesheet">
 </head>
-<body>
+<body style="height:100%">
 <!-- TOP NAVBAR -->
 <nav class="navbar navbar-default" role="navigation">
     <div class="container-fluid">
@@ -32,9 +32,9 @@
         </div><!-- /.navbar-collapse -->
     </div><!-- /.container-fluid -->
 </nav>
-
+<div style="height: calc(100% - 75px);display:table">
 <!-- WORKBENCH -->
-<div class="panel panel-default" style="display:table-cell">
+<div class="panel panel-default" style="display:table-cell;width:100%;height:100%">
     <div class="panel-heading"><span class="glyphicon glyphicon-cog"></span> Workbench</div>
     <div class="panel-body">
         <!-- TAB HEADERS -->
@@ -109,9 +109,11 @@
                 </div>
             </div>
             <div class="tab-pane fade" id="checkgap">
-                <div ondragover="allowDrop(event)" ondrop="gapProofDrop(event)" style="padding-top:15px" id="gapdroparea">
-                    <div style="width:400px;height:500px;float:left;padding-left:15px;padding-bottom:15px">
-                        <div class="thumbnail" style="height:100%">
+                <div class="row">
+                    <div ondragover="allowDrop(event)" ondrop="gapProofDrop(event)" style="padding-top:15px" id="gapdroparea">
+                        <div style="width:400px;height:500px;float:left;padding-left:15px;padding-bottom:15px">
+                            <div class="thumbnail" style="height:100%">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -143,9 +145,9 @@
 </div>
 
 <!-- CLIPBOARD -->
-<div class="panel panel-default" style="display:table-cell;min-width:500px;position:relative;padding-bottom:60px">
+<div class="panel panel-default" style="display:table-cell;width:500px;position:relative;padding-bottom:60px;height:100%">
     <div class="panel-heading"><span class="glyphicon glyphicon-briefcase"></span> Clipboard</div>
-    <div class="panel-body" ondrop="addProofDrop(event)" ondragover="allowDrop(event)">
+    <div class="panel-body" ondrop="addProofDrop(event)" ondragover="allowDrop(event)" style="height:100%;overflow-y:auto;overflow-x:hidden">
         <div class="row" id="clipboard">
             <!-- to be filled in programmatically -->
         </div>
@@ -154,7 +156,7 @@
         </nav>
     </div>
 </div>
-
+</div>
 <!-- CLEAR CLIPBOARD WARNING -->
 <div class="modal fade" id="clearclipboardmodal">
     <div class="modal-dialog">
@@ -203,8 +205,8 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
 <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 <script src="http://d3js.org/d3.v3.min.js"></script>
-<script src="js/argviztool_d3.js"></script>
-<script src="js/argviztool.js"></script>
-<script src="js/propositional_logic_parser.js"></script>
+<script src="ps/argviztool_d3.js"></script>
+<script src="ps/argviztool.js"></script>
+<script src="ps/propositional_logic_parser.js"></script>
 </body>
 </html>
