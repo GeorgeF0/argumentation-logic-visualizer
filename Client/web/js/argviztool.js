@@ -14,24 +14,17 @@ $("#importclipboardconfirm").click(function(){
 });
 
 $("#exportbtn").click(function() {
-    var newWindow = window.open();
-    var newDocument = newWindow.document;
-    newDocument.write(JSON.stringify(clipboardcontents));
-    newDocument.close();
-});
-
-$("#helpbtn").click(function() {
-    alert("not yet implemented!");
-});
-
-$("#aboutbtn").click(function() {
-    alert("not yet implemented!");
+    exportClipboard(clipboardcontents);
 });
 
 //clipboard
 
 $("#clearclipboardconfirm").click(function() {
     clearClipboard();
+});
+
+$("#exportbtn2").click(function() {
+    exportClipboard(clipboardcontents);
 });
 
 var clipboardcontents = [];
@@ -103,6 +96,16 @@ function deleteDrop(event){
     }
 }
 
+function exportDrop(event){
+    var match = event.dataTransfer.getData("Text").match(/clip(\d+)/);
+    if (match){
+        var id = match[1];
+        exportClipboard([clipboardcontents[id]]);
+    } else {
+        console.log("attempted to delete object not belonging to the clipboard!");
+    }
+}
+
 function allowDrop(event){
     event.preventDefault();
 }
@@ -123,6 +126,13 @@ function addProofDrop(event){
     } else {
         console.log("attempted to add invalid object to the clipboard!");
     }
+}
+
+function exportClipboard(clipboard){
+    var newWindow = window.open();
+    var newDocument = newWindow.document;
+    newDocument.write(JSON.stringify(clipboard));
+    newDocument.close();
 }
 
 //generate proofs tab

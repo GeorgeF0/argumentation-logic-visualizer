@@ -24,8 +24,8 @@
                         <li><a href="#" id="importbtn" data-toggle="modal" data-target="#importclipboardmodal"><span class="glyphicon glyphicon-floppy-save"></span> Import to Clipboard...</a></li>
                         <li><a href="#" id="exportbtn"><span class="glyphicon glyphicon-floppy-open"></span> Export Clipboard...</a></li>
                         <li class="divider"></li>
-                        <li><a href="#" id="helpbtn"><span class="glyphicon glyphicon-question-sign"></span> Help</a></li>
-                        <li><a href="#" id="aboutbtn"><span class="glyphicon glyphicon-info-sign"></span> About</a></li>
+                        <li><a href="help.html" target="_blank" id="helpbtn"><span class="glyphicon glyphicon-question-sign"></span> Help</a></li>
+                        <li><a href="#" id="aboutbtn" data-toggle="modal" data-target="#aboutmodal"><span class="glyphicon glyphicon-info-sign"></span> About</a></li>
                     </ul>
                 </li>
             </ul>
@@ -153,6 +153,7 @@
         </div>
         <nav class="navbar navbar-default" role="navigation" style="position:absolute;bottom:0;width:92.5%;padding-left:15px">
             <button type="button" class="btn btn-danger navbar-btn" data-toggle="modal" data-target="#clearclipboardmodal" ondrop="deleteDrop(event)" ondragover="allowDrop(event)"><span class="glyphicon glyphicon-trash"></span> Clear Clipboard</button>
+            <button type="button" class="btn btn-warning navbar-btn" ondrop="exportDrop(event)" ondragover="allowDrop(event)" id="exportbtn2"><span class="glyphicon glyphicon-floppy-open"></span> Export Clipboard</button>
         </nav>
     </div>
 </div>
@@ -196,6 +197,26 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" id="importclipboardconfirm">Import to Clipboard</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ABOUT MODAL -->
+<div class="modal fade" id="aboutmodal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title">About</h4>
+            </div>
+            <div class="modal-body">
+                <p>Argumentation Logic Visualizer - 2014</p>
+                <p>Made By: Giorgos Flourentzos</p>
+                <p>Supervised By: Dr. Krysia Broda, Dr. Francesca Toni</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
             </div>
         </div>
     </div>
