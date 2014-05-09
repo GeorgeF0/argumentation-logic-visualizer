@@ -1,7 +1,7 @@
 % GAP_TO_ARG: provides predicates to convert a GAP proof to its argumentation form
 
 % Converts a GAP proof to its argumentation representation
-convertGAPToArg(Proof, [Nodes, AttDefs]) :-
+convertGAPToArg(Proof, [Nodes, AttDefs], Theory) :-
 	reverse(Proof, RevProof),
 	getTheoryAndRevBox(RevProof, Theory, Box),
 	getDefence(Box, Box, Theory, 1, 0, Nodes, [_|AttDefs]), !.

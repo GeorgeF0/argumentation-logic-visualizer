@@ -24,6 +24,7 @@ deregisterQueries :-
 :- json_object proof_query(theory, goal) + [type=proof_query].
 :- json_object gap_query(proof) + [type=gap_query].
 :- json_object arg_view_query(proof) + [type=arg_view_query].
+:- json_object arg('1', '2') + [type=arg].
 
 jsonEcho(R) :-
 	format('Content-type: text/plain~n~n'),
@@ -54,6 +55,6 @@ serveGAPToArg(Request) :-
 	http_read_json(Request, JSONIn),
 	json_to_prolog(JSONIn, arg_view_query(Proof)),
 	reverseRecursive(Proof, RevProof),
-	convertGAPToArg(RevProof, PrologOut),
-	prolog_to_json(PrologOut, JSONOut),
+	convertGAPToArg(RevProof, PrologOut1, PrologOut2),
+	prolog_to_json(arg(PrologOut1, PrologOut2), JSONOut),
 	reply_json(JSONOut).

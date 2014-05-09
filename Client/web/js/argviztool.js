@@ -644,8 +644,8 @@ function visualizeGAPProof(){
 }
 
 function visualizeGAPProofCallback(data){
-    var d3NodeData = printPrologJSONArg(data);
-    proofToBeVisualized = {type:"arg", 1:data};
+    var d3NodeData = printPrologJSONArg(data[1]);
+    proofToBeVisualized = data;
     $("#argdragarea").html(makeArgThumbnail("argviz", d3NodeData, "argvizdrawarea"));
     drawArgThumbnails();
 }
