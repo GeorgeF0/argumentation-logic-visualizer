@@ -950,6 +950,7 @@ In a nutshell, the algorithm moves around the proof in a backwards, $\neg I$-rul
 The algorithm's function will now be demonstrated with the aid of an example. Consider 
 the following proof:
 
+\begin{figure}
 \[\vbox{\offinterlineskip\halign{
 &\tabskip=1.5em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\tabskip=0em\cr
 %
@@ -994,6 +995,8 @@ the following proof:
 %
 16&\neg\alpha&\neg I(4,15)\cr
 }}\]
+\caption{Example proof for the visualization algorithm\label{fig:vizexproof}}
+\end{figure}
 
 The initial argument will be found at the top of the outer-most box - the hypothesis $\alpha$. The attacks can be found from the contradiction at the bottom, from line 15. The reasons from the contradiction are lines 3 and 14, which are of the form $\neg A$ and $A$ respectively, where $A = \alpha\wedge\neg\beta\neg\gamma$. $A$ is a conjunction of (negated) atoms, and so the attack against $\alpha$ will be $\{\neg\beta, \neg\gamma\}$. Note that $\alpha$ in $A$ was ignored because it is the argument being attacked itself. The attacks were derived at lines 8 and 12. This is known because the conjunction $A$ is accompanied by the line numbers of its constituents. The defense against $\neg\beta$ and $\neg\gamma$ can be found in the two respective sub-derivations where their negations are assumed. 
 
@@ -1027,17 +1030,80 @@ forestyle
 	]
 ]
 \end{forest}}
-\caption{Visualization of the proof of example in \autoref{sec:vizalg}\label{fig:vizex}}
+\caption{Visualization of the proof of example in \autoref{fig:vizexproof}\label{fig:vizex}}
 \end{figure}
 
-\section{Observations and Remarks}
+\section{Observations, Remarks and Future Work}
 It may be obvious by now that a certain mapping can be established between the hypotheses and contradictions and defenses and attacks. A hypothesis in the proof always represents a defense from the argumentation point of view, and the individual atoms, negated atoms and negated subformulas whose conjunction (along with the negation of their conjunction) forms the contradiction represent the attack from the argumentation point of view. Some of these atoms, negated atoms and formulas can be traced back to conclusions of $\neg I$ rules, thus it can be said that conclusions of $\neg I$ rules (ie the results of the boxes) form some part of an attack.
 
 When using this algorithm, there is always one attack per argument, but there can be many defenses. Each defense is the negation of an atom of an attack (argument). Both the attacks and defenses follow their respective definitions as described in the original paper and in \autoref{subsec:alfdef} and \autoref{subsec:alfdef2}.
 
-When considering the formulas of the conjunction that constitutes an attack, all formulas that are part of the theory or the argument under attack are ignored. Absence of any remaining formulas signifies an attack by the empty set. This is shown by the last two examples in \autoref{sec:vizex}.
+When considering the formulas of the conjunction that constitutes an attack, all formulas that are part of the theory or the argument under attack are ignored. Absence of any remaining formulas signifies an attack by the empty set. This is shown by the example in \autoref{fig:emptysetattack}.
 
-Although the argumentation framework shown in \autoref{fig:vizex} could have been drawn so that argument $\{\beta\}$ on the left side of the ramification attacks $\{\neg\beta\}$ on the right, the algorithm repeats the whole branch in the drawing. The choice was merely based on visual appearance and on the fact that trees can be formed this way. The algorithm could be made instead to draw an attack from $\{\beta\}$ on the left branch to $\{\gamma\}$ on the right.
+Although the argumentation framework shown in \autoref{fig:vizex} could have been drawn so that argument $\{\beta\}$ on the left side of the ramification attacks $\{\neg\beta\}$ on the right, the algorithm repeats the whole branch in the drawing. This choice has a couple of implications. Firstly the generated diagram is always a tree, as chains of arguments are "expanded" or "ironed out" regardless of whether natural deduction proofs made use of sibling $\neg I$ applications. Take the example given in \autoref{fig:vizexproof}. The second inner box makes use of the conclusion $\neg\beta$ that was derived from the first inner box in order to reduce redundancy. The algorithm turns this proof into a framework where the first inner box is essentially cloned (duplicated) into the second box. Because of this "expansion", the visualization algorithm does not distinguish between the proof in \autoref{fig:vizexproof} and the redundant proof in \autoref{fig:vizexproof2}; both proofs when visualized would give the result shown in \autoref{fig:vizex}.
+
+The algorithm could be made instead to draw an attack from $\{\beta\}$ on the left branch to $\{\gamma\}$ on the right. This would remove the redundancy and produce different visualizations for the different proofs in \autoref{fig:vizexproof} and \autoref{fig:vizexproof2}. The resulting visualizations however would not necessarily be trees. An interesting topic is the detection of similar subtrees in argument attack/defense chains and their pruning, resulting in less redundant and more concise proofs when the arguments are converted back into proofs. In addition, attacks and defenses could be moved to shallower levels in the tree if possible, in order for their corresponding boxes in the proof to appear in a shallower box-nesting level, so that their conclusions can be used in a wider context. Of course, this pruning and relocating of nodes in the tree must be done carefully, so that the resulting proofs always follow the Genuine Absurdity Property. This topic remains part of future work and is not discussed further in the report.
+
+\begin{figure}[thp]
+\[\vbox{\offinterlineskip\halign{
+&\tabskip=1.5em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\tabskip=0em\cr
+%
+1&\neg(\beta\wedge\alpha)&\mbox{given}\cr
+2&\neg(\neg\beta\wedge\gamma)&\mbox{given}\cr
+3&\neg(\alpha\wedge\neg\beta\wedge\neg\gamma)&\mbox{given}\cr
+%
+\multispan3\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&4&\alpha&\mbox{hypothesis}&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&5&\beta&\mbox{hypothesis}&\cr
+&6&\beta\wedge\alpha&\wedge I(5,4)&\cr
+&7&\bot&\bot I(1,6)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&8&\neg\beta&\neg I(5,7)&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&9&\gamma&\mbox{hypothesis}&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&10&\beta&\mbox{hypothesis}&\cr
+&11&\beta\wedge\alpha&\wedge I(10,4)&\cr
+&12&\bot&\bot I(1,11)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&13&\neg\beta&\neg I(10,12)&\cr
+%
+&14&\neg\beta\wedge\gamma&\wedge I(13,9)&\cr
+&15&\bot&\bot I(2,14)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&16&\neg\gamma&\neg I(9,15)&\cr
+&17&\alpha\wedge\neg\beta&\wedge I(4,8)&\cr
+&18&\alpha\wedge\neg\beta\wedge\neg\gamma&\wedge I(17,16)&\cr
+&19&\bot&\bot I(3,18)&\cr
+%
+\noalign{\hrule}}}\,\cr
+%
+20&\neg\alpha&\neg I(4,19)\cr
+}}\]
+\caption{Example another proof that results in a framework like in \autoref{fig:vizex}. This proof is redundant but correct under the rules of natural deduction nevertheless.\label{fig:vizexproof2}}
+\end{figure}
 
 \section{Details of Implementation}
 The algorithm first starts by reversing the proof so that it is in ascending order (opposite of the output by the theorem prover in \autoref{chap:prover}). \autoref{lst:argviz1} shows that after reversing the proof, the algorithm calls the \lstinline$getDefence/7$ predicate, which is responsible for producing the defense node as well as handling its subtree (which on the top level is the entire tree).
@@ -1259,7 +1325,7 @@ forestyle
 ]
 \end{forest}}
 \end{minipage}%
-\caption{Visualization example of empty set attack}
+\caption{Visualization example of empty set attack\label{fig:emptysetattack}}
 \end{figure}
 
 \begin{figure}[thp]
