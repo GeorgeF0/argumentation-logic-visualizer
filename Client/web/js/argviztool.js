@@ -812,7 +812,7 @@ function printPrologJSONFormulaSet(input){
     for (var i = 0; i < input.length - 1; i++){
         output += printPrologJSONFormula(input[i]) + ", ";
     }
-    output += printPrologJSONFormula(input[i]) + "}";
+    output += (input[i] && printPrologJSONFormula(input[i]) || "") + "}";
     return output;
 }
 
