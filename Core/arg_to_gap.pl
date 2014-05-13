@@ -33,7 +33,7 @@ makeSubProof([Nodes, AttDefs], Theory, ChildGAPs, NodeID, SubProof) :-
 	m2([[Node], NodeID], Nodes),
 	a2(MergedCGAPs, [step(Node, [hypothesis], LineNumber1)], HypothesisChildren),
 	backwardProve(no, HypothesisChildren, ContextSteps, [[], []], [falsity], BoxProof),
-	childGAPsUsed(BoxProof, [Node|ChildSet], ParentSet),
+	childGAPsUsed(BoxProof, Theory, [Node|ChildSet], ParentSet),
 	ln(BoxProof, NextLineNumber), is(LineNumber2, NextLineNumber - 1),
 	(
 		Node = n(A),
@@ -45,16 +45,20 @@ makeSubProof([Nodes, AttDefs], Theory, ChildGAPs, NodeID, SubProof) :-
 	!.
 
 % Make sure that all the (negations of the) child hypotheses were used in the attack
-childGAPsUsed(Proof, ChildSet, ParentSet) :-
+childGAPsUsed(Proof, Theory, ChildSet, ParentSet) :-
 	(
 		Proof = [step(falsity, [falsityI, _, LN], _)|_];
 		
 		Proof = [step(falsity, [check, _], _), step(falsity, [falsityI, _, LN], _)|_]
 	),
 	m2(step(X, _, LN), Proof),
-	getConjunctionComponents(X, Components),
-	a2(ChildSet, ParentSet, UsedFormulas),
-	subset(Components, UsedFormulas).
+	getConjunctionComponents(X, UsedComponents),
+	subset(ChildSet, UsedComponents),
+	subtract(UsedComponents, ChildSet, Rest),
+	findall(TheoryComponents, (m2(T, Theory), getConjunctionComponents(T, TheoryComponents)), TheoryComponentsList),
+	append(TheoryComponentsList, AllowedTheoryComponents),
+	a2(AllowedTheoryComponents, ParentSet, AllowedComponents),
+	subset(Rest, AllowedComponents).
 
 % Returns the components making up a conjunction
 % Example: a&b&c&¬d -> [a,b,c,¬d]
