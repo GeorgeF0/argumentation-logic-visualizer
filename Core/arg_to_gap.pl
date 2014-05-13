@@ -25,7 +25,7 @@ convertArgToGAP([Nodes, AttDefs], Theory, NodeID, Proof) :-
 makeSubProof([Nodes, AttDefs], Theory, ChildGAPs, NodeID, SubProof) :-
 	parentSet([Nodes, AttDefs], NodeID, ParentSet),
 	childSet(ChildGAPs, ChildSet),
-	lineFix(ParentSet, ChildGAPs, FixedChildGAPs),
+	lineFix(ParentSet, Theory, ChildGAPs, FixedChildGAPs),
 	append(FixedChildGAPs, MergedCGAPs),
 	a2(Theory, ParentSet, Context),
 	toSteps(Context, ContextSteps), !,
@@ -66,26 +66,28 @@ getConjunctionComponents(X, [X]).
 	
 % Changes the lines of the proofs of the child proofs so that no two steps
 % have the same line number. References are updated as well
-lineFix(ParentSet, ChildGAPs, FixedChildGAPs) :-
+lineFix(ParentSet, Theory, ChildGAPs, FixedChildGAPs) :-
 	length(ParentSet, L),
-	lineFix(L, ChildGAPs, 0, FixedChildGAPs).
-lineFix(_, [], _, []).
-lineFix(From, [ChildGAP|ChildGAPs], Offset, [FixedChildGAP|FixedChildGAPs]) :-
-	shiftLines(From, Offset, ChildGAP, FixedChildGAP),
+	length(Theory, T),
+	lineFix(L, ChildGAPs, T, T, RevFixedChildGAPs),
+	reverse(RevFixedChildGAPs, FixedChildGAPs).
+lineFix(_, [], _, _, []).
+lineFix(From, [ChildGAP|ChildGAPs], Offset, TheoryOffset, [FixedChildGAP|FixedChildGAPs]) :-
+	shiftLines(From, Offset, TheoryOffset, ChildGAP, FixedChildGAP),
 	ln(ChildGAP, NewOffset),
-	lineFix(From, ChildGAPs, NewOffset, FixedChildGAPs).
-shiftLines(_, _, [], []).
-shiftLines(From, Offset, [step(A, [R|Reason], LineNumber)|Proof], [step(A, [R|FixedReason], FixedLineNumber)|FixedProof]) :-
-	shiftNumbers(From, Offset, [LineNumber|Reason], [FixedLineNumber|FixedReason]),
-	shiftLines(From, Offset, Proof, FixedProof).
-shiftLines(From, Offset, [box(BoxProof)|Proof], [box(FixedBoxProof)|FixedProof]) :-
-	shiftLines(From, Offset, BoxProof, FixedBoxProof),
-	shiftLines(From, Offset, Proof, FixedProof).
-shiftNumbers(_, _, [], []).
-shiftNumbers(From, Offset, [N|Numbers], [FN|FixedNumbers]) :-
+	lineFix(From, ChildGAPs, NewOffset -1, TheoryOffset, FixedChildGAPs).
+shiftLines(_, _, _, [], []).
+shiftLines(From, Offset, TheoryOffset, [step(A, [R|Reason], LineNumber)|Proof], [step(A, [R|FixedReason], FixedLineNumber)|FixedProof]) :-
+	shiftNumbers(From, Offset, TheoryOffset, [LineNumber|Reason], [FixedLineNumber|FixedReason]),
+	shiftLines(From, Offset, TheoryOffset, Proof, FixedProof).
+shiftLines(From, Offset, TheoryOffset, [box(BoxProof)|Proof], [box(FixedBoxProof)|FixedProof]) :-
+	shiftLines(From, Offset, TheoryOffset, BoxProof, FixedBoxProof),
+	shiftLines(From, Offset, TheoryOffset, Proof, FixedProof).
+shiftNumbers(_, _, _, [], []).
+shiftNumbers(From, Offset, TheoryOffset, [N|Numbers], [FN|FixedNumbers]) :-
 	(
-		N > From, is(FN, N + Offset);
+		N > From + TheoryOffset, is(FN, N + Offset - TheoryOffset - From);
 		
 		FN = N
 	),
-	shiftNumbers(From, Offset, Numbers, FixedNumbers).
+	shiftNumbers(From, Offset, TheoryOffset, Numbers, FixedNumbers).
