@@ -71,7 +71,7 @@ function render(id, item){
             return makeGAPThumbnail(id, printPrologJSONProof(item[1]));
             break;
         case "arg":
-            return makeArgThumbnail(id, printPrologJSONArg(item[1]));
+            return makeArgThumbnail(id, printPrologJSONArg(item[1]), printPrologJSONFormulaSet(item[2]));
             break;
     }
 }
@@ -123,6 +123,8 @@ function addProofDrop(event){
         addToClipboard(gapproved);
     } else if (objid.match(/argviz/)) {
         addToClipboard(proofToBeVisualized);
+    } else if (objid.match(/gapviz/)) {
+        addToClipboard(proofToBeExtracted);
     } else {
         console.log("attempted to add invalid object to the clipboard!");
     }
@@ -646,7 +648,7 @@ function visualizeGAPProof(){
 function visualizeGAPProofCallback(data){
     var d3NodeData = printPrologJSONArg(data[1]);
     proofToBeVisualized = data;
-    $("#argdragarea").html(makeArgThumbnail("argviz", d3NodeData, "argvizdrawarea"));
+    $("#argdragarea").html(makeArgThumbnail("argviz", d3NodeData, printPrologJSONFormulaSet(data[2]), "argvizdrawarea"));
     drawArgThumbnails();
 }
 
@@ -662,7 +664,7 @@ function extrGapProofDrop(event){
         if (proof.type == "arg"){
             proofToBeExtracted = proof;
             var d3NodeData = printPrologJSONArg(proof[1]);
-            $("#extrgapdroparea").html(makeArgThumbnail("invalid2", d3NodeData));
+            $("#extrgapdroparea").html(makeArgThumbnail("invalid2", d3NodeData, printPrologJSONFormulaSet(proof[2])));
             $("#extrgapdragarea").html(makeEmptyThumbnail());
             drawArgThumbnails();
         }
@@ -678,7 +680,6 @@ $("#extractgapbtn").click(function() {
 function extractGAPProof(){
     if (proofToBeExtracted && proofToBeExtracted.type == "arg"){
         var gapViewQuery = {type:"gap_view_query", arg:proofToBeExtracted[1], theory:proofToBeExtracted[2]};
-        console.log(gapViewQuery);
         $.ajax("query/visualizearg", {
             type: "POST",
             contentType:"application/json",
@@ -688,8 +689,7 @@ function extractGAPProof(){
 }
 
 function extractGAPProofCallback(data){
-    console.log(data);
-    proofToBeExtracted = data;
+    proofToBeExtracted = {type:"gapproved", 1:data};
     $("#extrgapdragarea").html(makeGAPThumbnail("gapviz", printPrologJSONProof(data)));
 }
 
@@ -897,14 +897,14 @@ function makeGAPThumbnail(id, content){
     return templateStart + id + templateMiddle + content + templateEnd;
 }
 
-function makeArgThumbnail(id, data, renderID){
+function makeArgThumbnail(id, data, theory, renderID){
     renderID = renderID || (id + "draw");
     var templateStart = "<div draggable=\"true\" ondragstart=\"drag(event)\" style=\"width:400px;height:500px;float:left;padding-left:15px;padding-bottom:15px;position:relative\" id=\"";
     var templateMiddle1 = "\"><div class=\"thumbnail\" style=\"height:100%;white-space:nowrap;overflow:auto\">";
     var templateMiddle2 = "<div id=\"";
     var templateEnd = "\"></div></div></div>";
     addToDrawQueue(renderID, data);
-    return templateStart + id + templateMiddle1 + data.name + templateMiddle2 + renderID + templateEnd;
+    return templateStart + id + templateMiddle1 + "Theory: " + theory + templateMiddle2 + renderID + templateEnd;
 }
 
 function makeEmptyThumbnail(){

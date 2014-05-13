@@ -8,7 +8,7 @@ registerQueries :-
 	http_handler(root(query/generateproofs), serveGenerateProofs, []),
 	http_handler(root(query/checkgap), serveGAPCheck, []),
 	http_handler(root(query/visualizegap), serveGAPToArg, []),
-	http_handler(root(query/visualizearg), jsonEcho, []).
+	http_handler(root(query/visualizearg), serveArgToGAP, []).
 
 deregisterQueries :- 
 	http_delete_handler(root(query)),
