@@ -7,4 +7,5 @@
 	[prune],
 	[pretty_print],
 	[gap_checker],
-	[gap_to_arg].
+	[gap_to_arg],
+	[arg_to_gap].

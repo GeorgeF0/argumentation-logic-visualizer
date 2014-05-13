@@ -650,6 +650,49 @@ function visualizeGAPProofCallback(data){
     drawArgThumbnails();
 }
 
+// gap view (extract gap proof) tab
+
+proofToBeExtracted = null;
+
+function extrGapProofDrop(event){
+    var match = event.dataTransfer.getData("Text").match(/clip(\d+)/);
+    if (match){
+        var id = match[1];
+        var proof = clipboardcontents[id];
+        if (proof.type == "arg"){
+            proofToBeExtracted = proof;
+            var d3NodeData = printPrologJSONArg(proof[1]);
+            $("#extrgapdroparea").html(makeArgThumbnail("invalid2", d3NodeData));
+            $("#extrgapdragarea").html(makeEmptyThumbnail());
+            drawArgThumbnails();
+        }
+    } else {
+        console.log("attempted to extract from a non-arg object!");
+    }
+}
+
+$("#extractgapbtn").click(function() {
+    extractGAPProof();
+});
+
+function extractGAPProof(){
+    if (proofToBeExtracted && proofToBeExtracted.type == "arg"){
+        var gapViewQuery = {type:"gap_view_query", arg:proofToBeExtracted[1], theory:proofToBeExtracted[2]};
+        console.log(gapViewQuery);
+        $.ajax("query/visualizearg", {
+            type: "POST",
+            contentType:"application/json",
+            data: JSON.stringify(gapViewQuery),
+            success: extractGAPProofCallback});
+    }
+}
+
+function extractGAPProofCallback(data){
+    console.log(data);
+    proofToBeExtracted = data;
+    $("#extrgapdragarea").html(makeGAPThumbnail("gapviz", printPrologJSONProof(data)));
+}
+
 //utilities
 
 function flattenTheory(input){

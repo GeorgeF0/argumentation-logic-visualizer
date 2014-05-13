@@ -43,6 +43,7 @@
             <li><a href="#buildproof" data-toggle="tab">Build Proof</a></li>
             <li><a href="#checkgap" data-toggle="tab">Check GAP</a> </li>
             <li><a href="#argview" data-toggle="tab">Visualize GAP Proof</a> </li>
+            <li><a href="#gapview" data-toggle="tab">Extract GAP Proof</a> </li>
         </ul>
         <!-- TAB BODIES -->
         <div id="myTabContent" class="tab-content">
@@ -140,7 +141,27 @@
                     <button type="button" class="btn btn-default" id="visualizeargbtn"><span class="glyphicon glyphicon-search"></span> Visualize GAP Proof</button>
                 </div>
             </div>
+            <div class="tab-pane fade" id="gapview">
+                <div class="row">
+                    <div ondragover="allowDrop(event)" ondrop="extrGapProofDrop(event)" style="float:left;padding-top:15px;padding-left:15px;padding-bottom:15px" id="extrgapdroparea">
+                        <div style="width:400px;height:500px;float:left;padding-left:15px;padding-bottom:15px">
+                            <div class="thumbnail" style="height:100%">
+                            </div>
+                        </div>
+                    </div>
+                    <div style="float:left;padding-top:15px;padding-bottom:15px;padding-right:15px" id="extrgapdragarea">
+                        <div style="width:400px;height:500px;float:left;padding-left:15px;padding-bottom:15px">
+                            <div class="thumbnail" style="height:100%">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div style="padding-left:15px">
+                    <button type="button" class="btn btn-default" id="extractgapbtn"><span class="glyphicon glyphicon-search"></span> Extract GAP Proof</button>
+                </div>
+            </div>
         </div>
+
     </div>
 </div>
 
