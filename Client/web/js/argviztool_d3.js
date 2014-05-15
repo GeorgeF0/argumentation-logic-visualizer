@@ -1,5 +1,5 @@
 // Code adapted from: http://bl.ocks.org/robschmuecker/7880033
-function doD3(container, treeData, size, draggable) {
+function doD3(container, treeData, size, draggable, attack) {
 
     // Calculate total nodes, max label length
     var totalNodes = 0;
@@ -87,6 +87,7 @@ function doD3(container, treeData, size, draggable) {
 
     function zoom() {
         svgGroup.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+        if (attackSvg) attackSvg.attr("transform", "translate(" + 25 + "," + 400 + ")scale(" + d3.event.scale + ")");
     }
 
     // define the zoomListener which calls the zoom function on the "zoom" event constrained within the scaleExtents
@@ -520,4 +521,24 @@ function doD3(container, treeData, size, draggable) {
     // Layout the tree initially and center on the root node.
     update(root);
     centerNode(root);
+
+    if (attack) {
+        var attackSvg = baseSvg.append("g");
+        attackSvg.attr("class", "node")
+            .attr("transform", function(d) {
+                return "translate(" + 25 + "," + 400 + ")";
+            })
+            .append("circle")
+            .attr('class', 'nodeCircle')
+            .attr("class", "nodeCircle candatt")
+            .attr("r", 5)
+            .style("fill", "#fff");
+
+        attackSvg.append("text")
+            .attr("y", 15)
+            .attr('class', 'nodeText')
+            .attr("text-anchor", "middle")
+            .text(attack)
+            .style("fill-opacity", 1);
+    }
 }
