@@ -8,14 +8,16 @@ registerQueries :-
 	http_handler(root(query/generateproofs), serveGenerateProofs, []),
 	http_handler(root(query/checkgap), serveGAPCheck, []),
 	http_handler(root(query/visualizegap), serveGAPToArg, []),
-	http_handler(root(query/visualizearg), serveArgToGAP, []).
+	http_handler(root(query/visualizearg), serveArgToGAP, []),
+	http_handler(root(query/provable), serveProvable, []).
 
 deregisterQueries :- 
 	http_delete_handler(root(query)),
 	http_delete_handler(root(query/generateproofs)),
 	http_delete_handler(root(query/checkgap)),
 	http_delete_handler(root(query/visualizegap)),
-	http_delete_handler(root(query/visualizearg)).
+	http_delete_handler(root(query/visualizearg)),
+	http_delete_handler(root(query/provable)).
 
 :- json_object and('1', '2') + [type=and].
 :- json_object or('1', '2') + [type=or].
@@ -28,6 +30,7 @@ deregisterQueries :-
 :- json_object arg_view_query(proof) + [type=arg_view_query].
 :- json_object arg('1', '2') + [type=arg].
 :- json_object gap_view_query(arg, theory) + [type=gap_view_query].
+:- json_object provable_query(theory, goal) + [type=provable_query].
 
 jsonEcho(R) :-
 	format('Content-type: text/plain~n~n'),
@@ -68,4 +71,11 @@ serveArgToGAP(Request) :-
 	convertArgToGAP(Argument, Theory, Proof),
 	reverseRecursive(Proof, RevProof),
 	prolog_to_json(RevProof, JSONOut),
+	reply_json(JSONOut).
+	
+serveProvable(Request) :-
+	http_read_json(Request, JSONIn),
+	json_to_prolog(JSONIn, provable_query(Theory, Goal)),
+	provable(Theory, [Goal], Verdict),
+	prolog_to_json(Verdict, JSONOut),
 	reply_json(JSONOut).

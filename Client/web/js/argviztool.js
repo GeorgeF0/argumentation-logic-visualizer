@@ -168,7 +168,7 @@ function generateProofs(){
         if (theoryInput.trim() != ""){
             theory = parser.parse(theoryInput);
             if (theory[0] == "list"){
-                theory = flattenTheory(theory[1]);
+                theory = flattenParsedList(theory[1]);
                 for (var i = 0; i < theory.length; i++){
                     theory[i] = parsedFormulaToPrologJSON(theory[i]);
                 }
@@ -228,7 +228,7 @@ function buildProof(){
         if (theoryInput.trim() != ""){
             theory = parser.parse(theoryInput);
             if (theory[0] == "list"){
-                theory = flattenTheory(theory[1]);
+                theory = flattenParsedList(theory[1]);
                 for (var i = 0; i < theory.length; i++){
                     theory[i] = parsedFormulaToPrologJSON(theory[i]);
                 }
@@ -693,9 +693,118 @@ function extractGAPProofCallback(data){
     $("#extrgapdragarea").html(makeGAPThumbnail("gapviz", printPrologJSONProof(data)));
 }
 
+// build argument tab
+
+$("#buildargbtn").click(function() {
+    buildArgument();
+});
+
+var argUnderConstruction = [];
+
+function buildArgument(){
+    $("#buildargtheoryfeedback").removeClass("has-error");
+    $("#buildarggoalfeedback").removeClass("has-error");
+    var theoryInput = $("#buildargtheory").val();
+    var goalInput = $("#buildarggoal").val();
+    var hasError = false;
+    try {
+        var theory;
+        if (theoryInput.trim() != ""){
+            theory = parser.parse(theoryInput);
+            if (theory[0] == "list"){
+                theory = flattenParsedList(theory[1]);
+                for (var i = 0; i < theory.length; i++){
+                    theory[i] = parsedFormulaToPrologJSON(theory[i]);
+                }
+            } else if (theory[0] == "formula"){
+                theory = [parsedFormulaToPrologJSON(theory[1])];
+            } else {
+                throw "wrong type of input!";
+            }
+        } else {
+            theory = [];
+        }
+    } catch (e){
+        $("#buildargtheoryfeedback").addClass("has-error");
+        console.log(e);
+        hasError = true;
+    }
+    try {
+        var goal = parser.parse(goalInput);
+        if (goal[0] == "formula"){
+            goal = parsedFormulaToPrologJSON(goal[1]);
+            if (!formulaIsAtom(goal, true)){
+                throw "goal must be a (negated) atom!";
+            }
+        } else {
+            throw "wrong type of input!";
+        }
+    } catch (e){
+        $("#buildarggoalfeedback").addClass("has-error");
+        console.log(e);
+        hasError = true;
+    }
+    if (hasError) return;
+
+    var provableQuery = {type:"provable_query", theory:theory, goal:"falsity"};
+    $.ajax("query/provable", {
+        type: "POST",
+        contentType:"application/json",
+        data: JSON.stringify(provableQuery),
+        success: buildArgumentCallback});
+}
+
+function buildArgumentCallback(data){
+    if (data == "yes"){
+        $("#buildargtheoryfeedback").addClass("has-error");
+    } else {
+        $("#buildargattackinput").removeAttr("disabled");
+        $("#argunderconstruction").removeAttr("draggable");
+        $("#argunderconstruction").removeAttr("ondragstart");
+        //TODO: set up argument, save theory and goal?
+    }
+}
+
+$("#buildargattackinput").keyup(function (e) {
+    $("#buildargattackinputfeedback").removeClass("has-error");
+    if (e.keyCode == 13 /*Enter key*/) {
+        var hasError = false;
+        try{
+            var attack = parser.parse($("#buildargattackinput").val());
+            if (attack[0] != "formula" && attack[0] != "list"){
+                throw "wrong type of input!";
+            }
+        } catch (e){
+            $("#buildargattackinputfeedback").addClass("has-error");
+            console.log(e);
+            hasError = true;
+        }
+        if (hasError) return;
+        attack = attack[0] == "formula"? [attack[1]]:flattenParsedList(attack[1]);
+        for (var i = 0; i < attack.length; i++){
+            attack[i] = parsedFormulaToPrologJSON(attack[i]);
+            if (!formulaIsAtom(attack[i], true)){
+                hasError = true;
+                $("#buildargattackinputfeedback").addClass("has-error");
+                break;
+            }
+        }
+        if (hasError) return;
+        handleAttack(attack);
+    }
+});
+
+function handleAttack(attack){
+    console.log("TODO");
+}
+
 //utilities
 
-function flattenTheory(input){
+function formulaIsAtom(input, negated){
+    return (typeof input == "string") || negated && (input.type == "n") && typeof input[1] == "string";
+}
+
+function flattenParsedList(input){
     var flatTheory = [];
     while(input.length == 2){
         flatTheory.push(input[1]);
