@@ -30,7 +30,7 @@ deregisterQueries :-
 :- json_object arg_view_query(proof) + [type=arg_view_query].
 :- json_object arg('1', '2') + [type=arg].
 :- json_object gap_view_query(arg, theory) + [type=gap_view_query].
-:- json_object provable_query(theory, goal) + [type=provable_query].
+:- json_object provable_query(theory, goal, mra) + [type=provable_query].
 
 jsonEcho(R) :-
 	format('Content-type: text/plain~n~n'),
@@ -75,7 +75,7 @@ serveArgToGAP(Request) :-
 	
 serveProvable(Request) :-
 	http_read_json(Request, JSONIn),
-	json_to_prolog(JSONIn, provable_query(Theory, Goal)),
-	provable(Theory, [Goal], Verdict),
+	json_to_prolog(JSONIn, provable_query(Theory, Goal, MRA)),
+	provable(Theory, [Goal], MRA, Verdict),
 	prolog_to_json(Verdict, JSONOut),
 	reply_json(JSONOut).

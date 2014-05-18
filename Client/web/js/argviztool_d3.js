@@ -1,5 +1,5 @@
 // Code adapted from: http://bl.ocks.org/robschmuecker/7880033
-function doD3(container, treeData, size, draggable, attack) {
+function doD3(container, treeData, size, draggable, attack, attackNotify) {
 
     // Calculate total nodes, max label length
     var totalNodes = 0;
@@ -87,7 +87,11 @@ function doD3(container, treeData, size, draggable, attack) {
 
     function zoom() {
         svgGroup.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
-        if (attackSvg) attackSvg.attr("transform", "translate(" + 25 + "," + 400 + ")scale(" + d3.event.scale + ")");
+        if (attackSvg) {
+            attackSvg.attr("transform", "translate(" + 25 + "," + 400 + ")scale(" + d3.event.scale + ")");
+            theD.x0 = 25;
+            theD.y0 = 400;
+        }
     }
 
     // define the zoomListener which calls the zoom function on the "zoom" event constrained within the scaleExtents
@@ -104,38 +108,38 @@ function doD3(container, treeData, size, draggable, attack) {
         baseSvg.selectAll('.ghostCircle').attr('class', 'ghostCircle show');
         d3.select(domNode).attr('class', 'node activeDrag');
 
-        svgGroup.selectAll("g.node").sort(function(a, b) { // select the parent and sort the path's
-            if (a.id != draggingNode.id) return 1; // a is not the hovered element, send "a" to the back
-            else return -1; // a is the hovered element, bring "a" to the front
-        });
-        // if nodes has children, remove the links and nodes
-        if (nodes.length > 1) {
-            // remove link paths
-            links = tree.links(nodes);
-            nodePaths = svgGroup.selectAll("path.link")
-                .data(links, function(d) {
-                    return d.target.id;
-                }).remove();
-            // remove child nodes
-            nodesExit = svgGroup.selectAll("g.node")
-                .data(nodes, function(d) {
-                    return d.id;
-                }).filter(function(d, i) {
-                    if (d.id == draggingNode.id) {
-                        return false;
-                    }
-                    return true;
-                }).remove();
-        }
+        // svgGroup.selectAll("g.node").sort(function(a, b) { // select the parent and sort the path's
+        //     if (a.id != draggingNode.id) return 1; // a is not the hovered element, send "a" to the back
+        //     else return -1; // a is the hovered element, bring "a" to the front
+        // });
+        // // if nodes has children, remove the links and nodes
+        // if (nodes.length > 1) {
+        //     // remove link paths
+        //     links = tree.links(nodes);
+        //     nodePaths = svgGroup.selectAll("path.link")
+        //         .data(links, function(d) {
+        //             return d.target.id;
+        //         }).remove();
+        //     // remove child nodes
+        //     nodesExit = svgGroup.selectAll("g.node")
+        //         .data(nodes, function(d) {
+        //             return d.id;
+        //         }).filter(function(d, i) {
+        //             if (d.id == draggingNode.id) {
+        //                 return false;
+        //             }
+        //             return true;
+        //         }).remove();
+        // }
 
-        // remove parent link
-        parentLink = tree.links(tree.nodes(draggingNode.parent));
-        svgGroup.selectAll('path.link').filter(function(d, i) {
-            if (d.target.id == draggingNode.id) {
-                return true;
-            }
-            return false;
-        }).remove();
+        // // remove parent link
+        // parentLink = tree.links(tree.nodes(draggingNode.parent));
+        // svgGroup.selectAll('path.link').filter(function(d, i) {
+        //     if (d.target.id == draggingNode.id) {
+        //         return true;
+        //     }
+        //     return false;
+        // }).remove();
 
         dragStarted = null;
     }
@@ -155,18 +159,12 @@ function doD3(container, treeData, size, draggable, attack) {
     var panTimer;
     var dragListener = d3.behavior.drag()
         .on("dragstart", function(d) {
-            if (d == root) {
-                return;
-            }
             dragStarted = true;
-            nodes = tree.nodes(d);
+            //nodes = tree.nodes(d);
             d3.event.sourceEvent.stopPropagation();
             // it's important that we suppress the mouseover event on the node being dragged. Otherwise it will absorb the mouseover event and the underlying node will not detect it d3.select(this).attr('pointer-events', 'none');
         })
         .on("drag", function(d) {
-            if (d == root) {
-                return;
-            }
             if (dragStarted) {
                 domNode = this;
                 initiateDrag(d, domNode);
@@ -201,28 +199,29 @@ function doD3(container, treeData, size, draggable, attack) {
             node.attr("transform", "translate(" + d.x0 + "," + d.y0 + ")");
             updateTempConnector();
         }).on("dragend", function(d) {
-            if (d == root) {
-                return;
-            }
+            // if (d == root) {
+            //     return;
+            // }
             domNode = this;
             if (selectedNode) {
                 // now remove the element from the parent, and insert it into the new elements children
-                var index = draggingNode.parent.children.indexOf(draggingNode);
-                if (index > -1) {
-                    draggingNode.parent.children.splice(index, 1);
-                }
-                if (typeof selectedNode.children !== 'undefined' || typeof selectedNode._children !== 'undefined') {
-                    if (typeof selectedNode.children !== 'undefined') {
-                        selectedNode.children.push(draggingNode);
-                    } else {
-                        selectedNode._children.push(draggingNode);
-                    }
-                } else {
-                    selectedNode.children = [];
-                    selectedNode.children.push(draggingNode);
-                }
-                // Make sure that the node being added to is expanded so user can see added node is correctly moved
-                expand(selectedNode);
+                // var index = draggingNode.parent.children.indexOf(draggingNode);
+                // if (index > -1) {
+                //     draggingNode.parent.children.splice(index, 1);
+                // }
+                // if (typeof selectedNode.children !== 'undefined' || typeof selectedNode._children !== 'undefined') {
+                //     if (typeof selectedNode.children !== 'undefined') {
+                //         selectedNode.children.push(draggingNode);
+                //     } else {
+                //         selectedNode._children.push(draggingNode);
+                //     }
+                // } else {
+                //     selectedNode.children = [];
+                //     selectedNode.children.push(draggingNode);
+                // }
+                // // Make sure that the node being added to is expanded so user can see added node is correctly moved
+                // expand(selectedNode);
+                attackNotify(selectedNode.prologNodeID);
                 endDrag();
             } else {
                 endDrag();
@@ -238,7 +237,10 @@ function doD3(container, treeData, size, draggable, attack) {
         updateTempConnector();
         if (draggingNode !== null) {
             update(root);
-            centerNode(draggingNode);
+            //centerNode(draggingNode);
+            attackSvg.transition().attr("transform", "translate(" + 25 + "," + 400 + ")");
+            theD.x0 = 25;
+            theD.y0 = 400;
             draggingNode = null;
         }
     }
@@ -273,6 +275,8 @@ function doD3(container, treeData, size, draggable, attack) {
     // Function to update the temporary connector indicating dragging affiliation
     var updateTempConnector = function() {
         var data = [];
+        var svgCoordinates = svgGroup.attr("transform").match(/translate\(([^,]+),([^,]+)\)/);
+        svgCoordinates = [parseFloat(svgCoordinates[1]), parseFloat(svgCoordinates[2])];
         if (draggingNode !== null && selectedNode !== null) {
             // have to flip the source coordinates since we did this for the existing connectors on the original tree
             data = [{
@@ -281,8 +285,8 @@ function doD3(container, treeData, size, draggable, attack) {
                     y: selectedNode.y0
                 },
                 target: {
-                    x: draggingNode.x0,
-                    y: draggingNode.y0
+                    x: draggingNode.x0 - svgCoordinates[0],
+                    y: draggingNode.y0 - svgCoordinates[1]
                 }
             }];
         }
@@ -523,7 +527,8 @@ function doD3(container, treeData, size, draggable, attack) {
     centerNode(root);
 
     if (attack) {
-        var attackSvg = baseSvg.append("g");
+        var theD = {x0:25, y0:400};
+        var attackSvg = baseSvg.append("g").selectAll("g.node").data([theD]).enter().append("g");
         attackSvg.attr("class", "node")
             .attr("transform", function(d) {
                 return "translate(" + 25 + "," + 400 + ")";
@@ -540,5 +545,6 @@ function doD3(container, treeData, size, draggable, attack) {
             .attr("text-anchor", "middle")
             .text(attack)
             .style("fill-opacity", 1);
+        attackSvg.call(dragListener);
     }
 }

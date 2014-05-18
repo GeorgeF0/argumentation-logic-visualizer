@@ -125,6 +125,10 @@ function addProofDrop(event){
         addToClipboard(proofToBeVisualized);
     } else if (objid.match(/gapviz/)) {
         addToClipboard(proofToBeExtracted);
+    } else if (objid.match(/argunderconstructionthumb/)) {
+        if (argconstructioncomplete){
+            addToClipboard(constructedArgument);
+        } 
     } else {
         console.log("attempted to add invalid object to the clipboard!");
     }
@@ -699,7 +703,15 @@ $("#buildargbtn").click(function() {
     buildArgument();
 });
 
-var argUnderConstruction = [];
+var argUnderConstruction = [[],[]];
+var argTheory = null;
+var argGoal = null;
+var argAttack = null;
+var nextArgumentPrologID = 1;
+var attackedNode = null;
+var attacksLeft = 1;
+var argconstructioncomplete = false;
+var constructedArgument = null;
 
 function buildArgument(){
     $("#buildargtheoryfeedback").removeClass("has-error");
@@ -746,7 +758,9 @@ function buildArgument(){
     }
     if (hasError) return;
 
-    var provableQuery = {type:"provable_query", theory:theory, goal:"falsity"};
+    argTheory = theory;
+    argGoal = goal;
+    var provableQuery = {type:"provable_query", theory:theory, goal:"falsity", mra:"no"};
     $.ajax("query/provable", {
         type: "POST",
         contentType:"application/json",
@@ -758,11 +772,28 @@ function buildArgumentCallback(data){
     if (data == "yes"){
         $("#buildargtheoryfeedback").addClass("has-error");
     } else {
+        attacksLeft = 1;
+        argUnderConstruction = [[],[]];
+        argAttack = null;
+        nextArgumentPrologID = 1;
+        attackedNode = null;
+        attacksLeft = 1;
+        argconstructioncomplete = false;
+        constructedArgument = null;
         $("#buildargattackinput").removeAttr("disabled");
         $("#argunderconstruction").removeAttr("draggable");
         $("#argunderconstruction").removeAttr("ondragstart");
-        //TODO: set up argument, save theory and goal?
+        addArgumentToConstruction([argGoal]);
+        var d3NodeData = printPrologJSONArg(argUnderConstruction);
+        var theory = printPrologJSONFormulaSet(argTheory);
+        $("#argunderconstruction").html(makeArgThumbnail("argunderconstructionthumb", d3NodeData, theory));
+        drawArgThumbnails();
     }
+}
+
+function addArgumentToConstruction(arg){
+    argUnderConstruction[0].push([arg, nextArgumentPrologID]);
+    return nextArgumentPrologID++;
 }
 
 $("#buildargattackinput").keyup(function (e) {
@@ -775,12 +806,19 @@ $("#buildargattackinput").keyup(function (e) {
                 throw "wrong type of input!";
             }
         } catch (e){
-            $("#buildargattackinputfeedback").addClass("has-error");
-            console.log(e);
-            hasError = true;
+            if ($("#buildargattackinput").val() != ""){
+                $("#buildargattackinputfeedback").addClass("has-error");
+                console.log(e);
+                hasError = true;  
+            }
         }
         if (hasError) return;
-        attack = attack[0] == "formula"? [attack[1]]:flattenParsedList(attack[1]);
+        if ($("#buildargattackinput").val() == ""){
+            attack = [];
+        } else {
+            attack = attack[0] == "formula"? [attack[1]]:flattenParsedList(attack[1]);
+
+        }
         for (var i = 0; i < attack.length; i++){
             attack[i] = parsedFormulaToPrologJSON(attack[i]);
             if (!formulaIsAtom(attack[i], true)){
@@ -790,12 +828,128 @@ $("#buildargattackinput").keyup(function (e) {
             }
         }
         if (hasError) return;
-        handleAttack(attack);
+        argAttack = attack;
+        handleAttack(printPrologJSONFormulaSet(attack));
     }
 });
 
 function handleAttack(attack){
-    console.log("TODO");
+    var d3NodeData = printPrologJSONArg(argUnderConstruction);
+    var theory = printPrologJSONFormulaSet(argTheory);
+    $("#argunderconstruction").html(makeArgThumbnail("argunderconstructionthumb", d3NodeData, theory, null, attack));
+    drawArgThumbnails();
+}
+
+function registerAttack(attackedNodeID){
+    attackedNode = attackedNodeID;
+    var node = argUnderConstruction[0].find(function(node){return node[1] == attackedNodeID;})[0];
+    var extraTheory = node.concat(argAttack);
+    var provableQuery = {type:"provable_query", theory:argTheory.concat(extraTheory), goal:"falsity", mra:"no"};
+    $.ajax("query/provable", {
+        type: "POST",
+        contentType:"application/json",
+        data: JSON.stringify(provableQuery),
+        success: registerAttackCallback1});
+}
+
+function registerAttackCallback1(data){
+    if (data == "yes"){
+        var provableQuery = {type:"provable_query", theory:argTheory.concat(argAttack), goal:"falsity", mra:"yes"};
+        $.ajax("query/provable", {
+            type: "POST",
+            contentType:"application/json",
+            data: JSON.stringify(provableQuery),
+            success: registerAttackCallback2});
+    } else if (data == "no"){
+        $("#buildargattackinputfeedback").addClass("has-error");
+        rerenderArgUnderConstruction();
+        console.log("provided attack does not contradict targeted defense");
+    }
+}
+
+function registerAttackCallback2(data){
+    if (data == "no"){
+        var attackNode = addArgumentAndAttackToConstruction(argAttack, attackedNode);
+        generateDefenses(argAttack, attackNode);
+    } else if (data == "yes"){
+        $("#buildargattackinputfeedback").addClass("has-error");
+        rerenderArgUnderConstruction();
+        console.log("provided attack is directly inconsistent");
+    }
+}
+
+function addArgumentAndAttackToConstruction(attack, attackedNode){
+    var attackNode = addArgumentToConstruction(attack);
+    argUnderConstruction[1].push([attackNode, attackedNode]);
+    rerenderArgUnderConstruction();
+    return attackNode;
+}
+
+function rerenderArgUnderConstruction(){
+    var d3NodeData = printPrologJSONArg(argUnderConstruction);
+    var theory = printPrologJSONFormulaSet(argTheory);
+    $("#argunderconstruction").html(makeArgThumbnail("argunderconstructionthumb", d3NodeData, theory));
+    drawArgThumbnails();
+}
+
+function generateDefenses(attack, attackNode){
+    var parentDefenses = getParentDefenses(attackNode);
+    attacksLeft--;
+    if (attackSubsetOfDefenses(attack, parentDefenses)){
+        if (attacksLeft == 0){
+            completeArgument();
+        }
+    } else {
+        for (var i = 0; i < attack.length; i++){
+            var defense = generateDefense(attack[i]);
+            addArgumentAndAttackToConstruction([defense], attackNode);
+        }
+        attacksLeft+= attack.length;
+    }
+}
+
+function getParentDefenses(attackNode){
+    var parentDefenses = [];
+    var defenseNode = argUnderConstruction[1].find(function(node){return node[0] == attackNode;})[1];
+    var defense = argUnderConstruction[0].find(function(node){return node[1] == defenseNode;})[0];
+    parentDefenses.push(defense[0]);
+    while (defenseNode != 1){
+        attackNode = argUnderConstruction[1].find(function(node){return node[0] == defenseNode;})[1];
+        defenseNode = argUnderConstruction[1].find(function(node){return node[0] == attackNode;})[1];
+        defense = argUnderConstruction[0].find(function(node){return node[1] == defenseNode;})[0];
+        parentDefenses.push(defense[0]);
+    }
+    return parentDefenses;
+}
+
+function attackSubsetOfDefenses(attack, parentDefenses){
+    for (var i = 0; i < attack.length; i++){
+        var attackComponent = attack[i];
+        for (var j = 0; j < parentDefenses.length; j++){
+            var defense = parentDefenses[j];
+            if (formulasAreEqual(attackComponent, defense)){
+                break;
+            }
+        }
+        if (j == parentDefenses.length) return false;
+    }
+    return true;
+}
+
+function generateDefense(attack){
+    if (typeof attack == "string"){
+        return {type: "n", 1: attack};
+    } else if (attack.type && attack.type == "n"){
+        return attack[1];
+    } else {
+        throw "not sure what to expect here!" + attack;
+    }
+}
+
+function completeArgument(){
+    $("#buildargattackinput").attr("disabled", "");
+    argconstructioncomplete = true;
+    constructedArgument = {type:"arg", 1: argUnderConstruction, 2:argTheory};
 }
 
 //utilities
@@ -1006,13 +1160,13 @@ function makeGAPThumbnail(id, content){
     return templateStart + id + templateMiddle + content + templateEnd;
 }
 
-function makeArgThumbnail(id, data, theory, renderID){
+function makeArgThumbnail(id, data, theory, renderID, attack){
     renderID = renderID || (id + "draw");
     var templateStart = "<div draggable=\"true\" ondragstart=\"drag(event)\" style=\"width:400px;height:500px;float:left;padding-left:15px;padding-bottom:15px;position:relative\" id=\"";
     var templateMiddle1 = "\"><div class=\"thumbnail\" style=\"height:100%;white-space:nowrap;overflow:auto\">";
     var templateMiddle2 = "<div id=\"";
     var templateEnd = "\"></div></div></div>";
-    addToDrawQueue(renderID, data);
+    addToDrawQueue(renderID, data, attack);
     return templateStart + id + templateMiddle1 + "Theory: " + theory + templateMiddle2 + renderID + templateEnd;
 }
 
@@ -1027,12 +1181,12 @@ argThumbnailDrawQueue = [];
 function drawArgThumbnails(){
     while (argThumbnailDrawQueue.length > 0){
         var argToDraw = argThumbnailDrawQueue.pop();
-        doD3("#" + argToDraw[0], argToDraw[1], {width:375, height:450});
+        doD3("#" + argToDraw[0], argToDraw[1], {width:375, height:450}, null, argToDraw[2], registerAttack);
     }
 }
 
-function addToDrawQueue(container, data){
-    argThumbnailDrawQueue.push([container, data]);
+function addToDrawQueue(container, data, attack){
+    argThumbnailDrawQueue.push([container, data, attack]);
 }
 
 // web storage

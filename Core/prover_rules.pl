@@ -2,7 +2,16 @@
 % prove is of the format prove([givens, ex: and(a,b), c, d], [goal that needs to be proven], Output proof given as variable)
 prove(Givens, Goal, Proof) :- is_list(Givens), is_list(Goal), toSteps(Givens, Steps), !, backwardProve(no, Steps, [], [[], []], Goal, Proof).
 proveMRA(Givens, Goal, Proof) :- is_list(Givens), is_list(Goal), toSteps(Givens, Steps), !, backwardProve(yes, Steps, [], [[], []], Goal, Proof).
-provable(Givens, Goal, Verdict) :- 
+provable(Givens, Goal, yes, Verdict) :- 
+	is_list(Givens), 
+	is_list(Goal), 
+	(
+		proveMRA(Givens, Goal, _),
+		Verdict = yes, !;
+		
+		Verdict = no
+	).
+provable(Givens, Goal, no, Verdict) :- 
 	is_list(Givens), 
 	is_list(Goal), 
 	(
@@ -11,7 +20,7 @@ provable(Givens, Goal, Verdict) :-
 		
 		Verdict = no
 	).
-
+	
 % FORWARD PROVE: iterates through all steps and breaks down formulas into smaller, simpler parts
 % this process does not take into account the goals or the proof so far
 % this process repeats itself until no further progress can be made (ie: until formulas can not be broken down any longer)
