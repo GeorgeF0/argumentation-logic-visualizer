@@ -411,7 +411,8 @@ function doD3(container, treeData, size, draggable, attack, attackNotify) {
             .style("fill-opacity", 0);
 
         // phantom node to give us mouseover in a radius around it
-        nodeEnter.append("circle")
+        nodeEnter.filter(function(d){return d.designatedDropZone;})
+            .append("circle")
             .attr('class', 'ghostCircle')
             .attr("r", 30)
             .attr("opacity", 0.2) // change this to zero to hide the target area

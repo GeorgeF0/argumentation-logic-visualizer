@@ -712,6 +712,7 @@ var attackedNode = null;
 var attacksLeft = 1;
 var argconstructioncomplete = false;
 var constructedArgument = null;
+var remainingDefenses = [];
 
 function buildArgument(){
     $("#buildargtheoryfeedback").removeClass("has-error");
@@ -780,6 +781,7 @@ function buildArgumentCallback(data){
         attacksLeft = 1;
         argconstructioncomplete = false;
         constructedArgument = null;
+        remainingDefenses = [1];
         $("#buildargattackinput").removeAttr("disabled");
         $("#argunderconstruction").removeAttr("draggable");
         $("#argunderconstruction").removeAttr("ondragstart");
@@ -817,7 +819,6 @@ $("#buildargattackinput").keyup(function (e) {
             attack = [];
         } else {
             attack = attack[0] == "formula"? [attack[1]]:flattenParsedList(attack[1]);
-
         }
         for (var i = 0; i < attack.length; i++){
             attack[i] = parsedFormulaToPrologJSON(attack[i]);
@@ -835,6 +836,7 @@ $("#buildargattackinput").keyup(function (e) {
 
 function handleAttack(attack){
     var d3NodeData = printPrologJSONArg(argUnderConstruction);
+    specifyDropZones(d3NodeData, remainingDefenses);
     var theory = printPrologJSONFormulaSet(argTheory);
     $("#argunderconstruction").html(makeArgThumbnail("argunderconstructionthumb", d3NodeData, theory, null, attack));
     drawArgThumbnails();
@@ -895,6 +897,7 @@ function rerenderArgUnderConstruction(){
 function generateDefenses(attack, attackNode){
     var parentDefenses = getParentDefenses(attackNode);
     attacksLeft--;
+    remainingDefenses.splice(remainingDefenses.indexOf(attackedNode), 1);
     if (attackSubsetOfDefenses(attack, parentDefenses)){
         if (attacksLeft == 0){
             completeArgument();
@@ -902,7 +905,8 @@ function generateDefenses(attack, attackNode){
     } else {
         for (var i = 0; i < attack.length; i++){
             var defense = generateDefense(attack[i]);
-            addArgumentAndAttackToConstruction([defense], attackNode);
+            var defenseNode = addArgumentAndAttackToConstruction([defense], attackNode);
+            remainingDefenses.push(defenseNode);
         }
         attacksLeft+= attack.length;
     }
@@ -950,6 +954,17 @@ function completeArgument(){
     $("#buildargattackinput").attr("disabled", "");
     argconstructioncomplete = true;
     constructedArgument = {type:"arg", 1: argUnderConstruction, 2:argTheory};
+}
+
+function specifyDropZones(d3NodeData, dropZones){
+    var nodes = [d3NodeData];
+    while (nodes.length > 0){
+        var node = nodes.pop();
+        nodes = nodes.concat(node.children);
+        if (dropZones.indexOf(node.prologNodeID) >= 0){
+            node.designatedDropZone = true;
+        }
+    }
 }
 
 //utilities
