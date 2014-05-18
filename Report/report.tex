@@ -696,13 +696,43 @@ As with every design, there are some drawbacks as well. There is some unavoidabl
 There are some disadvantages that come with web applications as well, but some of them fortunately do not apply to this system. Compatibility and performance issues (compared to native applications) are some of the common problems with web interfaces. Since the server does the heavy lifting the client is left with the responsibility of running the a simple GUI, ruling out any potential issues with performance. Every effort is made to make the Client adhere to standards, reducing the chances of running into compatibility issues with the browser. The main disadvantage however is the need for constant connection to the server. Unless the server is run locally, the client cannot be used as all calculations take place server-side.
 
 \subsection{Structure of Remainder of Report}
-The core implementation as well as the findings of this project are discussed in chapters TODO to TODO. The server implementation is discussed in more detail in \autoref{chap:server}. The client is discussed in \autoref{chap:client}. The evaluation of this project can be found in \autoref{chap:eval}, and finally, a conclusion is drawn based on the evaluation in \autoref{chap:chiliconclusion}. A full code listing for the core can be found in the Appendix (TODO).
+The core implementation as well as the findings of this project are discussed in chapters TODO to TODO. An overview of the different features implemented in the core can be found in \autoref{chap:coreoverview}. The server implementation is discussed in more detail in \autoref{chap:server}. The client is discussed in \autoref{chap:client}. The evaluation of this project can be found in \autoref{chap:eval}, and finally, a conclusion is drawn based on the evaluation in \autoref{chap:chiliconclusion}. A full code listing for the core can be found in the Appendix (TODO).
+
+\chapter{Core Functional Overview}
+\label{chap:coreoverview}
+The core is made of different predicates or procedures that work together in order to provide an ecosystem of functions that can be used to create and manipulate natural deduction proofs and arguments. \autoref{fig:funcmap} provides a functional map that illustrates the different procedures as well as the data flow around them.
+
+\begin{figure}[ht]
+\centerline{\includegraphics[scale=0.85]{img/functional-map.png}}
+\caption{The high-level functional map for the core\label{fig:funcmap}}
+\end{figure}
+
+The main procedures involved are the following:
+\begin{itemize}
+\item
+Theorem Prover (\autoref{chap:prover}): the theorem proof system provides proofs for the given theory and goal
+\item
+GAP Checker (\autoref{chap:gapcheck}): the Genuine Absurdity Property checker takes a proof and succeeds if the given proof indeed follows the property
+\item
+Proof Visualizer (\autoref{chap:viz}): the proof visualization predicate takes a proof that follows the Genuine Absurdity Property and returns an argument that can be used to visualize the given proof
+\item
+Proof Extractor (TODO): this predicate can take an argument (a visualization of a proof) and extract a proof from it
+\end{itemize}
+
+In addition to the core module predicates, there are a few client features that can still provide data that can be used by the core modules listed above. These are:
+\begin{itemize}
+\item
+Proof Builder (TODO): provides a method of allowing the user to construct a particular proof
+\item
+Argument Builder(TODO): provides a method of allowing the user to construct an argument 
+\end{itemize}
 
 \chapter{Theorem Proving System}
 \label{chap:prover}
 TODO
 
 \chapter{Checking for Genuine Absurdity Property}
+\label{chap:gapcheck}
 Recall from \autoref{subsec:gap} that for a RAND derivation, $T\cup\{\phi\}\cup\{\phi_1, ..., \phi_k\}\cup\{\neg\psi_1, ..., \neg\psi_l\}\vdash_{MRA}\bot$, where $k, l \geq 0$ and
 
 \begin{itemize}

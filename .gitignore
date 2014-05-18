@@ -1,3 +1,4 @@
 Report/*
 !Report/*.tex
 !Report/*.bib
+!Report/*/
