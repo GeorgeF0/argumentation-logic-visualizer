@@ -1917,10 +1917,12 @@ forestyle
 20&\neg\alpha&\neg I(6,19)\cr
 }}\]
 \end{minipage}%
-\caption{Proof extraction example\label{fig:extrex2}}
+\caption{Proof extraction example of two proofs generated from the same argument\label{fig:extrex2}}
 \end{figure}
 
 This means that when using the visualization algorithm to turn a proof into an argument, and then the extraction algorithm to turn the argument back into a proof, the final proof may not be the same as the initial. If the final proof is visualized again, then the first and final arguments will be the same however.
+
+As discussed in \autoref{chap:viz}, the proof extraction algorithm could be upgraded with a feature that enables it to identify repeated arguments and generate proofs that are more concise than the current output. Proofs can then be visualized and processed by this algorithm in order to receive more optimized versions than those input into the algorithm.
 
 \section{Details of Implementation}
 The algorithm first starts with the argument given in the same format as the output of the visualization algorithm and the theory on which the argument is based. The format of the argument is a list of two elements: a list of pairs of nodes (the actual arguments) and their IDs, and a list of pairs of node IDs indicating the attacks and defenses. \autoref{lst:proofextr1} shows that the proof is built from the ground up (line 2), and then the theory is stitched on it at the end (lines 3-4).
@@ -2236,6 +2238,80 @@ TODO
 \chapter{Client Module}
 \label{chap:client}
 TODO
+
+\chapter{Proof Builder}
+\label{chap:proofbuilder}
+Experience from repeated usage of the theorem prover in order to generate proofs has shown that sometimes the amount of proofs generated using the theorem prover directly can be overwhelming. Most of the time, a particular proof was required for further study, and going through the generated results was found tedious. Thus a need for a proof builder arose, so that when a particular proof is required, it can be input directly with the help of the proof builder.
+
+\section{Motivation for Client Side Implementation}
+The proof builder is completely client side. There are several reasons for this decision. 
+
+Firstly, since this is an aided construction, visual feedback should be frequent and immediate. Requesting validation from the server would be both wasteful in terms of resources and possibly time-consuming as the builder would stall until the response comes back from the server. 
+
+Hence by building this feature client side, unnecessary back-and-forth communication is avoided. 
+
+Since the proof builder is completely contained in the client, it can be easily integrated into the GUI for a seamless experience that can be used offline as well. 
+
+Since this feature involves a gradual construction of a proof with intermediate user input, keeping the current state is essential. Since the proof builder is client side, it does not communicate with the server and therefore the server does not need to hold any session information and can indeed be completely stateless.
+
+\section{Features}
+The proof builder features a very simple, easy to use interface. The interface is made of two input fields where the user can input the theory and goal of the proof, a button that signifies the start of a new proof, a placeholder for rendering the current state of the proof, and finally, one more input box for entering commands to guide the construction of the proof.
+
+The proof builder makes use of the client's text input parser. The parser can report incorrect input and validate the user's commands to the proof builder. For example, if the user enters the command $a\&b; \&I(5)$ (which means that a new step is to be added where the derivation is $a\wedge b$ and the reason is $\wedge$-introduction from line 5), the parser will detect that a $\wedge$-introduction rule requires two line references instead of the one provided (one for each of the two subformulas of the conjunction) and will make the command input box glow red to indicate an error.
+
+Even if the input is syntactically correct, mistakes can still happen. Assuming correct syntactically input that passed the parser stage, the natural deduction rule checker can be used to verify the command. Line references will be checked, and the rule application will be verified as well. For example if the user enters an erroneous command $a\&b; \&I(5, 9000)$ and the current step to be added has line number 5, then this is picked up by the rule checker. The rule checker can work out if the derivation was made correctly. For example if the given input is $a\&b; \&I(5,3)$, the rule checker will see that this is supposed to be an application of the $\wedge$-introduction rule. This means that the derivation should be a conjunction of two sub-formulas. Those subformulas ($a$ and $b$ in the example) should have previously been derived on the lines referenced by the command (lines 5 and 3 in the example). If any error occurs, the command input box glows red to signal incorrect input. The effect of this is that proofs generated by the proof builder are sound.
+
+As mentioned above, feedback is given immediately after the user enters a command. Even if the feedback is not very specific, it is adequate for the user to understand what went wrong with just a brief inspection of their input. Since feedback is available immediately after each command entered, and because no progress can be made if the command is not valid, the user can easily identify the mistake.
+
+\section{Usage}
+The user starts by navigating to the "Build Proof" tab of the Workbench. There, two input boxes can be found. In the first one, a comma-separated list of formulas can be entered for the theory. In the second input field, a single formula may be entered for the goal of the proof. This is used by the proof builder to identify when the proof is complete. The user clicks on the "Build Proof" button and the proof construction begins if the theory and goal parse correctly. If not, then whichever field contains erroneous input is highlighted. If the parsing succeeds then the command input field is enabled and is ready for use. The theory is already filled in with "given" being the reasons of the steps of the proof. TODO shows this state.
+
+The user can type commands in the command input field below the rendered proof under construction and enter them by pressing the Enter key. If the command is accepted, it is executed. Otherwise, the command input field glows red to indicate an error. This is shown in TODO. There are three supported commands:
+
+\begin{itemize}
+\item
+New step: adds a new line at the end of the proof under construction
+\item
+Delete last step: deletes the last line of the proof
+\item
+Delete last n steps: deletes the last n steps of the proof
+\end{itemize}
+
+The first command is of the format $[formula]; [reason]$, where $[formula]$ is any valid formula and $[reason]$ is any of the supported reasons listed in \autoref{fig:ndrulesproofbuilder}. These can be compared to \autoref{subsec:logicrules}. If the step command is a new hypothesis, a box is automatically opened. Boxes are shown by an indentation of the lines of the proof proportional to the level of nesting. If the step command describes a $\neg I$ step, then the current box is closed and the command is appended one level up.
+
+\begin{figure}
+\begin{tabular}[htp]{|l|l|l|}
+\hline
+Rule Format & Rule Name & Description\\
+\hline
+$\&I(\#,\#)$ & $\wedge I$ & Conjunction of the formulas indicated by the two referenced\\ 
+&& lines\\
+$\&E(\#)$ & $\wedge E$ & The left/right hand side of a conjunction indicated by the\\
+&& referenced line\\
+$->I(\#,\#)$ & $\rightarrow I$ & Implication of two formulas at the start or end of preceding\\
+&& box indicated by the referenced lines\\
+$->E(\#,\#)$ & $\rightarrow E$ & Right hand side of implication derived by an implication \\
+&& and its left hand side indicated by the referenced lines\\
+$\_I(\#,\#)$ & $\bot I$ & Contradiction introduced by a formula and its negation as \\
+&& indicated by the referenced lines\\
+$\_E(\#)$ & $\bot E$ & Any formula derived from a contradiction indicated by the \\
+&& referenced line\\
+$!I(\#,\#)$ & $\neg I$ & The negation of a hypothesis and a subsequent contradiction \\
+&& in a box as indicated by the referenced lines\\
+$!E(\#)$ & $\neg E$ & The derivation of a formula by removing a double-negation \\
+&& from a formula indicated by the referenced line\\
+$hypothesis$ & $hypothesis$ & A hypothesis placed at the beginning of a box\\
+$check(\#)$ & $reiteration$ & Restating a previously derived formula\\
+\hline
+\end{tabular}
+\caption{Supported natural deduction rules for the proof builder. A \# represents a line number\label{fig:ndrulesproofbuilder}}
+\end{figure}
+
+The second command is of the format $--$. This deletes the last line of the proof. If that line was a $\neg I$ or $\rightarrow I$ rule then the preceding box is now re-opened and can be closed by issuing another $\neg I$ or $\rightarrow I$ step command.
+
+The last command is of the format $-[number]$, where $[number]$ is any non-negative number. The last $n$ steps are deleted where $n$ is the number specified. This command works by repeating the second command $n$ times so the effects are essentially the same.
+
+The user can enter commands to fill in the proof. When the last step in at the top level (not inside a box) and it matched the goal entered at the very start, then the proof is complete and the command input box is disabled. The rendered proof now becomes draggable and the user can subsequently drag the proof onto the clipboard to save it. Underneath the user interface, the proof has the same exact representation as a proof generated by the theorem prover, and can thus be used to check whether it follows the Genuine Absurdity Property, be visualized (if it does indeed follow the property) and so on.
 
 \chapter{Evaluation}
 \label{chap:eval}
