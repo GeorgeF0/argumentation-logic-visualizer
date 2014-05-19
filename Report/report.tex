@@ -397,6 +397,7 @@ there is an argument $d\in Args^T$ which defends against $c$ and $ACC^T(d,a\cup 
 Intuitively, an argument is acceptable with respect to one other one if it is a subset of it (they share the same ideas), or all of its attacking arguments are not based on the same ideas (are not subsets of the two arguments whose acceptability is under examination) and they can be successfully blocked by other acceptable arguments.
 
 \subsubsection{Non-Acceptability of Arguments}
+\label{subsec:nacc}
 Similarly to the acceptability of arguments, for argumentation framework $\langle Args^T, Att^T\rangle$ fixed for a consistent theory $T$, with $a,b\in Args^T$, then $a$ is not acceptable with respect to $b$, denoted by $NACC^T(a,b)$, if and only if both of the following conditions are met:
 \begin{itemize}
 \item
@@ -716,7 +717,7 @@ GAP Checker (\autoref{chap:gapcheck}): the Genuine Absurdity Property checker ta
 \item
 Proof Visualizer (\autoref{chap:viz}): the proof visualization predicate takes a proof that follows the Genuine Absurdity Property and returns an argument that can be used to visualize the given proof
 \item
-Proof Extractor (TODO): this predicate can take an argument (a visualization of a proof) and extract a proof from it
+Proof Extractor (\autoref{chap:extractor}): this predicate can take an argument (a visualization of a proof) and extract a proof from it
 \end{itemize}
 
 In addition to the core module predicates, there are a few client features that can still provide data that can be used by the core modules listed above. These are:
@@ -1071,6 +1072,8 @@ When using this algorithm, there is always one attack per argument, but there ca
 When considering the formulas of the conjunction that constitutes an attack, all formulas that are part of the theory or the argument under attack are ignored. Absence of any remaining formulas signifies an attack by the empty set. This is shown by the example in \autoref{fig:emptysetattack}.
 
 Although the argumentation framework shown in \autoref{fig:vizex} could have been drawn so that argument $\{\beta\}$ on the left side of the ramification attacks $\{\neg\beta\}$ on the right, the algorithm repeats the whole branch in the drawing. This choice has a couple of implications. Firstly the generated diagram is always a tree, as chains of arguments are "expanded" or "ironed out" regardless of whether natural deduction proofs made use of sibling $\neg I$ applications. Take the example given in \autoref{fig:vizexproof}. The second inner box makes use of the conclusion $\neg\beta$ that was derived from the first inner box in order to reduce redundancy. The algorithm turns this proof into a framework where the first inner box is essentially cloned (duplicated) into the second box. Because of this "expansion", the visualization algorithm does not distinguish between the proof in \autoref{fig:vizexproof} and the redundant proof in \autoref{fig:vizexproof2}; both proofs when visualized would give the result shown in \autoref{fig:vizex}.
+
+The algorithm behaves in accordance to the Argumentation Logic technical report. Using a sibling derivation can be considered a shortcut in natural deduction which is used to avoid repeating the same part of the proof twice. The Argumentation Logic paper uses natural deduction in its "pure" form, where this shortcut is not allowed, and proofs where the conclusion of a sibling derivation is used in another derivation do not exist as such. This is the reason why the definition of the Genuine Absurdity Property (\autoref{subsec:gap}) does not take into account sibling derivations. For flexibility purposes, the algorithm "irons out" proofs that do make use of sibling derivations instead of rejecting them.
 
 The algorithm could be made instead to draw an attack from $\{\beta\}$ on the left branch to $\{\gamma\}$ on the right. This would remove the redundancy and produce different visualizations for the different proofs in \autoref{fig:vizexproof} and \autoref{fig:vizexproof2}. The resulting visualizations however would not necessarily be trees. An interesting topic is the detection of similar subtrees in argument attack/defense chains and their pruning, resulting in less redundant and more concise proofs when the arguments are converted back into proofs. In addition, attacks and defenses could be moved to shallower levels in the tree if possible, in order for their corresponding boxes in the proof to appear in a shallower box-nesting level, so that their conclusions can be used in a wider context. Of course, this pruning and relocating of nodes in the tree must be done carefully, so that the resulting proofs always follow the Genuine Absurdity Property. This topic remains part of future work and is not discussed further in the report.
 
@@ -1701,6 +1704,530 @@ forestyle
 \end{minipage}%
 \caption{Visualization example of 4-level boxes}
 \end{figure}
+
+\chapter{Extracting Proofs from Arguments}
+\label{chap:extractor}
+\autoref{chap:viz} shows how proofs following the Genuine Absurdity Property can be seen from an argumentative point of view. An algorithm can be devised to work the opposite way. This chapter discusses how an argument can be used along with the theory it was drawn from to produce a proof that corresponds to this argument. This proof, if visualized again using the algorithm from \autoref{chap:viz} will produce the same argument used to generate the proof.
+
+\section{Assumptions Made by Algorithm}
+Valid, complete arguments are the primary assumption of this algorithm. This means that the argument has the form of a tree, in the same way the visualization algorithm produces arguments. Odd layers of the tree represent defenses and even layers represent attacks. The definitions used for attacks and defenses are those found in \nameref{subsec:alfdef} and \nameref{subsec:alfdef2} (\autoref{subsec:alfdef}). Furthermore, the argument must be about the non-acceptability of the initial hypothesis (argument at the root) as described in \autoref{subsec:nacc}. In other words, the argument should be a proof of $NACC^T(\{a\}, \{\})$, where $a$ is the initial hypothesis posited. It might be possible to visualize incomplete arguments, but this is not guaranteed by the algorithm.
+
+The algorithm assumes that the theory accompanying the argument is expressed in conjunction and negation only. The generated proof will have a conjunction (or a single atom) at the end of each box in the generated proof which will be used alongside its negation (that usually appears in the theory) in order to establish a contradiction. Implicitly, the proofs will be expressed in conjunction and negation only.
+
+\section{Description of the Algorithm}
+In a nutshell, the algorithm works by stitching together small proofs that each contains an application of the Reductio ad Absurdum rule. The process starts bottom-up, from the leaves of the argument tree, and builds the proof starting from the inner-most boxes building outwards (to the top-level box).
+
+Consider the example in \autoref{fig:extrex}. This will be used to describe the workings of the algorithm.
+
+\begin{figure}[thp]
+\begin{minipage}[c]{.5\linewidth}
+\[\vbox{\offinterlineskip\halign{
+&\tabskip=1.5em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\tabskip=0em\cr
+%
+1&\neg(\beta\wedge\alpha)&\mbox{given}\cr
+2&\neg(\alpha\wedge\gamma)&\mbox{given}\cr
+3&\neg(\alpha\wedge\neg\beta\wedge\neg\gamma)&\mbox{given}\cr
+%
+\multispan3\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&4&\alpha&\mbox{hypothesis}&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&5&\beta&\mbox{hypothesis}&\cr
+&6&\beta\wedge\alpha&\wedge I(5,4)&\cr
+&7&\bot&\bot I(1,6)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&8&\neg\beta&\neg I(5,7)&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&9&\gamma&\mbox{hypothesis}&\cr
+&10&\alpha\wedge\gamma&\wedge I(4,9)&\cr
+&11&\bot&\bot I(2,10)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&12&\neg\gamma&\neg I(9,11)&\cr
+&13&\alpha\wedge\neg\beta&\wedge I(4,8)&\cr
+&14&\alpha\wedge\neg\beta\wedge\neg\gamma&\wedge I(13,12)&\cr
+&15&\bot&\bot I(3,14)&\cr
+%
+\noalign{\hrule}}}\,\cr
+%
+16&\neg\alpha&\neg I(4,15)\cr
+}}\]
+\end{minipage}%
+\begin{minipage}[c]{.5\linewidth}
+\centerline{\begin{forest}
+forestyle
+[,tikz={\node[pos=0,font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{$\{\alpha\}$};}
+	[,edge label={node[font=\sffamily,anchor=west,xshift=8pt,yshift=1pt]{\color{black}$\{\neg\beta, \neg\gamma\}$}}
+		[,edge label={node[font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{\color{black}$\{\beta\}$}}
+			[,edge label={node[font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{\color{black}$\{\alpha\}$}}]
+		]
+		[,edge label={node[font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{\color{black}$\{\gamma\}$}}
+			[,edge label={node[font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{\color{black}$\{\alpha\}$}}]
+		]
+	]
+]
+\end{forest}}
+\end{minipage}%
+\caption{Proof extraction example\label{fig:extrex}}
+\end{figure}
+
+The algorithm works with defense-attack pairs, and as mentioned before, bottom-up. It will choose either the left branch or the right branch (it makes no difference in the final result). 
+
+Assume that the pair $\{\beta\}$ - $\{\alpha\}$ is chosen from the left branch. A $\neg I$ proof will be generated with the ultimate goal being the negation of the defense, $\neg\beta$. Inside the box of the $\neg I$ application, the defense $\beta$ will be the hypothesis. The generated proof will be such that the contradiction is derived from the attack (in this case $\{\alpha\}$) and the defense. This ensures that if the final proof is visualized again, the attack node (argument) generated will be $\{\alpha\}$. Note that while generating this proof, all parent defenses (in this case $\{\alpha\}$) are temporarily added as givens so that they are available for use. Recall from the mapping discussed in the visualization algorithm (\autoref{chap:viz}) that defenses translate to hypotheses, thus parent defenses (up the argument tree) should be available (as givens) to child proofs. By now, lines 5-8 of the final proof shown in \autoref{fig:extrex} have been built.
+
+The same procedure is used to generate another proof for the $\{\gamma\}$ - $\{\alpha\}$ pair on the right branch. The result is a Reductio ad Absurdum proof shown on lines 9-12 in \autoref{fig:extrex}. During the generation of this proof, $\alpha$ is again accessible as a given.
+
+The algorithm takes the final pair $\{\alpha\}$ - $\{\neg\beta, \neg\gamma\}$. Once more, it strives to create a proof with the end-goal being the negation of the defense, $\neg\alpha$, with a $\neg I$ application with hypothesis the defense $\alpha$ and the contradiction given by the attack $\{\neg\beta, \neg\gamma\}$. In this case, there are no parent defenses so the only givens are the theory. There are however child hypotheses available and this is the main reason as to why the algorithm is bottom-up. When opening the box for the $\neg I$ application, the two sub-proofs can be added at the beginning of the box in addition to the hypothesis (defense) $\alpha$. The conclusions of the sub-proofs, $\neg\beta$ and $\neg\gamma$ respectively, can be used to fill in the gaps of the box and help find a contradiction for the attack $\{\neg\beta, \neg\gamma\}$. This way, if the resulting proof is visualized again, the same nodes will be generated again. By now, lines 4-16 in \autoref{fig:extrex} are generated.
+
+There is also a small bit of housekeeping that takes place in the process as well. This is mainly to ensure that the line numbers of the sub-proofs are updated when included in higher-level proofs, and that references to givens that constituted parent defenses are rewired to point to the actual parent hypotheses as they become available by including sub-proofs in higher-level proofs. As a final step before returning the proof, the theory is stitched to the beginning of the proof and the line numbers are updated again.
+
+\section{Observations, Remarks and Future Work}
+It may be obvious by now that the proof extraction algorithm works as a counterpart of the visualization algorithm discussed previously in \autoref{chap:viz}. The algorithm ensures that the right boxes are created at the right parts of the proof so that the inverse of the mapping discussed in the visualization algorithm is followed.
+
+Recall from \autoref{chap:viz} that some information is lost when converting a proof to an argument regarding sibling proofs and child proofs. The visualization algorithm makes no distinction between the two, so the generated arguments seem "spread out". Thus, when converting back to a proof from the generated argument, only proofs that refer to child and ancestor hypotheses are created. 
+
+Another bit of information that is dropped when visualizing proofs is the exact part of theory that may have been used along with the attack to reach a contradiction. This is because each argument (node) in the tree shows only its own claims, and hides the part of the theory with which, along with the defense under attack, lead to a contradiction. The example in \autoref{fig:extrex2} shows two proofs that visualize to the same argument using the visualization algorithm, and either of those proofs can be extracted from the argument using the proof extraction algorithm. Note that the difference only lies in the theory used by the outermost box.
+
+\begin{figure}[thp]
+\begin{minipage}[c]{.35\linewidth}
+\[\vbox{\offinterlineskip\halign{
+&\tabskip=1.5em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\tabskip=0em\cr
+%
+1&\neg(\beta\wedge\alpha)&\mbox{given}\cr
+2&\neg(\alpha\wedge\gamma)&\mbox{given}\cr
+3&\neg(\alpha\wedge\neg\beta\wedge\neg\gamma\wedge\delta)&\mbox{given}\cr
+4&\neg(\alpha\wedge\neg\beta\wedge\neg\gamma\wedge\epsilon)&\mbox{given}\cr
+5&\epsilon\wedge\delta&\mbox{given}\cr
+%
+\multispan3\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&6&\alpha&\mbox{hypothesis}&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&7&\beta&\mbox{hypothesis}&\cr
+&8&\beta\wedge\alpha&\wedge I(7,6)&\cr
+&9&\bot&\bot I(1,8)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&10&\neg\beta&\neg I(7,9)&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&11&\gamma&\mbox{hypothesis}&\cr
+&12&\alpha\wedge\gamma&\wedge I(6,11)&\cr
+&13&\bot&\bot I(2,12)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&14&\neg\gamma&\neg I(11,13)&\cr
+&15&\alpha\wedge\neg\beta&\wedge I(6,10)&\cr
+&16&\alpha\wedge\neg\beta\wedge\neg\gamma&\wedge I(15,14)&\cr
+&17&\delta&\wedge E(5)&\cr
+&18&\alpha\wedge\neg\beta\wedge\neg\gamma\wedge\delta&\wedge I(16,17)&\cr
+&19&\bot&\bot I(3,18)&\cr
+%
+\noalign{\hrule}}}\,\cr
+%
+20&\neg\alpha&\neg I(6,19)\cr
+}}\]
+\end{minipage}%
+\begin{minipage}[c]{.3\linewidth}
+\centerline{\begin{forest}
+forestyle
+[,tikz={\node[pos=0,font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{$\{\alpha\}$};}
+	[,edge label={node[font=\sffamily,anchor=west,xshift=8pt,yshift=1pt]{\color{black}$\{\neg\beta, \neg\gamma\}$}}
+		[,edge label={node[font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{\color{black}$\{\beta\}$}}
+			[,edge label={node[font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{\color{black}$\{\alpha\}$}}]
+		]
+		[,edge label={node[font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{\color{black}$\{\gamma\}$}}
+			[,edge label={node[font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{\color{black}$\{\alpha\}$}}]
+		]
+	]
+]
+\end{forest}}
+\end{minipage}%
+\begin{minipage}[c]{.35\linewidth}
+\[\vbox{\offinterlineskip\halign{
+&\tabskip=1.5em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\tabskip=0em\cr
+%
+1&\neg(\beta\wedge\alpha)&\mbox{given}\cr
+2&\neg(\alpha\wedge\gamma)&\mbox{given}\cr
+3&\neg(\alpha\wedge\neg\beta\wedge\neg\gamma\wedge\delta)&\mbox{given}\cr
+4&\neg(\alpha\wedge\neg\beta\wedge\neg\gamma\wedge\epsilon)&\mbox{given}\cr
+5&\epsilon\wedge\delta&\mbox{given}\cr
+%
+\multispan3\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&6&\alpha&\mbox{hypothesis}&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&7&\beta&\mbox{hypothesis}&\cr
+&8&\beta\wedge\alpha&\wedge I(7,6)&\cr
+&9&\bot&\bot I(1,8)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&10&\neg\beta&\neg I(7,9)&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&11&\gamma&\mbox{hypothesis}&\cr
+&12&\alpha\wedge\gamma&\wedge I(6,11)&\cr
+&13&\bot&\bot I(2,12)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&14&\neg\gamma&\neg I(11,13)&\cr
+&15&\alpha\wedge\neg\beta&\wedge I(6,10)&\cr
+&16&\alpha\wedge\neg\beta\wedge\neg\gamma&\wedge I(15,14)&\cr
+&17&\epsilon&\wedge E(5)&\cr
+&18&\alpha\wedge\neg\beta\wedge\neg\gamma\wedge\epsilon&\wedge I(16,17)&\cr
+&19&\bot&\bot I(4,18)&\cr
+%
+\noalign{\hrule}}}\,\cr
+%
+20&\neg\alpha&\neg I(6,19)\cr
+}}\]
+\end{minipage}%
+\caption{Proof extraction example\label{fig:extrex2}}
+\end{figure}
+
+This means that when using the visualization algorithm to turn a proof into an argument, and then the extraction algorithm to turn the argument back into a proof, the final proof may not be the same as the initial. If the final proof is visualized again, then the first and final arguments will be the same however.
+
+\section{Details of Implementation}
+The algorithm first starts with the argument given in the same format as the output of the visualization algorithm and the theory on which the argument is based. The format of the argument is a list of two elements: a list of pairs of nodes (the actual arguments) and their IDs, and a list of pairs of node IDs indicating the attacks and defenses. \autoref{lst:proofextr1} shows that the proof is built from the ground up (line 2), and then the theory is stitched on it at the end (lines 3-4).
+
+The call to \lstinline$convertArgToGAP/4$ is recursive, and although it starts from level 1 of the argument tree (as called by \lstinline$convertArgToGAP/3$) it recursively bottoms out before starting to assemble the proof at each level. This can be seen on lines 6-8. First, all of the defenses against the attack on the current defense are found. These will make up the lower level boxes. Then, a sub-proof for each of those defenses is found by recursively calling itself. Hence by the time this is finished, the procedure bottomed out and then sub-proofs bubbled back up from the bottom with all the lower levels taken care of. Finally, \lstinline$convertArgToGAP/4$ acts on the current level of the tree by generating a proof using the theory and sub-proofs.
+
+The predicate \lstinline$makeSubProof/5$ is responsible for the making of the sub-proof at each level of the tree. It takes the argument as a first parameter, the theory and child sub-proofs as the second and third parameters, and the node ID for the defense it is supposed to generate a proof for. The predicate returns the generated (sub-)proof as the last parameter. \lstinline$parentSet/3$ provides all the higher-level hypotheses that should be available when building the proof. \lstinline$childSet/2$ returns the negated hypotheses of the children. Its use will be discussed shortly. The \lstinline$lineFix/4$ predicate updates the line numbers of the previously generated child derivations so that they can fit nicely in the current-level proof. The theory and the parent set (masqueraded as more theory) are mixed together on line 15. Line 18 finds the actual defense that will be used as a hypothesis given that the defense node's ID is known and line 19 puts together the hypothesis and the lower-level derivations.
+
+Now everything is set for the theorem prover to find a proof that brings the theory, ancestor hypotheses, current hypothesis and child derivations together with the attack. The proof is created on line 20 of \autoref{lst:proofextr1}. In order to ensure that the theorem prover made use of all the components of the attack, the predicate \lstinline$childGAPsUsed/4$ performs a check that fails if the "wrong" proof is found. This is to keep the theorem prover in check so that it does not deviate from the attack plan. If the generated proof were to have a different cause for the contradiction, some of the child derivations could possibly not be referenced. In that case, re-visualizing the final proof would result in a different argument.
+
+After passing this check, the resulting proof is the box containing the hypothesis and contradiction. The trailing conclusion is stuck at the end of the box (on the outside) by lines 23-29. These lines of code decide whether a $\neg E$ rule is used directly after the $\neg I$ rule and calculate the line numbers for those steps.
+
+Before moving on, the \lstinline$parentSet/3$ and \lstinline$childSet/2$ predicates may deserve a quick glance. The former predicate gathers all the parent hypotheses by crawling the tree upwards from the indicated defense node. Line 35 finds the node ID of the attack that the defense tries to defend against, and line 36 finds the ID of the defense which is attacked by the aforementioned attack. Line 37 looks into the "nodes directory" to find the actual defense indicated by its ID. This is added to the parent set and then the predicate calls itself again but this time to act on the higher-level defense. The \lstinline$childSet/2$ predicate acts slightly differently. The \lstinline$makeSubProof/5$ predicate returns proofs that have the conclusion drawn on the last line of the proof. Thus the negated hypotheses (which are the conclusions of each proof) can be gathered by reading the last step of each of the child derivations.
+
+The predicate \lstinline$m2/2$ on lines 6-7, 18 and 35-37 acts as an alias to the standard \lstinline$member/2$ Prolog predicate. The predicate \lstinline$a2/3$ on lines 4 and 15 acts as an alias to the standard \lstinline$append/3$ Prolog predicate.
+
+\begin{lstlisting}[caption={First part of the proof extraction algorithm},label=lst:proofextr1]
+convertArgToGAP(Argument, Theory, TheoryAndProof) :-
+	convertArgToGAP(Argument, Theory, 1, Proof),
+	toSteps(Theory, TheorySteps),
+	a2(Proof, TheorySteps, TheoryAndProof).
+convertArgToGAP([Nodes, AttDefs], Theory, NodeID, Proof) :-
+	findall(Def, (m2([Att, NodeID], AttDefs), m2([Def, Att], AttDefs)), Defs),
+	findall(SubProof, (m2(X, Defs), convertArgToGAP([Nodes, AttDefs], Theory, X, SubProof)), SubProofs),
+	makeSubProof([Nodes, AttDefs], Theory, SubProofs, NodeID, Proof).
+
+makeSubProof([Nodes, AttDefs], Theory, ChildGAPs, NodeID, SubProof) :-
+	parentSet([Nodes, AttDefs], NodeID, ParentSet),
+	childSet(ChildGAPs, ChildSet),
+	lineFix(ParentSet, Theory, ChildGAPs, FixedChildGAPs),
+	append(FixedChildGAPs, MergedCGAPs),
+	a2(Theory, ParentSet, Context),
+	toSteps(Context, ContextSteps), !,
+	ln(ContextSteps, LineNumber1),
+	m2([[Node], NodeID], Nodes),
+	a2(MergedCGAPs, [step(Node, [hypothesis], LineNumber1)], HypothesisChildren),
+	backwardProve(no, HypothesisChildren, ContextSteps, [[], []], [falsity], BoxProof),
+	childGAPsUsed(BoxProof, Theory, [Node|ChildSet], ParentSet),
+	ln(BoxProof, NextLineNumber), is(LineNumber2, NextLineNumber - 1),
+	(
+		Node = n(A),
+		ln(NextLineNumber, NextNextLineNumber),
+		SubProof = [step(A, [notE, NextLineNumber], NextNextLineNumber), step(n(Node), [notI, LineNumber1, LineNumber2], NextLineNumber), box(BoxProof)], !;
+
+		SubProof = [step(n(Node), [notI, LineNumber1, LineNumber2], NextLineNumber), box(BoxProof)], !
+	),
+	!.
+	
+% Return the parent hypotheses of the given defense node
+parentSet([_, _], 1, []).
+parentSet([Nodes, AttDefs], NodeID, [Parent|ParentSet]) :-
+	m2([NodeID, AttackNodeID], AttDefs),
+	m2([AttackNodeID, ParentNodeID], AttDefs),
+	m2([[Parent], ParentNodeID], Nodes),
+	parentSet([Nodes, AttDefs], ParentNodeID, ParentSet).
+
+% Returns a list of the negated child hypotheses for the given child proofs
+childSet([], []).
+childSet([[step(NegHyp, _, _)|_]|ChildGAPs], [NegHyp|ChildHypotheses]) :-
+	childSet(ChildGAPs, ChildHypotheses).
+\end{lstlisting}
+
+The \lstinline$childGAPsUsed/4$ predicate is responsible for making sure that the generated proof at each level makes use of the lower-level proofs. Lines 3-8 of \autoref{lst:proofextr2} retrieve the step of the proof responsible for the contradiction (the attack), and then it is broken down into individual components on line 9. Line 10 checks that the given child set is included in the attack components. This ensures that all the lower-level subtrees of the argument tree will be present should the resulting proof be visualized again. As a further precaution, the child set is subtracted from the set of used components and the result is checked against a set containing components from the theory and parent set. This is to ensure that the generated proof does not contain any extra items that would add more branches to the argument received by visualizing the extracted proof again. This is done by lines 11-15.
+
+The predicate \lstinline$getConjunctionComponents/2$ is fairly simple. It breaks down conjunctions into individual components. The predicate \lstinline$m2/2$ on lines 8 and 12 acts as an alias to the standard \lstinline$member/2$ Prolog predicate. The predicate \lstinline$a2/3$ on lines 14 and 22 acts as an alias to the standard \lstinline$append/3$ Prolog predicate.
+
+\begin{lstlisting}[caption={Second part of the proof extraction algorithm},label=lst:proofextr2]
+% Make sure that all the (negations of the) child hypotheses were used in the attack
+childGAPsUsed(Proof, Theory, ChildSet, ParentSet) :-
+	(
+		Proof = [step(falsity, [falsityI, _, LN], _)|_];
+		
+		Proof = [step(falsity, [check, _], _), step(falsity, [falsityI, _, LN], _)|_]
+	),
+	m2(step(X, _, LN), Proof),
+	getConjunctionComponents(X, UsedComponents),
+	subset(ChildSet, UsedComponents),
+	subtract(UsedComponents, ChildSet, Rest),
+	findall(TheoryComponents, (m2(T, Theory), getConjunctionComponents(T, TheoryComponents)), TheoryComponentsList),
+	append(TheoryComponentsList, AllowedTheoryComponents),
+	a2(AllowedTheoryComponents, ParentSet, AllowedComponents),
+	subset(Rest, AllowedComponents).
+
+% Returns the components making up a conjunction
+% Example: a&b&c&¬d -> [a,b,c,¬d]
+getConjunctionComponents(and(A, B), Components):-
+	getConjunctionComponents(A, Component1),
+	getConjunctionComponents(B, Component2),
+	a2(Component1, Component2, Components), !.
+getConjunctionComponents(X, [X]).
+\end{lstlisting}
+
+The predicate \lstinline$lineFix/4$ (shown in \autoref{lst:proofextr3}) is used to update the line numbers in the proofs for lower-level nodes. Its usage is solely related to housekeeping. Each of the child derivations considers the first few lines to be the theory and the parent hypotheses. Thus all proofs start from a certain line number $n = length(Theory) + length(Parent Set)$. Thus every line number proof has to be "reset" by subtracting this $n$ and adding an offset which is calculated for each proof as they will appear one after another. The offset is the last line number of each proof for intermediate proofs. Care must be taken to not shift all line references as some references refer to the theory or parent hypotheses. Shifting those numbers (numbers smaller than $n$) will result in wrong references.
+
+\begin{lstlisting}[caption={Third part of the proof extraction algorithm},label=lst:proofextr3]
+% Changes the lines of the proofs of the child proofs so that no two steps
+% have the same line number. References are updated as well
+lineFix(ParentSet, Theory, ChildGAPs, FixedChildGAPs) :-
+	length(ParentSet, L),
+	length(Theory, T),
+	lineFix(L, ChildGAPs, T, T, RevFixedChildGAPs),
+	reverse(RevFixedChildGAPs, FixedChildGAPs).
+lineFix(_, [], _, _, []).
+lineFix(From, [ChildGAP|ChildGAPs], Offset, TheoryOffset, [FixedChildGAP|FixedChildGAPs]) :-
+	shiftLines(From, Offset, TheoryOffset, ChildGAP, FixedChildGAP),
+	ln(ChildGAP, NewOffset),
+	lineFix(From, ChildGAPs, NewOffset -1, TheoryOffset, FixedChildGAPs).
+shiftLines(_, _, _, [], []).
+shiftLines(From, Offset, TheoryOffset, [step(A, [R|Reason], LineNumber)|Proof], [step(A, [R|FixedReason], FixedLineNumber)|FixedProof]) :-
+	shiftNumbers(From, Offset, TheoryOffset, [LineNumber|Reason], [FixedLineNumber|FixedReason]),
+	shiftLines(From, Offset, TheoryOffset, Proof, FixedProof).
+shiftLines(From, Offset, TheoryOffset, [box(BoxProof)|Proof], [box(FixedBoxProof)|FixedProof]) :-
+	shiftLines(From, Offset, TheoryOffset, BoxProof, FixedBoxProof),
+	shiftLines(From, Offset, TheoryOffset, Proof, FixedProof).
+shiftNumbers(_, _, _, [], []).
+shiftNumbers(From, Offset, TheoryOffset, [N|Numbers], [FN|FixedNumbers]) :-
+	(
+		N > From + TheoryOffset, is(FN, N + Offset - TheoryOffset - From);
+		
+		FN = N
+	),
+	shiftNumbers(From, Offset, TheoryOffset, Numbers, FixedNumbers).
+\end{lstlisting}
+
+\section{Example Walkthrough}
+The example will revolve around the example argument given in \autoref{fig:extrex}. Assume that the format of the input argument is $Args = [(\{\alpha\}, 1), (\{\neg\beta, \neg\gamma\}, 2), (\{\beta\}, 3), (\{\alpha\}, 4), (\{\gamma\}, 5), (\{\alpha\}, 6)]$ for the nodes and their IDs, and $Att = [(1, 0), (3, 2), (4, 3), (5, 2), (6, 5)]$ for the attacks/defenses. In the Prolog implementation, lists, tuples and sets were all implemented as lists, but for the sake of readability a richer format will be used.
+
+\autoref{lst:proofextr1} shows \lstinline$convertArgToGAP/3$ starting up \lstinline$convertArgToGAP/4$ with node ID 1, the root of the tree. Line 6 of the code finds all defenses that defend against this node's attack from $Att$ and puts them in a list, which in this case is $[3, 5]$. Line 7 of the code calls \lstinline$convertArgToGAP/4$ for each of those defenses, passing in the appropriate ID.
+
+For the call with node ID $3$, line 6 of the code executes and finds no defenses against attack node $4$. Hence no sub-proofs are generated by line 7. Line 8 executes. The \lstinline$makeSubProof/5$ predicate runs and calculates the parent set $\{\alpha\}$ and child set $\{\}$ (since there are no child derivations). Predicate \lstinline$lineFix/4$ has no effect for the same reason. Line 15 of the code puts together the theory and parent set. Line 18 looks up node ID $3$ in $Args$ in order to find the actual defense $\{\beta\}$. The theorem prover then is tasked with finding a proof with hypothesis $\beta$, context theory plus parent set and goal a contradiction. Assume that the following proof was returned:
+
+\[\vbox{\offinterlineskip\halign{
+&\tabskip=1.5em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\tabskip=0em\cr
+%
+\multispan3\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&5&\beta&\mbox{hypothesis}&\cr
+&6&\beta\wedge\alpha&\wedge I(5,4)&\cr
+&7&\bot&\bot I(1,6)&\cr
+%
+\noalign{\hrule}}}\,\cr
+}}\]
+
+Line 21 calls \lstinline$childGAPsUsed/4$. \autoref{lst:proofextr2} shows the definition of this predicate. Lines 3-8 of the code find the step responsible for the contradiction. This is line 6 in the proof. It is split into individual components by line 9 of the code. The components are $[\beta, \alpha]$. The given child set is not the empty set not because there are child derivations but rather because the defense itself was appended to it by \lstinline$makeSubProof/5$. This is because the hypothesis can be present in the conjunction resulting in the contradiction (in fact it has to if the proof is to follow the Genuine Absurdity Property). The first test (line 10) passes. The theory and parent are split into individual components giving $[\neg(\beta\wedge\alpha), \neg(\alpha\wedge\gamma), \neg(\alpha\wedge\neg\beta\wedge\neg\gamma), \alpha]$. The theory did not have any conjunction so it was left intact. If, as an example, $\delta\wedge\epsilon$ was part of the theory then it would produce components $\delta$ and $\epsilon$. Subtracting the child set from the attack components leaves the list with only one element in it. $[\alpha]$ is part of the allowed remaining components as tested by line 15 and the \lstinline$childGAPsUsed/4$ predicate returns successful.
+
+Back in the \lstinline$makeSubProof/5$ predicate on line 21 (\autoref{lst:proofextr1}) the execution continues and lines 22-29 decide that because the defense $\beta$ is a positive atom, there should be only one line with the conclusion $\neg\beta$ trailing the box. Thus before returning, the predicate assembles this proof:
+
+\[\vbox{\offinterlineskip\halign{
+&\tabskip=1.5em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\tabskip=0em\cr
+%
+\multispan3\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&5&\beta&\mbox{hypothesis}&\cr
+&6&\beta\wedge\alpha&\wedge I(5,4)&\cr
+&7&\bot&\bot I(1,6)&\cr
+%
+\noalign{\hrule}}}\,\cr
+%
+8&\neg\beta&\neg I(5,7)\cr
+}}\]
+
+In a similar way, a box for node $5$ is created that looks like the following:
+
+\[\vbox{\offinterlineskip\halign{
+&\tabskip=1.5em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\tabskip=0em\cr
+%
+\multispan3\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&5&\gamma&\mbox{hypothesis}&\cr
+&6&\alpha\wedge\gamma&\wedge I(4,5)&\cr
+&7&\bot&\bot I(2,6)&\cr
+%
+\noalign{\hrule}}}\,\cr
+%
+8&\neg\gamma&\neg I(5,7)\cr
+}}\]
+
+Note that the two sub-proofs have the same line numbers because at creation time they were unaware of each other's existence. This issue will be fixed by the \lstinline$lineFix/4$ predicate shortly. On the top tree level now, after line 7 returns in \autoref{lst:proofextr1} for node $1$, \lstinline$makeSubProof5$ is run but this time with the two proofs for the child derivations.
+
+On line 11, the parent set is an empty set as node $1$ has no parent defenses up the tree (since it's the root). The child set however is non-empty; it is $\{\neg\beta, \neg\gamma\}$. The \lstinline$lineFix/4$ predicate changes the line numbers of the sub-proofs. The first child proof is effectively left intact, but the second proof now starts from where the first left off; line number 9. Hence after the line fix the two proofs are:
+
+\begin{minipage}[c]{0.5\linewidth}
+\[\vbox{\offinterlineskip\halign{
+&\tabskip=1.5em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\tabskip=0em\cr
+%
+\multispan3\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&5&\beta&\mbox{hypothesis}&\cr
+&6&\beta\wedge\alpha&\wedge I(5,4)&\cr
+&7&\bot&\bot I(1,6)&\cr
+%
+\noalign{\hrule}}}\,\cr
+%
+8&\neg\beta&\neg I(5,7)\cr
+}}\]
+\end{minipage}%
+\begin{minipage}[c]{0.5\linewidth}
+\[\vbox{\offinterlineskip\halign{
+&\tabskip=1.5em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\tabskip=0em\cr
+%
+\multispan3\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&9&\gamma&\mbox{hypothesis}&\cr
+&10&\alpha\wedge\gamma&\wedge I(4,9)&\cr
+&11&\bot&\bot I(2,10)&\cr
+%
+\noalign{\hrule}}}\,\cr
+%
+12&\neg\gamma&\neg I(9,11)\cr
+}}\]
+\end{minipage}
+
+Line 19 merges the hypothesis (defense) $\alpha$ with the child proofs, and the theorem prover is then tasked to find a proof that results in a contradiction on line 20. Assume that the returned proof is the following:
+
+\[\vbox{\offinterlineskip\halign{
+&\tabskip=1.5em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\tabskip=0em\cr
+%
+\multispan3\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&4&\alpha&\mbox{hypothesis}&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&5&\beta&\mbox{hypothesis}&\cr
+&6&\beta\wedge\alpha&\wedge I(5,4)&\cr
+&7&\bot&\bot I(1,6)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&8&\neg\beta&\neg I(5,7)&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&9&\gamma&\mbox{hypothesis}&\cr
+&10&\alpha\wedge\gamma&\wedge I(4,9)&\cr
+&11&\bot&\bot I(2,10)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&12&\neg\gamma&\neg I(9,11)&\cr
+&13&\alpha\wedge\neg\beta&\wedge I(4,8)&\cr
+&14&\alpha\wedge\neg\beta\wedge\neg\gamma&\wedge I(13,12)&\cr
+&15&\bot&\bot I(3,14)&\cr
+%
+\noalign{\hrule}}}\,\cr
+}}\]
+
+Note that lines 4-12 were already there at the start of the proof search as they were stitched together by the \lstinline$makeSubProof/5$ predicate and handed in to the theorem prover for the construction of a contradiction. The next line to execute is line 21 where \lstinline$childGAPsUsed/4$ is called. \autoref{lst:proofextr2} shows this predicate. On lines 3-8 the step contributing to the contradiction is located (line 14 of the proof) and then it is broken down into individual components (line 9 of the code). The components are $[\alpha, \neg\beta, \neg\gamma]$. The child set (which includes the current defense $\alpha$) is the same, which does make it a subset (not strictly speaking). The subtraction leaves no remaining components to be checked. This step is just a precaution however, as the generated proof could have an extra attack component that could generate a slightly different tree if the result was to be visualized again. The predicate returns successfully. Back in the predicate \lstinline$makeSubProof/5$ shown in \autoref{lst:proofextr1} lines 23-29 decide that the hypothesis is a positive atom, and thus the conclusion is just it's negation (there is no need to apply the $\neg E$ rule afterwards as the conclusion is not doubly-negated). Thus one last line deriving $\neg\alpha$ from the box is appended and the resulting proof looks like the following:
+
+\[\vbox{\offinterlineskip\halign{
+&\tabskip=1.5em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\tabskip=0em\cr
+%
+\multispan3\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&4&\alpha&\mbox{hypothesis}&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&5&\beta&\mbox{hypothesis}&\cr
+&6&\beta\wedge\alpha&\wedge I(5,4)&\cr
+&7&\bot&\bot I(1,6)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&8&\neg\beta&\neg I(5,7)&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&9&\gamma&\mbox{hypothesis}&\cr
+&10&\alpha\wedge\gamma&\wedge I(4,9)&\cr
+&11&\bot&\bot I(2,10)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&12&\neg\gamma&\neg I(9,11)&\cr
+&13&\alpha\wedge\neg\beta&\wedge I(4,8)&\cr
+&14&\alpha\wedge\neg\beta\wedge\neg\gamma&\wedge I(13,12)&\cr
+&15&\bot&\bot I(3,14)&\cr
+%
+\noalign{\hrule}}}\,\cr
+%
+16&\neg\alpha&\neg I(4,15)\cr
+}}\]
+
+The execution returns to \lstinline$convertArgToGAP/4$ and then to \lstinline$convertArgToGAP/3$ on line 2. The theory is finally appended to the proof and the result is the proof shown in \autoref{fig:extrex}.
 
 \chapter{Server Module}
 \label{chap:server}
