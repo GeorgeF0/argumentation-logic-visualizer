@@ -1217,6 +1217,14 @@ function retrieveClipboard(){
 //misc - init
 $("#myTab a:first").tab("show");
 
+function toProlog(input){
+    $.ajax("query", {
+        type: "POST",
+        contentType:"application/json",
+        data: JSON.stringify(input),
+        success: function(d){console.log(d);}});
+}
+
 //polyfill from Mozilla for Array.find()
 //taken from https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/find
 if (!Array.prototype.find) {
