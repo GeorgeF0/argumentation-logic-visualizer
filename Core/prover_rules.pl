@@ -143,8 +143,10 @@ falsityIE(MRA, Steps, Context, Extras, [G|Goals], [step(G, [falsityE, LineNumber
 	not(G = falsity), !,
 	not(m3(step(falsity, _, _), Steps, Context)),
 	nth0(0, Extras, PastTries, RestExtras),
-	bagof(A, (m3(step(n(A), _, LN1), Steps, Context), not(m3(step(A, _, _), Steps, Context))), [X]),
-	not(m2(X, PastTries)),
+	findall([A, LN], (m3(step(n(A), _, LN), Steps, Context), not(m3(step(A, _, _), Steps, Context)), not(m2(A, PastTries))), Negated),
+	rate(Steps, Context, Negated, Rated),
+	predsort(compareNegations, Rated, Sorted),
+	m2([_,X, LN1], Sorted),
 	nth0(0, NewExtras, [X|PastTries], RestExtras),
 	backwardProve(MRA, Steps, Context, NewExtras, Goals, RestProof),
 	backwardProve(MRA, RestProof, Context, NewExtras, [X], Proof),
@@ -154,8 +156,10 @@ falsityIE(MRA, Steps, Context, Extras, [G|Goals], [step(G, [falsityE, LineNumber
 falsityIE(MRA, Steps, Context, Extras, [_|Goals], [step(falsity, [falsityI, LN1, LN2], LineNumber)| Proof]) :-
 	not(m3(step(falsity, _, _), Steps, Context)),
 	nth0(0, Extras, PastTries, RestExtras),
-	bagof(A, (m3(step(n(A), _, LN1), Steps, Context), not(m3(step(A, _, _), Steps, Context))), [X]),
-	not(m2(X, PastTries)),
+	findall([A, LN], (m3(step(n(A), _, LN), Steps, Context), not(m3(step(A, _, _), Steps, Context)), not(m2(A, PastTries))), Negated),
+	rate(Steps, Context, Negated, Rated),
+	predsort(compareNegations, Rated, Sorted),
+	m2([_,X, LN1], Sorted),
 	nth0(0, NewExtras, [X|PastTries], RestExtras),
 	backwardProve(MRA, Steps, Context, NewExtras, Goals, RestProof),
 	backwardProve(MRA, RestProof, Context, NewExtras, [X], Proof),
@@ -178,3 +182,17 @@ proofByContradiction(MRA, Steps, Context, Extras, [G|Goals], [step(G, [notE, Nex
 	backwardProve(MRA, [step(n(G), [hypothesis], LineNumber1)], NewContext, Extras, [falsity], BoxProof),
 	ln(BoxProof, NextLineNumber), is(LineNumber2, NextLineNumber - 1),
 	ln(NextLineNumber, NextNextLineNumber).
+
+compareNegations(Delta, [Rating1, _, _], [Rating2, _, _]) :-
+	compare(Delta, Rating1, Rating2).
+
+rate(Steps, Context, Negated, Rated) :-
+	forwardProve(Steps, Context, NewSteps),
+	a2(NewSteps, Context, AllContext),
+	rate(AllContext, Negated, Rated).
+rate(_, [], []).
+rate(AllContext, [[N, LN]|Negated], [[R, N, LN]|Rated]) :-
+	getConjunctionComponents(N, Components),
+	findall(C, (m2(C, Components), not(m2(step(C, _, _), AllContext))), X),
+	length(X, R),
+	rate(AllContext, Negated, Rated).
