@@ -184,7 +184,8 @@ proofByContradiction(MRA, Steps, Context, Extras, [G|Goals], [step(G, [notE, Nex
 	ln(NextLineNumber, NextNextLineNumber).
 
 compareNegations(Delta, [Rating1, _, _], [Rating2, _, _]) :-
-	compare(Delta, Rating1, Rating2).
+	Delta = (<), Rating1 < Rating2;
+	Delta = (>).
 
 rate(Steps, Context, Negated, Rated) :-
 	forwardProve(Steps, Context, NewSteps),
