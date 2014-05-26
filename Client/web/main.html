@@ -72,6 +72,7 @@
                         </div>
                     </div>
                 </nav>
+                <div id="generateproofalert"></div>
                 <div class="row" id="generatedproofsplaceholder">
                     <!-- to be filled in programmatically -->
                 </div>
@@ -100,6 +101,7 @@
                         </div>
                     </div>
                 </nav>
+                <div id="buildproofalert"></div>
                 <div class="well" id="proofunderconstruction">
                     <!-- to be filled in programmatically -->
                 </div>
@@ -111,9 +113,10 @@
                 </div>
             </div>
             <div class="tab-pane fade" id="checkgap">
+                <div id="gapcheckalert" style="padding-top:15px"></div>
                 <div class="row">
-                    <div ondragover="allowDrop(event)" ondrop="gapProofDrop(event)" style="padding-top:15px" id="gapdroparea">
-                        <div style="width:400px;height:500px;float:left;padding-left:15px;padding-bottom:15px">
+                    <div ondragover="allowDrop(event)" ondrop="gapProofDrop(event)" id="gapdroparea">
+                        <div style="width:400px;height:500px;float:left;padding-left:15px;padding-bottom:15px;padding-top:15px">
                             <div class="thumbnail" style="height:100%">
                             </div>
                         </div>
@@ -124,14 +127,15 @@
                 </div>
             </div>
             <div class="tab-pane fade" id="argview">
+                <div id="argviewalert" style="padding-top:15px"></div>
                 <div class="row">
-                    <div ondragover="allowDrop(event)" ondrop="argProofDrop(event)" style="float:left;padding-top:15px;padding-left:15px;padding-bottom:15px" id="argdroparea">
+                    <div ondragover="allowDrop(event)" ondrop="argProofDrop(event)" style="float:left;padding-top:15px;padding-left:15px" id="argdroparea">
                         <div style="width:400px;height:500px;float:left;padding-left:15px;padding-bottom:15px">
                             <div class="thumbnail" style="height:100%">
                             </div>
                         </div>
                     </div>
-                    <div style="float:left;padding-top:15px;padding-bottom:15px;padding-right:15px" id="argdragarea">
+                    <div style="float:left;padding-top:15px;padding-right:15px" id="argdragarea">
                         <div style="width:400px;height:500px;float:left;padding-left:15px;padding-bottom:15px">
                             <div class="thumbnail" style="height:100%">
                             </div>
@@ -143,14 +147,15 @@
                 </div>
             </div>
             <div class="tab-pane fade" id="gapview">
+                <div id="gapviewalert" style="padding-top:15px"></div>
                 <div class="row">
-                    <div ondragover="allowDrop(event)" ondrop="extrGapProofDrop(event)" style="float:left;padding-top:15px;padding-left:15px;padding-bottom:15px" id="extrgapdroparea">
+                    <div ondragover="allowDrop(event)" ondrop="extrGapProofDrop(event)" style="float:left;padding-top:15px;padding-left:15px" id="extrgapdroparea">
                         <div style="width:400px;height:500px;float:left;padding-left:15px;padding-bottom:15px">
                             <div class="thumbnail" style="height:100%">
                             </div>
                         </div>
                     </div>
-                    <div style="float:left;padding-top:15px;padding-bottom:15px;padding-right:15px" id="extrgapdragarea">
+                    <div style="float:left;padding-top:15px;padding-right:15px" id="extrgapdragarea">
                         <div style="width:400px;height:500px;float:left;padding-left:15px;padding-bottom:15px">
                             <div class="thumbnail" style="height:100%">
                             </div>
@@ -185,6 +190,7 @@
                         </div>
                     </div>
                 </nav>
+                <div id="buildargalert"></div>
                 <div class="form-group has-feedback" id="buildargattackinputfeedback">
                     <div class="input-group" style="width:100%">
                         <span class="input-group-addon"><span class="glyphicon glyphicon-pencil"></span></span>

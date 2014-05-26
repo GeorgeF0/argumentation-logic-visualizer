@@ -159,9 +159,13 @@ function generateProofsCallback(data){
     }
     var placeholder = $("#generatedproofsplaceholder");
     placeholder.html(placeholderHTML);
+    if (generatedProofs.length == 0){
+        $("#generateproofalert").html("<div class=\"alert alert-warning alert-dismissable\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-hidden=\"true\">&times;</button><strong>Warning!</strong> No proofs have been found!</div>");
+    }
 }
 
 function generateProofs(){
+    $("#generateproofalert").html("");
     $("#generateprooftheoryfeedback").removeClass("has-error");
     $("#generateproofgoalfeedback").removeClass("has-error");
     var theoryInput = $("#generateprooftheory").val();
@@ -201,7 +205,10 @@ function generateProofs(){
         console.log(e);
         hasError = true;
     }
-    if (hasError) return;
+    if (hasError) {
+        $("#generateproofalert").html("<div class=\"alert alert-danger alert-dismissable\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-hidden=\"true\">&times;</button><strong>Oops!</strong> Something is wrong with the input! Please fix the error and try again!</div>");
+        return;
+    }
     var proofQuery = {type:"proof_query", theory:theory, goal:goal};
     $.ajax("query/generateproofs", {
         type: "POST",
@@ -222,6 +229,7 @@ var currentLevel = 0;
 var proofUnderConstructionLength = 0;
 
 function buildProof(){
+    $("#buildproofalert").html("");
     $("#buildprooftheoryfeedback").removeClass("has-error");
     $("#buildproofgoalfeedback").removeClass("has-error");
     var theoryInput = $("#buildprooftheory").val();
@@ -261,7 +269,10 @@ function buildProof(){
         console.log(e);
         hasError = true;
     }
-    if (hasError) return;
+    if (hasError) {
+        $("#buildproofalert").html("<div class=\"alert alert-danger alert-dismissable\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-hidden=\"true\">&times;</button><strong>Oops!</strong> Something is wrong with the input! Please fix the error and try again!</div>");
+        return;
+    }
     targetGoal = goal;
     proofUnderConstruction = setUpGivens(theory);
     currentLevel = 0;
@@ -280,6 +291,7 @@ function rerenderProofUnderConstruction(){
 $("#buildproofcommandinput").keyup(function (e) {
     $("#buildproofcommandinputfeedback").removeClass("has-error");
     if (e.keyCode == 13 /*Enter key*/) {
+        $("#buildproofalert").html("");
         var hasError = false;
         try{
             var command = parser.parse($("#buildproofcommandinput").val());
@@ -291,7 +303,10 @@ $("#buildproofcommandinput").keyup(function (e) {
             console.log(e);
             hasError = true;
         }
-        if (hasError) return;
+        if (hasError) {
+            $("#buildproofalert").html("<div class=\"alert alert-danger alert-dismissable\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-hidden=\"true\">&times;</button><strong>Oops!</strong> Something is wrong with the input! Please fix the error and try again!</div>");
+            return;
+        }
         command = command[1];
         switch (command[0]){
             case "--":
@@ -310,6 +325,7 @@ $("#buildproofcommandinput").keyup(function (e) {
             $("#buildproofcommandinput").attr("disabled", "");
             $("#proofunderconstruction").attr("draggable", "true");
             $("#proofunderconstruction").attr("ondragstart", "drag(event)");
+            $("#buildproofalert").html("<div class=\"alert alert-success alert-dismissable\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-hidden=\"true\">&times;</button><strong>Done!</strong> The proof is now complete! Drag it onto the clipboard to save it!</div>");
         }
     }
 });
@@ -586,9 +602,13 @@ function gapProofDrop(event){
         if (proof.type == "proof"){
             gapproved = proof;
             $("#gapdroparea").html(makeProofThumbnail("invalid", printPrologJSONProof(gapproved[1])));
+            $("#gapcheckalert").html("");
+        } else {
+            $("#gapcheckalert").html("<div class=\"alert alert-danger alert-dismissable\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-hidden=\"true\">&times;</button><strong>Oops!</strong> Only proofs from the clipboard can be dropped here!</div>");
         }
     } else {
         console.log("attempted to check GAP of a non-proof object!");
+        $("#gapcheckalert").html("<div class=\"alert alert-danger alert-dismissable\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-hidden=\"true\">&times;</button><strong>Oops!</strong> Only proofs from the clipboard can be dropped here!</div>");
     }
 }
 
@@ -612,6 +632,9 @@ function checkGAPPropertyCallback(data){
         $("#gapdroparea").html(makeGAPThumbnail("gapproved", printPrologJSONProof(gapproved[1])));
         gapproved.type = "gapproved";
         rerenderClipboard();
+        $("#gapcheckalert").html("<div class=\"alert alert-success alert-dismissable\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-hidden=\"true\">&times;</button><strong>Approved!</strong> The proof indeed follows the Genuine Absurdity Property!</div>");
+    } else if (data == "disproved"){
+        $("#gapcheckalert").html("<div class=\"alert alert-warning alert-dismissable\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-hidden=\"true\">&times;</button><strong>Warning!</strong> The proof does not seem to follow the Genuine Absurdity Property!</div>");
     }
 }
 
@@ -628,9 +651,13 @@ function argProofDrop(event){
             proofToBeVisualized = proof;
             $("#argdroparea").html(makeGAPThumbnail("invalid", printPrologJSONProof(proofToBeVisualized[1])));
             $("#argdragarea").html(makeEmptyThumbnail());
+            $("#argviewalert").html("");
+        } else {
+            $("#argviewalert").html("<div class=\"alert alert-danger alert-dismissable\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-hidden=\"true\">&times;</button><strong>Oops!</strong> Only GAP proofs from the clipboard can be dropped here!</div>");
         }
     } else {
         console.log("attempted to visualize a non-(gap-proof) object!");
+        $("#argviewalert").html("<div class=\"alert alert-danger alert-dismissable\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-hidden=\"true\">&times;</button><strong>Oops!</strong> Only GAP proofs from the clipboard can be dropped here!</div>");
     }
 }
 
@@ -646,6 +673,8 @@ function visualizeGAPProof(){
             contentType:"application/json",
             data: JSON.stringify(argViewQuery),
             success: visualizeGAPProofCallback});
+    } else {
+        $("#argviewalert").html("<div class=\"alert alert-danger alert-dismissable\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-hidden=\"true\">&times;</button><strong>Oops!</strong> Please provide a GAP proof from the clipboard to be visualized!</div>");
     }
 }
 
@@ -671,9 +700,13 @@ function extrGapProofDrop(event){
             $("#extrgapdroparea").html(makeArgThumbnail("invalid2", d3NodeData, printPrologJSONFormulaSet(proof[2])));
             $("#extrgapdragarea").html(makeEmptyThumbnail());
             drawArgThumbnails();
+            $("#gapviewalert").html("");
+        } else {
+            $("#gapviewalert").html("<div class=\"alert alert-danger alert-dismissable\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-hidden=\"true\">&times;</button><strong>Oops!</strong> Only arguments from the clipboard can be dropped here!</div>");
         }
     } else {
         console.log("attempted to extract from a non-arg object!");
+        $("#gapviewalert").html("<div class=\"alert alert-danger alert-dismissable\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-hidden=\"true\">&times;</button><strong>Oops!</strong> Only arguments from the clipboard can be dropped here!</div>");
     }
 }
 
@@ -689,6 +722,8 @@ function extractGAPProof(){
             contentType:"application/json",
             data: JSON.stringify(gapViewQuery),
             success: extractGAPProofCallback});
+    } else {
+        $("#gapviewalert").html("<div class=\"alert alert-danger alert-dismissable\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-hidden=\"true\">&times;</button><strong>Oops!</strong> Please provide an argument from the clipboard to be processed!</div>");
     }
 }
 
@@ -720,6 +755,7 @@ function buildArgument(){
     var theoryInput = $("#buildargtheory").val();
     var goalInput = $("#buildarggoal").val();
     var hasError = false;
+    $("#buildargalert").html("");
     try {
         var theory;
         if (theoryInput.trim() != ""){
@@ -757,7 +793,10 @@ function buildArgument(){
         console.log(e);
         hasError = true;
     }
-    if (hasError) return;
+    if (hasError) {
+        $("#buildargalert").html("<div class=\"alert alert-danger alert-dismissable\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-hidden=\"true\">&times;</button><strong>Oops!</strong> Something is wrong with the input! Please fix the error and try again!</div>");
+        return;
+    }
 
     argTheory = theory;
     argGoal = goal;
@@ -772,6 +811,7 @@ function buildArgument(){
 function buildArgumentCallback(data){
     if (data == "yes"){
         $("#buildargtheoryfeedback").addClass("has-error");
+        $("#buildargalert").html("<div class=\"alert alert-danger alert-dismissable\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-hidden=\"true\">&times;</button><strong>Oops!</strong> The theory provided seems to be inconsistent! Please provide a consistent theory!</div>");
     } else {
         attacksLeft = 1;
         argUnderConstruction = [[],[]];
@@ -800,6 +840,7 @@ function addArgumentToConstruction(arg){
 
 $("#buildargattackinput").keyup(function (e) {
     $("#buildargattackinputfeedback").removeClass("has-error");
+    $("#buildargalert").html("");
     if (e.keyCode == 13 /*Enter key*/) {
         var hasError = false;
         try{
@@ -814,7 +855,10 @@ $("#buildargattackinput").keyup(function (e) {
                 hasError = true;  
             }
         }
-        if (hasError) return;
+        if (hasError) {
+            $("#buildargalert").html("<div class=\"alert alert-danger alert-dismissable\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-hidden=\"true\">&times;</button><strong>Oops!</strong> Something is wrong with the input! Please fix the error and try again!</div>");
+            return;
+        }
         if ($("#buildargattackinput").val() == ""){
             attack = [];
         } else {
@@ -828,7 +872,10 @@ $("#buildargattackinput").keyup(function (e) {
                 break;
             }
         }
-        if (hasError) return;
+        if (hasError) {
+            $("#buildargalert").html("<div class=\"alert alert-danger alert-dismissable\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-hidden=\"true\">&times;</button><strong>Oops!</strong> Each formula in the list must be a positive or negated atom!</div>");
+            return;
+        }
         argAttack = attack;
         handleAttack(printPrologJSONFormulaSet(attack));
     }
@@ -865,6 +912,7 @@ function registerAttackCallback1(data){
     } else if (data == "no"){
         $("#buildargattackinputfeedback").addClass("has-error");
         rerenderArgUnderConstruction();
+        $("#buildargalert").html("<div class=\"alert alert-danger alert-dismissable\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-hidden=\"true\">&times;</button><strong>Oops!</strong> The attack-defense pair does not lead to a contradiction! Please choose a different attack or target defense!</div>");
         console.log("provided attack does not contradict targeted defense");
     }
 }
@@ -876,6 +924,7 @@ function registerAttackCallback2(data){
     } else if (data == "yes"){
         $("#buildargattackinputfeedback").addClass("has-error");
         rerenderArgUnderConstruction();
+        $("#buildargalert").html("<div class=\"alert alert-danger alert-dismissable\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-hidden=\"true\">&times;</button><strong>Oops!</strong> The attack itself is inconsistent! Please choose a consistent attack!</div>");
         console.log("provided attack is directly inconsistent");
     }
 }
@@ -954,6 +1003,7 @@ function completeArgument(){
     $("#buildargattackinput").attr("disabled", "");
     argconstructioncomplete = true;
     constructedArgument = {type:"arg", 1: argUnderConstruction, 2:argTheory};
+    $("#buildargalert").html("<div class=\"alert alert-success alert-dismissable\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-hidden=\"true\">&times;</button><strong>You Won!</strong> Drag the argument onto the clipboard to save it!</div>");
 }
 
 function specifyDropZones(d3NodeData, dropZones){
