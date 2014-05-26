@@ -163,6 +163,7 @@ function doD3(container, treeData, size, draggable, attack, attackNotify) {
             //nodes = tree.nodes(d);
             d3.event.sourceEvent.stopPropagation();
             // it's important that we suppress the mouseover event on the node being dragged. Otherwise it will absorb the mouseover event and the underlying node will not detect it d3.select(this).attr('pointer-events', 'none');
+            d3.select(this).attr('pointer-events', 'none');
         })
         .on("drag", function(d) {
             if (dragStarted) {

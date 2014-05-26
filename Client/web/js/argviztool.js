@@ -953,6 +953,10 @@ function generateDefenses(attack, attackNode){
         }
     } else {
         for (var i = 0; i < attack.length; i++){
+            if (attackSubsetOfDefenses([attack[i]], parentDefenses)){
+                attacksLeft--;
+                continue;
+            }
             var defense = generateDefense(attack[i]);
             var defenseNode = addArgumentAndAttackToConstruction([defense], attackNode);
             remainingDefenses.push(defenseNode);
