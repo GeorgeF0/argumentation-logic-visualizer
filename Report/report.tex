@@ -247,6 +247,58 @@ Assume theory $T = \{\alpha\rightarrow\beta\rightarrow\neg\gamma, \neg\gamma\wed
 
 A box is used to contain the hypotheses, derivations inside which cannot be used outside. Each derivation is numbered on the left, and reasons (i.e. rules used) for each derivation are given on the right, following the rules defined in the previous section. Theory is indicated as "given", and assumptions (hypotheses) are indicated as "hypothesis" at the beginning of a sub-derivation (inner box).
 
+\subsection{Automated Theorem Proving and Proof Search}
+Despite what the name implies, proof theory in general does not work with natural deduction calculi as the expressiveness of natural deduction comes at a price in terms of its unrestricted search space \citep*[pp. 140-141]{siegfried}. Hilbert systems and natural deduction are said to be inappropriate for automated theorem proving since they both exhibit the modus ponens rule \citep*[p. 95]{autobots}. Natural deduction calculi that are indeed used in theorem proving or proof search have special properties and restrictions in their search space in order to provide a good strategic method of achieving their goals \citep*[pp. 140-141]{siegfried}.
+
+\subsection{Example of a Proof Search Implementation}
+The \href{http://www.cs.cmu.edu/~cogito/cptproject.html}{Carnegie Melon Proof Tutor}\footnote{http://www.cs.cmu.edu/~cogito/cptproject.html} is an example of an automated proof search program that can formulate proofs in natural deduction by employing a wide range of natural deduction proofs. A summary of its ruleset (with a slight adjustment to the notation) is given below:
+
+Using the notation in Sieg and Scheine's article \citep{siegfried}, $\alpha;\beta?G$ is a triplet describing the following:
+\begin{itemize}
+\item
+available assumptions as the set of formulas $\alpha$
+\item
+set of formulas obtained by using the $\wedge E$ and $\rightarrow E$ rules on the available assumptions $\beta$
+\item
+current goal $G$
+\end{itemize}
+
+The following conventions are used in the article: the concatenation of sequences $\alpha$ and $\beta$ is indicated by their juxtaposition; if $\phi$ is a formula and $\alpha$ is a sequence, then the extension of $\alpha$ by $\phi$ is given by $\alpha,\phi$; lastly, a formula $\phi$ that is a member of the sequence $\alpha$ can be denoted by $\phi \in \alpha$.
+
+The rules used by this proof search program are split into three categories, namely the "elimination" rules ($\downarrow$-rules), the "introduction" rules ($\uparrow$-rules) and the negation rules. 
+
+The elimination rules are listed here:
+\begin{itemize}
+\item
+$r\downarrow\wedge_i:\alpha,\beta?G, \phi_1\wedge\phi_2 \in \alpha\beta, \phi_i \notin \alpha\beta \Rightarrow \alpha;\beta,\phi_i?G, i = 1\, or\, 2$
+\item
+$r\downarrow\vee_i:\alpha,\beta?G, \phi_1\vee\phi_2 \in \alpha\beta, \phi_1 \notin \alpha\beta, \phi_2 \notin \alpha\beta \Rightarrow \alpha,\phi_1?G\, AND\, \alpha,\phi_2?G$
+\item
+$r\downarrow\rightarrow\alpha,\beta?G, \phi_1\rightarrow\phi_2 \in \alpha\beta, \phi_1 \in \alpha\beta, \phi_2 \notin \alpha\beta \Rightarrow \alpha;\beta?G$
+\end{itemize}
+
+The introduction rules are listed here:
+\begin{itemize}
+\item
+$\uparrow\wedge: \alpha;\beta?\phi_1\wedge\phi_2 \Rightarrow \alpha;\beta?\phi_1\, AND\, \alpha;\beta?\phi_2$
+\item
+$\uparrow\vee: \alpha;\beta?\phi_1\vee\phi_2 \Rightarrow \alpha;\beta?\phi_1\, OR\, \alpha;\beta?\phi_2$
+\item
+$\uparrow\rightarrow: \alpha;\beta?\phi_1\rightarrow\phi_2 \Rightarrow \alpha,\phi_1;?\phi2$
+\end{itemize}
+
+The negation rules are listed here:
+\begin{itemize}
+\item
+$\bot_c: \alpha;\beta?\phi, \phi\neq\bot \Rightarrow \alpha,\neg\phi;?\bot$
+\item
+$\bot_i: \alpha;\beta?\neg\phi \Rightarrow \alpha,\phi;?\bot$
+\item
+$\bot_F: \alpha;\beta?\bot, \phi\in F \Rightarrow \alpha;\beta?\phi\, AND\, \alpha;\beta?\neg\phi$
+\end{itemize}
+
+The last rule mentions $F$; this is the finite class of formulas that consist of all subformulas of elements in the subsequence $\alpha\beta$. The theorem prover built for this project (\autoref{chap:prover}) will base some of its rules on the Carnegie Melon Proof Tutor.
+
 \section{Argumentation Logic}
 Recommended Reading: \citep*{alpaper}
 
@@ -625,6 +677,7 @@ JavaScript is a great tool for creating graphs and GUIs, and will therefore be c
 This client-server design will allow for the application to be hosted on a webserver for public use and community feedback, as well, which makes it a great way to introduce Argumentation Logic to the academia and industry alike.
 
 \chapter{Solution Overview}
+\label{chap:solover}
 This chapter aims to introduce the overall structure of the solution and provide justification as to the decisions made that constitute the solution.
 
 \section{Solution Architecture}
@@ -2233,11 +2286,181 @@ The execution returns to \lstinline$convertArgToGAP/4$ and then to \lstinline$co
 
 \chapter{Server Module}
 \label{chap:server}
-TODO
+The main purpose of the server is to act as a conduit between the core module and the client, since they are written in different programming languages and runtime environments. As mentioned in the overview in \autoref{chap:solover}, the server is written in \href{http://www.swi-prolog.org/}{SWI-Prolog}\footnote{http://www.swi-prolog.org/}, using the provided \href{http://www.swi-prolog.org/pldoc/doc_for?object=section(\%27packages/http.html\%27)}{HTTP package}\footnote{http://www.swi-prolog.org/pldoc/doc\_for?object=section(\%27packages/http.html\%27)} that offers a comprehensive server solution out of the box. SWI-Prolog was used also because the core module was written in the same Prolog implementation, and using the module was as simple as loading the files into the runtime operating the server application.
+
+The server covers two functions:
+\begin{itemize}
+\item
+it serves the files required by the client to run - these are HTML, CSS and JavaScript files that are requested by the browser
+\item
+it serves queries issued by the client as the user operates the graphical frontend in the browser - these are JSON HTTP requests
+\end{itemize}
+
+The exact nature of the server is explained in the next section and alternatives are discussed afterwards.
+
+\section{Implementation Details}
+Thanks to the provided HTTP Package, most of the implementation of the server is hidden away. The server code imports the package, configures the server, registers the handlers and fires up the server. These steps will be explained in more detail in this section.
+
+\begin{lstlisting}[caption={The Prolog code that configures and runs the server},label=lst:server1]
+:- use_module(library(http/thread_httpd)).
+:- use_module(library(http/http_dispatch)).
+:- use_module(library(http/http_files)).
+
+init :- conf(document_root, D), http_handler(root(.), http_reply_from_files(D, []), [prefix]), registerQueries.
+fin :- http_delete_handler(root(.)), deregisterQueries.
+startServer :- conf(port, P), http_server(http_dispatch, [port(P)]).
+stopServer :- conf(port, P), http_stop_server(P, []).
+
+boot :- init, startServer.
+shutdown :- fin, stopServer.
+\end{lstlisting}
+
+The first three lines of \autoref{lst:server1} load the necessary packages, and line 5 takes the document root from the configuration file, and adds a handler that allows the server to serve any file requests under that document root. This handler is the one that serves the HTML, CSS and JavaScript files of the client. It then proceeds to run the \lstinline$registerQueries/0$ predicate (\autoref{lst:server3}) that registers the handlers responsible for serving the queries made by the client. The predicate \lstinline$startServer/0$ on line 7 of the code listing reads the port number from the configuration file and starts an HTTP server that listens on the port specified by the configuration file.
+
+Line 10 is merely a shortcut that provides a predicate \lstinline$boot/0$ that runs the code on lines 5 and 7. Lines 6, 8 and 11 undo what lines 5, 7 and 10 do respectively. They deregister the server handlers and shutdown the HTTP server. This can also be accomplished by closing the Prolog runtime as well.
+
+\begin{lstlisting}[caption={The server configuration file written in Prolog},label=lst:server2]
+conf(document_root, 'C:/users/george/thesis/client/web/').
+conf(port, 8000).
+\end{lstlisting}
+
+The small configuration file that specifies the port and document root of the server is shown in \autoref{lst:server2}. This configuration file can be customized according to the environment in which the server is meant to run. In order to deploy the server in a different environment only this file needs to be edited. The configuration file may be extended to house more settings in future updates.
+
+\begin{lstlisting}[caption={The server code file that registers handlers that server client queries},label=lst:server3]
+:- use_module(library(http/json)).
+:- use_module(library(http/http_json)).
+:- use_module(library(http/json_convert)).
+:- use_module(library(http/http_error)).
+
+registerQueries :- 
+	http_handler(root(query), jsonEcho, []),
+	http_handler(root(query/generateproofs), serveGenerateProofs, []),
+	http_handler(root(query/checkgap), serveGAPCheck, []),
+	http_handler(root(query/visualizegap), serveGAPToArg, []),
+	http_handler(root(query/visualizearg), serveArgToGAP, []),
+	http_handler(root(query/provable), serveProvable, []).
+
+deregisterQueries :- 
+	http_delete_handler(root(query)),
+	http_delete_handler(root(query/generateproofs)),
+	http_delete_handler(root(query/checkgap)),
+	http_delete_handler(root(query/visualizegap)),
+	http_delete_handler(root(query/visualizearg)),
+	http_delete_handler(root(query/provable)).
+
+:- json_object and('1', '2') + [type=and].
+:- json_object or('1', '2') + [type=or].
+:- json_object implies('1', '2') + [type=implies].
+:- json_object n('1') + [type=n].
+:- json_object step(derivation, reason, line) + [type=step].
+:- json_object box(proof) + [type=box].
+:- json_object proof_query(theory, goal) + [type=proof_query].
+:- json_object gap_query(proof) + [type=gap_query].
+:- json_object arg_view_query(proof) + [type=arg_view_query].
+:- json_object arg('1', '2') + [type=arg].
+:- json_object gap_view_query(arg, theory) + [type=gap_view_query].
+:- json_object provable_query(theory, goal, mra) + [type=provable_query].
+
+jsonEcho(R) :-
+	format('Content-type: text/plain~n~n'),
+	http_read_json(R, J),
+	json_to_prolog(J, P),
+	write(P).
+	
+serveGenerateProofs(Request) :-
+	http_read_json(Request, JSONIn),
+	json_to_prolog(JSONIn, proof_query(Theory, Goal)),
+	findall(X, (prove(Theory, [Goal], Y), reverseRecursive(Y, X)), PrologOut),
+	prolog_to_json(PrologOut, JSONOut),
+	reply_json(JSONOut).
+
+serveGAPCheck(Request) :-
+	http_read_json(Request, JSONIn),
+	json_to_prolog(JSONIn, gap_query(Proof)),
+	reverseRecursive(Proof, RevProof),
+	(
+		checkGAP(RevProof),
+		prolog_to_json('approved', JSONOut);
+		
+		prolog_to_json('disproved', JSONOut)
+	),
+	reply_json(JSONOut).
+	
+serveGAPToArg(Request) :-
+	http_read_json(Request, JSONIn),
+	json_to_prolog(JSONIn, arg_view_query(Proof)),
+	reverseRecursive(Proof, RevProof),
+	convertGAPToArg(RevProof, PrologOut1, PrologOut2),
+	prolog_to_json(arg(PrologOut1, PrologOut2), JSONOut),
+	reply_json(JSONOut).
+	
+serveArgToGAP(Request) :-
+	http_read_json(Request, JSONIn),
+	json_to_prolog(JSONIn, gap_view_query(Argument, Theory)),
+	convertArgToGAP(Argument, Theory, Proof),
+	reverseRecursive(Proof, RevProof),
+	prolog_to_json(RevProof, JSONOut),
+	reply_json(JSONOut).
+	
+serveProvable(Request) :-
+	http_read_json(Request, JSONIn),
+	json_to_prolog(JSONIn, provable_query(Theory, Goal, MRA)),
+	provable(Theory, [Goal], MRA, Verdict),
+	prolog_to_json(Verdict, JSONOut),
+	reply_json(JSONOut).
+\end{lstlisting}
+
+\autoref{lst:server3} shows the server code that deals with the queries issued by the client as the user operates the graphical interface. Lines 1-4 of the code import more SWI-Prolog libraries, and lines 6-12 define the \lstinline$registerQueries/0$ predicate that is called by the main server file predicate \lstinline$init/0$. This predicate registers the handlers for queries by the client under the relative path $query/$. The handlers registered are predicates that take one parameter, which is the actual request made by the client. From this request the JSON string can be extracted and easily converted to Prolog by the JSON object declarations on lines 22-33. The JSON strings include details about the specific request (such as the theory and the goal for generating proofs, or the proof that needs to be checked whether it follows the Genuine Absurdity Property or not). After extracting and converting to Prolog terms, the handler predicate can run code from the core module, and then respond with the results after converting them back to JSON format.
+
+The JSON object declarations are used to automatically convert JSON objects to Prolog terms and vice versa. The values of the keys in a JSON object will become the parameters of the corresponding Prolog term, positioned by their keys as specified by the declaration. The functor (predicate name) is extracted from the value of the special key \lstinline$type$ in the JSON object. For example, line 28 defines the Prolog term \lstinline$proof_query(theory, goal)$ as the equivalence of the JSON object \lstinline${"type":"proof_query", "theory":"...", "goal":"..."}$. Line 22 defines conjunction in Prolog terms in a similar way. Thus, a request with JSON object \lstinline${"type":"proof_query", "theory":[{"type":"and", "1":"a", "2":"b"}], "goal":"a"}$ translates to \lstinline$proof_query([and(a, b)], [a])$. The predicate \lstinline$json_to_prolog/2$ does this conversion from JSON to Prolog, as the name implies, and predicate \lstinline$prolog_to_json/2$ does the opposite.
+
+Going back to the handler predicates, a number of them are registered by \lstinline$registerQueries/0$:
+\begin{itemize}
+\item
+on line 35, \lstinline$jsonEcho/1$ is used to check that the server is set up properly for debugging purposes and is not used by the client
+\item
+on line 41, \lstinline$serveGenerateProofs/1$ is used to take a theory and a goal and respond with all the proofs that prove the goal using the given theory (\autoref{chap:prover})
+\item
+on line 48, \lstinline$serveGAPCheck/1$ takes a proof and responds appropriately depending on whether the proof follows the Genuine Absurdity Property or not (\autoref{chap:gapcheck})
+\item
+on line 60, \lstinline$serveGAPToArg/1$ takes a proof that follows the Genuine Absurdity Property and returns a visualization (\autoref{chap:viz})
+\item
+on line 68, \lstinline$serveArgToGAP/1$ takes an argument (a visualization) and the theory it is based on and extracts a proof that when visualized again, provides the same argument (\autoref{chap:extractor})
+\item
+on line 76, \lstinline$serveProvable/1$ takes a theory and a goal and checks whether the goal can be proven; no proof is sent back to the client; used by the argument builder to check for consistent attacks provided by the user (\autoref{chap:argbuilder})
+\end{itemize} 
+
+\section{Remarks}
+As seen from the previous section, the server is quite simple to use and due to the fact that it is very minimalistic, it requires virtually no maintenance. Its requirements in terms of its host environment are very low. A full installation of SWI-Prolog and its libraries suffices to run the server. No other software or libraries are necessary. Throughout the construction of the application, the server has proven to be very reliable and resilient, and no bugs or any type of problems were detected.
+
+\section{Alternatives}
+Different alternatives were considered before the construction of the server. This section summarizes the alternate paths explored and justifies the final decision.
+
+Since the core module is written in Prolog, communication with or support for running such an environment was deemed necessary. There were different solutions that mainly fall under two general categories:
+\begin{itemize}
+\item
+using a library that forms a bridge between Prolog and another programming language (which provides libraries that offer server functionality) that makes use of SWI-Prolog's C/C++ interface
+\item
+using a Prolog engine implementation written in another programming language (which provides libraries that offer server functionality)
+\end{itemize}
+
+Regardless of choice, the methodology boils down to the same procedure: use a third-party software to either communicate with a running Prolog instance (through SWI-Prolog's C/C++ interface) or run the core module directly by using the third party's Prolog implementation. Several candidates were considered, including \href{https://code.google.com/p/pyswip/}{pyswip}\footnote{https://code.google.com/p/pyswip/}, \href{http://www.swi-prolog.org/packages/jpl/java\_api/}{jpl}\footnote{http://www.swi-prolog.org/packages/jpl/java\_api/} and \href{http://sourceforge.net/projects/cs-prolog/}{C\#Prolog}\footnote{http://sourceforge.net/projects/cs-prolog/}.
+
+Most of the alternatives were dropped because of their lack of documentation and support, or because the projects were abandoned with bugs and issues still raised. C\#Prolog offers its own ISO Prolog implementation in C\#, and C\# offers great server solutions that are highly popular and reliable, such as Microsoft's \href{http://www.iis.net/}{IIS}\footnote{http://www.iis.net/}. Unfortunately, the employment of C\#Prolog was rejected, as many of the SWI-Prolog-specific libraries that are used by the core module would have to be re-implemented.
+
+A completely different approach would be to implement the graphical user interface and all other functionality of the client in pure Prolog. This would eliminate the necessity for the server altogether. This approach and what is entailed is discussed in the client module chapter in \autoref{sec:clientalt}.
 
 \chapter{Client Module}
 \label{chap:client}
 TODO
+\section{Features}
+\section{Usage}
+\section{Remarks}
+\section{Alternatives}
+\label{sec:clientalt}
+
+
+
 
 \chapter{Proof Builder}
 \label{chap:proofbuilder}
@@ -2314,6 +2537,7 @@ The last command is of the format $-[number]$, where $[number]$ is any non-negat
 The user can enter commands to fill in the proof. When the last step in at the top level (not inside a box) and it matched the goal entered at the very start, then the proof is complete and the command input box is disabled. The rendered proof now becomes draggable and the user can subsequently drag the proof onto the clipboard to save it. Underneath the user interface, the proof has the same exact representation as a proof generated by the theorem prover, and can thus be used to check whether it follows the Genuine Absurdity Property, be visualized (if it does indeed follow the property) and so on.
 
 \chapter{Argument Builder}
+\label{chap:argbuilder}
 In order to complement the proof builder (\autoref{chap:proofbuilder}) an argument builder was created so that specific arguments can be drawn directly, without first having to create the corresponding proof. 
 
 Much in the same way as the proof builder works, the argument builder provides immediate feedback to the user during the construction of the argument. Unlike the proof builder however, the argument builder is not completely client side. This is due to the fact that the theorem prover needs to be used in order to justify attacks claimed by the user.
