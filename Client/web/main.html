@@ -113,10 +113,25 @@
                 </div>
             </div>
             <div class="tab-pane fade" id="checkgap">
-                <div id="gapcheckalert" style="padding-top:15px"></div>
+                <nav class="navbar navbar-default" role="navigation" style="padding-left:15px">
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-default dropdown-toggle navbar-btn" data-toggle="dropdown" id="currentgapselection">
+                                    <span class="glyphicon glyphicon-certificate"></span> Select GAP semantics <span class="caret"></span>
+                                </button>
+                                <ul class="dropdown-menu" role="menu">
+                                    <li><a href="#" id="classicgap">Classic GAP</a></li>
+                                    <li><a href="#" id="extendedgap">Extended GAP</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </nav>
+                <div id="gapcheckalert"></div>
                 <div class="row">
                     <div ondragover="allowDrop(event)" ondrop="gapProofDrop(event)" id="gapdroparea">
-                        <div style="width:400px;height:500px;float:left;padding-left:15px;padding-bottom:15px;padding-top:15px">
+                        <div style="width:400px;height:500px;float:left;padding-left:15px;padding-bottom:15px">
                             <div class="thumbnail" style="height:100%">
                             </div>
                         </div>

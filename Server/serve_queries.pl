@@ -26,7 +26,7 @@ deregisterQueries :-
 :- json_object step(derivation, reason, line) + [type=step].
 :- json_object box(proof) + [type=box].
 :- json_object proof_query(theory, goal) + [type=proof_query].
-:- json_object gap_query(proof) + [type=gap_query].
+:- json_object gap_query(proof, check) + [type=gap_query].
 :- json_object arg_view_query(proof) + [type=arg_view_query].
 :- json_object arg('1', '2') + [type=arg].
 :- json_object gap_view_query(arg, theory) + [type=gap_view_query].
@@ -47,10 +47,16 @@ serveGenerateProofs(Request) :-
 
 serveGAPCheck(Request) :-
 	http_read_json(Request, JSONIn),
-	json_to_prolog(JSONIn, gap_query(Proof)),
+	json_to_prolog(JSONIn, gap_query(Proof, Check)),
 	reverseRecursive(Proof, RevProof),
 	(
-		checkGAP(RevProof),
+		(
+			Check = classic, 
+			checkGAP(RevProof);
+			
+			Check = extended,
+			checkGAPX(RevProof)
+		),
 		prolog_to_json('approved', JSONOut);
 		
 		prolog_to_json('disproved', JSONOut)

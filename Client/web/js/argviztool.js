@@ -592,6 +592,17 @@ function generalValidation(command){
 
 //gap check tab
 
+$("#classicgap").click(function(){
+    currentSemantics = "classic";
+    $("#currentgapselection").html("<span class=\"glyphicon glyphicon-certificate\"></span> Classic GAP <span class=\"caret\"></span>");
+});
+
+$("#extendedgap").click(function(){
+    currentSemantics = "extended";
+    $("#currentgapselection").html("<span class=\"glyphicon glyphicon-certificate\"></span> Extended GAP <span class=\"caret\"></span>");
+});
+
+currentSemantics = null;
 gapproved = null;
 
 function gapProofDrop(event){
@@ -617,13 +628,20 @@ $("#checkgapbtn").click(function() {
 });
 
 function checkGAPProperty(){
+    $("#gapcheckalert").html("");
+    if (!currentSemantics){
+        $("#gapcheckalert").html("<div class=\"alert alert-danger alert-dismissable\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-hidden=\"true\">&times;</button><strong>Oops!</strong> Please select which Genuine Absurdity Property version you would like to use!</div>");
+        return;
+    }
     if (gapproved && gapproved.type == "proof"){
-        var gapQuery = {type:"gap_query", proof:gapproved[1]};
+        var gapQuery = {type:"gap_query", proof:gapproved[1], check:currentSemantics};
         $.ajax("query/checkgap", {
             type: "POST",
             contentType:"application/json",
             data: JSON.stringify(gapQuery),
             success: checkGAPPropertyCallback});
+    } else {
+        $("#gapcheckalert").html("<div class=\"alert alert-danger alert-dismissable\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-hidden=\"true\">&times;</button><strong>Oops!</strong> Please provide a proof to check for the Genuine Absurdity Property!</div>");
     }
 }
 
