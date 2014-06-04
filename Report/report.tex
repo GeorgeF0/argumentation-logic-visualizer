@@ -2,11 +2,15 @@
 
 \usepackage{fullpage}
 \usepackage{amssymb}
+\usepackage{pifont}
 \usepackage{hyperref}
 \usepackage{forest}
 \usepackage{listings}
 \usepackage{color}
 \usepackage[round]{natbib}
+
+\newcommand{\cmark}{\ding{51}}
+\newcommand{\xmark}{\ding{55}}
 
 \hypersetup{
     colorlinks=true, %set true if you want colored links
@@ -265,36 +269,58 @@ current goal $G$
 
 The following conventions are used in the article: the concatenation of sequences $\alpha$ and $\beta$ is indicated by their juxtaposition; if $\phi$ is a formula and $\alpha$ is a sequence, then the extension of $\alpha$ by $\phi$ is given by $\alpha,\phi$; lastly, a formula $\phi$ that is a member of the sequence $\alpha$ can be denoted by $\phi \in \alpha$.
 
-The rules used by this proof search program are split into three categories, namely the "elimination" rules ($\downarrow$-rules), the "introduction" rules ($\uparrow$-rules) and the negation rules. 
+The rules used by this proof search program are split into three categories, namely the elimination rules ($\downarrow$-rules), the introduction rules ($\uparrow$-rules) and the negation rules. 
 
 The elimination rules are listed here:
 \begin{itemize}
 \item
 $r\downarrow\wedge_i:\alpha,\beta?G, \phi_1\wedge\phi_2 \in \alpha\beta, \phi_i \notin \alpha\beta \Rightarrow \alpha;\beta,\phi_i?G, i = 1\, or\, 2$
+
+(if there is a conjunction in the set $\alpha\beta$, add its components if not already present)
 \item
-$r\downarrow\vee_i:\alpha,\beta?G, \phi_1\vee\phi_2 \in \alpha\beta, \phi_1 \notin \alpha\beta, \phi_2 \notin \alpha\beta \Rightarrow \alpha,\phi_1?G\, AND\, \alpha,\phi_2?G$
+$r\downarrow\vee:\alpha,\beta?G, \phi_1\vee\phi_2 \in \alpha\beta, \phi_1 \notin \alpha\beta, \phi_2 \notin \alpha\beta \Rightarrow \alpha,\phi_1?G\, AND\, \alpha,\phi_2?G$
+
+(if there is a disjunction in the set $\alpha\beta$, and neither of the components have been proven, do a case by case analysis on the goal)
 \item
-$r\downarrow\rightarrow\alpha,\beta?G, \phi_1\rightarrow\phi_2 \in \alpha\beta, \phi_1 \in \alpha\beta, \phi_2 \notin \alpha\beta \Rightarrow \alpha;\beta?G$
+$r\downarrow\rightarrow\alpha,\beta?G, \phi_1\rightarrow\phi_2 \in \alpha\beta, \phi_1 \in \alpha\beta, \phi_2 \notin \alpha\beta \Rightarrow \alpha;\beta,\phi_2?G$
+
+(if there is an implication in the set $\alpha\beta$ and the first component has been proven, add the second component to the set $\beta$ if not already present)
 \end{itemize}
+
+Note that the restricted versions of the elimination rules are to be used in the proof search implementation (hence the "r" in front of the rules' names) so that redundancy is avoided. The restricted rules only add elements if they are absent from the set $\alpha\beta$. Otherwise, the system could hang by adding infinite copies of the same formulas by repeatedly applying the unrestricted rules. The restrictions in the above rules are the $\phi_i \notin \alpha\beta$ conditions not present in the unrestricted versions.
+
+Consider for example the query $\alpha,\beta?G$ where $\alpha = \{\gamma\wedge\delta\}, \beta = \{\gamma\}$ and $G = \delta$. If the restriction $\gamma \notin \{\gamma\wedge\delta\}$ was not present, then the first elimination rule would be applicable all the time, and the program could keep adding $\gamma$ to the set $\beta$ forever, making no real progress.
 
 The introduction rules are listed here:
 \begin{itemize}
 \item
 $\uparrow\wedge: \alpha;\beta?\phi_1\wedge\phi_2 \Rightarrow \alpha;\beta?\phi_1\, AND\, \alpha;\beta?\phi_2$
+
+(if the goal is a conjunction, prove its constituent parts)
 \item
 $\uparrow\vee: \alpha;\beta?\phi_1\vee\phi_2 \Rightarrow \alpha;\beta?\phi_1\, OR\, \alpha;\beta?\phi_2$
+
+(if the goal is a disjunction, prove either of its constituent parts)
 \item
 $\uparrow\rightarrow: \alpha;\beta?\phi_1\rightarrow\phi_2 \Rightarrow \alpha,\phi_1;?\phi2$
+
+(if the goal is an implication, assume the first part and prove the second)
 \end{itemize}
 
 The negation rules are listed here:
 \begin{itemize}
 \item
 $\bot_c: \alpha;\beta?\phi, \phi\neq\bot \Rightarrow \alpha,\neg\phi;?\bot$
+
+(proof by contradiction: if the goal is a positive formula other than contradiction, prove that its negation leads to a contradiction)
 \item
 $\bot_i: \alpha;\beta?\neg\phi \Rightarrow \alpha,\phi;?\bot$
+
+(if the goal is a negated formula, prove that the positive subformula leads to a contradiction)
 \item
 $\bot_F: \alpha;\beta?\bot, \phi\in F \Rightarrow \alpha;\beta?\phi\, AND\, \alpha;\beta?\neg\phi$
+
+(if the goal is a contradiction, prove it by taking any subformula in the set $\alpha\beta$ and prove both that subformula and its negation)
 \end{itemize}
 
 The last rule mentions $F$; this is the finite class of formulas that consist of all subformulas of elements in the subsequence $\alpha\beta$. The theorem prover built for this project (\autoref{chap:prover}) will base some of its rules on the Carnegie Melon Proof Tutor.
@@ -580,6 +606,120 @@ The Genuine Absurdity Property then states that a RAND derivation satisfies this
 
 In terms of argumentation, the violation of the genuine absurdity property can be thought of an argument with premises irrelevant to the conversation at hand (as was discussed in \autoref{subsec:relevance}). RAND derivations satisfying the genuine absurdity property are not guaranteed to exist, except for classically consistent theories \citep*[p. 9]{alpaper}. It can be shown that for a directly consistent theory, if there is a RAND derivation of $\neg\phi$ that fully satisfies the genuine absurdity property then $NACC^T(\{\phi\},\{\})$ holds \citep*[p. 19]{alpaper}.
 
+A very important thing to note is that the Genuine Absurdity Property is defined only in natural deduction that does not make use of the substitution shortcut (which can be thought of as similar to a cut in sequent calculus). This shortcut is useful in avoiding to re-prove parts of the derivation by proving them once in a more general context and then using them repeatedly in (possibly) more specific contexts. To illustrate the use of the shortcut, consider the two proofs shown in \autoref{fig:shortcut}.
+
+\begin{figure}[htp]
+\begin{minipage}[c]{.5\linewidth}
+\[\vbox{\offinterlineskip\halign{
+&\tabskip=1.5em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\tabskip=0em\cr
+%
+1&\neg(\alpha\wedge\beta)&\mbox{given}\cr
+2&\neg(\alpha\wedge\gamma\wedge\neg\beta)&\mbox{given}\cr
+3&\neg(\alpha\wedge\neg\gamma\wedge\neg\beta)&\mbox{given}\cr
+%
+\multispan3\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&4&\alpha&\mbox{hypothesis}&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&5&\beta&\mbox{hypothesis}&\cr
+&6&\alpha\wedge\beta&\wedge I(4,5)&\cr
+&7&\bot&\bot I(1,6)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&8&\neg\beta&\neg I(5,7)&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&9&\gamma&\mbox{hypothesis}&\cr
+&10&\alpha\wedge\gamma&\wedge I(4,9)&\cr
+&11&\alpha\wedge\gamma\wedge\neg\beta&\wedge I(10,8)&\cr
+&12&\bot&\bot I(2,11)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&13&\neg\gamma&\neg I(9,12)&\cr
+&14&\alpha\wedge\neg\gamma&\wedge I(4,13)&\cr
+&15&\alpha\wedge\neg\gamma\wedge\neg\beta&\wedge I(14,8)&\cr
+&16&\bot&\bot I(3,15)&\cr
+%
+\noalign{\hrule}}}\,\cr
+%
+17&\neg\alpha&\neg I(4,16)\cr
+}}\]
+\end{minipage}%
+\begin{minipage}[c]{.5\linewidth}
+\[\vbox{\offinterlineskip\halign{
+&\tabskip=1.5em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\tabskip=0em\cr
+%
+1&\neg(\alpha\wedge\beta)&\mbox{given}\cr
+2&\neg(\alpha\wedge\gamma\wedge\neg\beta)&\mbox{given}\cr
+3&\neg(\alpha\wedge\neg\gamma\wedge\neg\beta)&\mbox{given}\cr
+%
+\multispan3\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&4&\alpha&\mbox{hypothesis}&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&5&\beta&\mbox{hypothesis}&\cr
+&6&\alpha\wedge\beta&\wedge I(4,5)&\cr
+&7&\bot&\bot I(1,6)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&8&\neg\beta&\neg I(5,7)&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&9&\gamma&\mbox{hypothesis}&\cr
+&10&\alpha\wedge\gamma&\wedge I(4,9)&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&11&\beta&\mbox{hypothesis}&\cr
+&12&\alpha\wedge\beta&\wedge I(4,11)&\cr
+&13&\bot&\bot I(1,12)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&14&\neg\beta&\neg I(11,13)&\cr
+&15&\alpha\wedge\gamma\wedge\neg\beta&\wedge I(10,14)&\cr
+&16&\bot&\bot I(2,15)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&17&\neg\gamma&\neg I(9,16)&\cr
+&18&\alpha\wedge\neg\gamma&\wedge I(4,17)&\cr
+&19&\alpha\wedge\neg\gamma\wedge\neg\beta&\wedge I(18,8)&\cr
+&20&\bot&\bot I(3,19)&\cr
+%
+\noalign{\hrule}}}\,\cr
+%
+21&\neg\alpha&\neg I(4,20)\cr
+}}\]
+\end{minipage}
+\caption{Proofs showing the use of a shortcut in natural deduction. The proof on the right derives $\neg\beta$ again whereas the proof on the left simply reuses the previous derivation of $\neg\beta$\label{fig:shortcut}}
+\end{figure}
+
+These two proofs are the same in a sense. The difference lies in that the first proof does not derive $\neg\beta$ again by re-using the derivation made on lines 5-8. The second proof is more explicit, by re-proving $\neg\beta$ inside the derivation of $\neg\gamma$. Too see how this affects the definition of the Genuine Absurdity Property, take the child hypotheses for the derivation of $\neg\gamma$ for each proof. In the former proof, there is none, whereas in the latter, there is $\beta$. The definition of the Genuine Absurdity Property depends on the set of children hypotheses of each (sub)derivation, and allowing the use of the shortcut affects that set. This is because in the first proof the check for the property will be $T\cup\{\alpha\}\cup\{\}\nvdash_{MRA}\bot$, whereas in the second it will be $T\cup\{\alpha\}\cup\{\neg\beta\}\nvdash_{MRA}\bot$. The fact that $\neg\beta$ is excluded from the check could affect whether the proof is correctly attributed as following the Genuine Absurdity Property or not. This is addressed in \autoref{chap:gapx} where an extension is given to this definition so that proofs that use the shortcut can still follow this property.
+
 \subsubsection{Acceptability Semantics With Respect to Propositional Logic}
 The technical report presents a series of theorems and proofs that closely relate Argumentation Logic's acceptability semantics to propositional logic \citep*[pp. 10-11]{alpaper}. Below is a summary of properties of the notions of acceptability that demonstrate their connection to notions in propositional logic:
 \begin{itemize}
@@ -766,7 +906,7 @@ The main procedures involved are the following:
 \item
 Theorem Prover (\autoref{chap:prover}): the theorem proof system provides proofs for the given theory and goal
 \item
-GAP Checker (\autoref{chap:gapcheck}): the Genuine Absurdity Property checker takes a proof and succeeds if the given proof indeed follows the property
+GAP Checker (\autoref{chap:gapcheck} and \autoref{chap:gapx}): the Genuine Absurdity Property checker takes a proof and succeeds if the given proof indeed follows the property
 \item
 Proof Visualizer (\autoref{chap:viz}): the proof visualization predicate takes a proof that follows the Genuine Absurdity Property and returns an argument that can be used to visualize the given proof
 \item
@@ -776,9 +916,9 @@ Proof Extractor (\autoref{chap:extractor}): this predicate can take an argument 
 In addition to the core module predicates, there are a few client features that can still provide data that can be used by the core modules listed above. These are:
 \begin{itemize}
 \item
-Proof Builder (TODO): provides a method of allowing the user to construct a particular proof
+Proof Builder (\autoref{chap:proofbuilder}): provides a method of allowing the user to construct a particular proof
 \item
-Argument Builder(TODO): provides a method of allowing the user to construct an argument 
+Argument Builder(\autoref{chap:argbuilder}): provides a method of allowing the user to construct an argument 
 \end{itemize}
 
 \chapter{Theorem Proving System}
@@ -805,14 +945,14 @@ Moreover, recall that the Genuine Absurdity Property forms a kind of relevance b
 Recall, further, that the Genuine Absurdity Property is a recursive property in that any sub-derivations of an application of the Reductio ad Absurdum rule must also follow this property, and finally, that this property is defined only over proofs using conjunction and negation only.
 
 \section{Short Description of Algorithm}
-In a nutshell, the algorithm for checking for the Genuine Absurdity Property traverses the proof and keeps track of ancestor hypotheses and child hypotheses as well as the theory given initially. At the beginning the algorithm checks that the given proof is a RAND proof and that it only contains conjunctions and negations of atoms.
+In a nutshell, the algorithm for checking for the Genuine Absurdity Property traverses the proof and keeps track of ancestor hypotheses and child hypotheses as well as the theory given initially. At the beginning the algorithm checks that the given proof is a RAND proof and that it only contains conjunctions and negations of atoms. In addition, it checks that the proof does not make use of any shortcuts. Those are dealt in the extended version of the Genuine Absurdity Property discussed in \autoref{chap:gapx}.
 
 At the end of each application of the Reductio ad Absurdum rule the Genuine Absurdity Property is checked by asking the theorem prover in \autoref{chap:prover} to try and prove a contradiction using the given theory, and the ancestor and (negations of the) child hypotheses. That is, we ask the prover to prove that $T\cup\{\phi_1, ..., \phi_k\}\cup\{\neg\psi_1, ..., \neg\psi_l\}\vdash_{MRA}\bot$. If that succeeds, then we know that a contradiction could have been reached without the use of the hypothesis in the current application of the Reductio ad Absurdum rule, thus making the proof not follow the property under check.
 
 Before reaching the end of the current application of the $\neg I$ rule, each sub-derivation is also checked that it follows the Genuine Absurdity Property by calling the algorithm again recursively, while adding the current hypothesis to the tracked formulas.
 
 \section{Details of Implementation}
-The overall algorithm is split into three stages. The first stage involves checking whether the given proof is a RAND proof. That is, apart from the theory, the proof should only contain an application of the Reductio ad Absurdum rule on the top level. The second stage involves checking whether the given proof has formulas consisting of only conjunction and negation. The third and final stage is the actual check which verifies the Genuine Absurdity Theory.
+The overall algorithm is split into four stages. The first stage involves checking whether the given proof is a RAND proof. That is, apart from the theory, the proof should only contain an application of the Reductio ad Absurdum rule on the top level. The second stage involves checking whether the given proof has formulas consisting of only conjunction and negation. The third stage checks that the proof does not make any use of the substitution rule. The fourth and final stage is the actual check which verifies the Genuine Absurdity Theory.
 
 \begin{lstlisting}[caption={Genuine Absurdity Property top level predicate},label=lst:gaptoppred]
 % Checks that the given proof follows the GAP property
@@ -823,10 +963,11 @@ checkGAP(Proof) :-
 	checkRestrictedRules(RevProof), !,
 	getTheoryAndRevBox(RevProof, Theory, RevBox), !,
 	checkRestrictedTheory(Theory), !,
+	checkPureND(Theory, RevBox), !,
 	checkGAP(Theory, _, [], [], RevBox), !.
 \end{lstlisting}
 
-\autoref{lst:gaptoppred} shows the top-level predicate where the three stages (checks) can be seen at line 5 for RAND proof, lines 6 and 7 for the restricted use of propositional logic, and finally line 9 for the actual check for the definition of the Genuine Absurdity Property. The format of the proof is the same as that output by the theorem proving algorithm in \autoref{chap:prover}. The three stages are further discussed below.
+\autoref{lst:gaptoppred} shows the top-level predicate where the four stages (checks) can be seen at line 5 for RAND proof, lines 6 and 7 for the restricted use of propositional logic, line 9 for the lack of shortcuts and finally line 10 for the actual check for the definition of the Genuine Absurdity Property. The format of the proof is the same as that output by the theorem proving algorithm in \autoref{chap:prover}. The four stages are further discussed below.
 
 \subsection{Checking for RAND Proof}
 The format of a RAND proof is the following: first, there may or may not be a few steps containing the theory. These are steps that are justified with "given". Following should be a box, and finally, there should be either the goal (derived using the box), or the double negation of the goal (derived using the box) and the goal (derived by $\neg E$).
@@ -872,6 +1013,27 @@ checkRestrictedFormula(n(X)) :-
 
 The predicate \lstinline$checkRestrictedTheory/1$ as shown in \autoref{lst:gaprestrictedcheck} looks at the theory contained in the proof and makes sure that it consists only of atoms, conjunctions and negations. The predicate \lstinline$checkRestrictedRules/1$ shown in \autoref{lst:gaprestrictedcheck} again ensures that rules that could potentially introduce a new construct (such as implication or disjunction) are not used. This predicate probes nested boxes as well so that the entire proof is covered. The predicate \lstinline$m2/2$ on line 6 acts as an alias to the standard \lstinline$member/2$ Prolog predicate.
 
+\subsection{Ensuring the Lack of Substitution}
+This stage looks at the line number references that the steps inside a derivation address, and checks that all line numbers either refer to steps inside the current context, theory, or parent hypotheses. Any other references are considered extraneous.
+
+\begin{lstlisting}[caption={Checking whether a proof uses any shortcuts},label=lst:gapsubcheck]
+% Checks to see if this proof does not make references to external derivations
+checkPureND(Theory, Proof) :-
+	length(Theory, TheoryLength),
+	checkPureND(TheoryLength, _, Proof, Proof).
+checkPureND(_, _, [], _) :- !.
+checkPureND(L, _, [step(_, [hypothesis], LN)|Proof], WholeProof) :-
+	!, checkPureND(L, LN, Proof, WholeProof).
+checkPureND(L, LN, [step(_, [_|ReasonLines], _)|Proof], WholeProof) :-
+	forall(m2(RL, ReasonLines), (RL >= LN; RL < L; getStep(RL, WholeProof, step(_, [hypothesis], RL)))),
+	checkPureND(L, LN, Proof, WholeProof).
+checkPureND(L, LN, [box(BoxProof)|Proof], WholeProof) :-
+	checkPureND(L, _, BoxProof, WholeProof),
+	checkPureND(L, LN, Proof, WholeProof).
+\end{lstlisting}
+
+\autoref{lst:gapsubcheck} shows predicate \lstinline$checkPureND/2$ which takes the theory and the proof under examination. It measures the size of the theory, and passes this information along with the proof to \lstinline$checkPureND/4$. Line 7 makes a note of the line number of the hypothesis, which is the first step of each sub-derivation. Line 9 checks that all referenced steps by the line currently under consideration are either internal steps (bigger than the hypothesis line number measured by line 7 of the code) or point to the theory (any line references smaller than the length of the theory are considered acceptable as the theory always appears at the top of the proof), or that they point to a hypothesis (of an ancestor). The last clause of \lstinline$checkPureND$ makes sure that all sub-derivations are visited.
+
 \subsection{Checking for Genuine Absurdity Property}
 The final part of the algorithm deals with the definition of the Genuine Absurdity Property directly.
 
@@ -886,19 +1048,25 @@ checkGAP(Theory, Hypothesis, AncestorHypotheses, ChildHypotheses, [step(_, _, _)
 checkGAP(Theory, Hypothesis, AncestorHypotheses, ChildHypotheses, [box(BoxProof)|Proof]) :-
 	checkGAP(Theory, _, [Hypothesis|AncestorHypotheses], [], BoxProof),
 	BoxProof = [step(ChildHypothesis, [hypothesis], _)|_],
-	checkGAP(Theory, Hypothesis, AncestorHypotheses, [n(ChildHypothesis)|ChildHypotheses], Proof).
+	(
+		ChildHypothesis = n(X),
+		NegatedChildHypothesis = X;
+		
+		NegatedChildHypothesis = n(ChildHypothesis)
+	),
+	checkGAP(Theory, Hypothesis, AncestorHypotheses, [NegatedChildHypothesis|ChildHypotheses], Proof).
 \end{lstlisting}
 
 The format of the proof passed in this predicate is the opposite of that output by the theorem prover in \autoref{chap:prover} in that the steps are in increasing order as one would read the proof on paper. This is due to the work of the \lstinline$getTheoryAndRevBox/3$ predicate called before the check as shown in \autoref{lst:gaptoppred}.
 
-The clause on line 4 of \autoref{lst:gapgapcheck} makes a note of the hypothesis. It is the one and only clause that Prolog chooses upon entering a new box (application of the Reductio ad Absurdum rule). All intermediate steps bear little significance and are hence ignored by this predicate as shown on the clause defined on line 6. 
+The clause on line 4 of \autoref{lst:gapgapcheck} makes a note of the hypothesis. It is the one and only clause that Prolog chooses upon entering a new box (application of the Reductio ad Absurdum rule). All intermediate steps bear little significance and are hence ignored by this predicate as shown on the clause defined on line 6. This is because it is known from the previous check for the lack of substitutions (shortcuts) that there are no references to external conclusions (sibling derivations).
 
 Child proofs however must be checked for the Genuine Absurdity Property as well as this property is recursive. Line 7 takes that into account. It adds the hypothesis of the current context into the ancestor hypotheses of a new call to the \lstinline$checkGAP/5$ predicate (line 9). If the sub-derivation follows the property, the algorithm continues to add the negation of the sub-derivation hypothesis to the child hypotheses. 
 
 At the end of the current context, when all the child hypotheses have been gathered and checked that they follow the property, the algorithm checks that the property holds for this context as well. This is done by the clause on line 1. The predicate \lstinline$a3/4$ ("append 3 lists") on line 2 merges the theory, ancestor hypotheses and child hypotheses gathered so far into one bundle, and calls for the theorem prover to try and prove a contradiction while purposely excluding the hypothesis of the current context from the bundle (line 3). That is, the theorem prover is given the task of proving $T\cup\{\phi_1, ..., \phi_k\}\cup\{\neg\psi_1, ..., \neg\psi_l\}\vdash_{MRA}\bot$. If it succeeds, then the Genuine Absurdity Theory does not hold. If it fails, then so far the property holds.
 
 \section{Example Walkthrough}
-This example will focus on the \lstinline$checkGAP/5$ predicate shown in \autoref{lst:gapgapcheck}. Consider a proof with theory $\{\neg(\beta\wedge\alpha), \neg(\neg\beta\wedge\gamma), \neg(\alpha\wedge\neg\beta\wedge\neg\gamma)\}$ and goal $\neg\alpha$. The proof is given below: 
+This example will focus on the \lstinline$checkGAP/5$ predicate shown in \autoref{lst:gapgapcheck}. Consider a proof with theory $\{\neg(\beta\wedge\alpha), \neg(\alpha\wedge\gamma), \neg(\alpha\wedge\neg\beta\wedge\neg\gamma)\}$ and goal $\neg\alpha$. The proof is given below: 
 
 \[\vbox{\offinterlineskip\halign{
 &\tabskip=1.5em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\tabskip=0em\cr
@@ -930,7 +1098,7 @@ This example will focus on the \lstinline$checkGAP/5$ predicate shown in \autore
 \noalign{\hrule}
 %
 &9&\gamma&\mbox{hypothesis}&\cr
-&10&\neg\beta\wedge\gamma&\wedge I(8,9)&\cr
+&10&\alpha\wedge\gamma&\wedge I(4,9)&\cr
 &11&\bot&\bot I(2,10)&\cr
 %
 \noalign{\hrule}}}\,&\cr
@@ -945,7 +1113,7 @@ This example will focus on the \lstinline$checkGAP/5$ predicate shown in \autore
 16&\neg\alpha&\neg I(4,15)\cr
 }}\]
 
-The \lstinline$checkGAP/5$ predicate is called with theory $[\neg(\beta\wedge\alpha), \neg(\neg\beta\wedge\gamma), \neg(\alpha\wedge\neg\beta\wedge\neg\gamma)]$, and empty lists for the ancestor and child hypotheses. It is also given the outer box (lines 4 to 15 of the proof). 
+The \lstinline$checkGAP/5$ predicate is called with theory $[\neg(\beta\wedge\alpha), \neg(\alpha\wedge\gamma), \neg(\alpha\wedge\neg\beta\wedge\neg\gamma)]$, and empty lists for the ancestor and child hypotheses. It is also given the outer box (lines 4 to 15 of the proof). 
 
 Line 4 of the code in \autoref{lst:gapgapcheck} picks up the hypothesis $\alpha$ on line 4 of the proof while at the same time consuming this line of the proof and calling itself again, passing in the hypothesis just picked up. The current context looks like this:
 \begin{itemize}
@@ -1015,15 +1183,467 @@ Lines 12-15 of the proof are ignored by the clause on line 6 of the code listing
 
 The empty box calls for the clause on line 1 of the code, which checks that a contradiction cannot be proven just by using the theory and children hypotheses $\neg\beta$ and $\neg\gamma$ without the need for the current hypothesis $\alpha$. That is, it checks that $T\cup\{\neg\beta, \neg\gamma\}\nvdash_{MRA}\bot$. After this check, the algorithm ends as the top-level RAND derivation has been proven to follow the Genuine Absurdity Property.
 
-\section{Remarks}
+\section{Remarks and Limitation of Genuine Absurdity Property Definition}
 It is worth noting that for the algorithm to work, the theorem prover must return true whenever $T\cup\{\phi_1, ..., \phi_k\}\cup\{\neg\psi_1, ..., \neg\psi_l\}\vdash_{MRA}\bot$ is the case. This means that the theorem prover must be complete, in addition to being sound. If the use of an incomplete theorem prover is employed, then a proof might be deemed to be following the Genuine Absurdity Property because the theorem prover might fail to prove the contradiction of a $\neg I$ rule application (without the hypothesis), rather than because it really might be the case that $T\cup\{\phi_1, ..., \phi_k\}\cup\{\neg\psi_1, ..., \neg\psi_l\}\nvdash_{MRA}\bot$. 
+
+A limitation of the Genuine Absurdity Property as it is currently defined is that it is not defined over proofs that make use of the substitution rule, that is, reusing previously derived formulas in order to cut down on the proof length. An example of a proof that goes the long way in proving its goal and a similar one that takes a shortcut can be seen in \autoref{fig:shortcut}. This limitation is overcome by taking sibling derivations into account as discussed in \autoref{chap:gapx}.
+
+\chapter{Extending the Genuine Absurdity Property}
+\label{chap:gapx}
+As briefly mentioned in \autoref{subsec:gap}, the standard definition for the Genuine Absurdity Property comes with a shortcoming. It only considers proofs where the substitution rule is not permitted, which is why only ancestor and child hypotheses are taken into account. This chapter explains how the current definition of the Genuine Absurdity Property can be extended to accommodate proofs of that kind, as many proof search software or even humans tend to use shortcuts or derived rules in order to shorten proofs by decreasing repetition and reduce the amount of effort needed to build a proof.
+
+\section{Arriving at the Definition of the Extension}
+This section starts from the classic definition of the Genuine Absurdity Property and arrives at the final definition. This section can be skipped without any loss of context. The final definition is given again in the next section.
+
+As a first step, extend the definition of the Genuine Absurdity Property from $T\cup\{\phi_1, ..., \phi_k\}\cup\{\neg\psi_1, ..., \neg\psi_l\}\nvdash_{MRA}\bot$ to $T\cup\{\phi_1, ..., \phi_k\}\cup\{\neg\psi_1, ..., \neg\psi_l\}\cup\{\neg\chi_1, ..., \neg\chi_m\}\nvdash_{MRA}\bot$, where $\phi_i$ is an ancestor hypothesis, $\psi_i$ is a child hypothesis and $\chi_i$ is a sibling hypothesis.
+
+The above suggestion could be considered as being incorrect, because of the following: assume $\neg\chi_i$ is a sibling conclusion that happens after the box under examination. Clearly because it happens later in the proof it cannot be referenced by the current context, so allowing it to influence the result is unfair.
+
+The next obvious move could be to enforce some ordering and redefine the extension definition (henceforth known as "GAPX") to be $T\cup\{\phi_1, ..., \phi_k\}\cup\{\neg\psi_1, ..., \neg\psi_l\}\cup\{\neg\chi_1, ..., \neg\chi_m\}\nvdash_{MRA}\bot$, where $\chi_m < \phi$ (and $\chi_i < \chi_j$ for $i < j$), where $\phi$ is the current hypothesis. The relation $<(x, y)$ means that $x$ precedes $y$ in the proof. In other words, all sibling hypotheses that happened before are taken into account only.
+
+This definition may be regarded as a bit naive, since by changing the ordering of sibling derivations the outcome can change. As an abstract example, consider sibling derivations $A$ and $B$. Consider whether $A$ follows GAPX or not. It could be the case that if $B$ happens before $A$, $A$ is not GAPX-compliant. If $B$ happens after $A$, then $A$ might follow the property. Consider a more practical example as shown in \autoref{fig:gaph}.
+
+\begin{figure}[htp]
+\begin{minipage}[c]{.5\linewidth}
+\[\vbox{\offinterlineskip\halign{
+&\tabskip=1.5em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\tabskip=0em\cr
+%
+1&\neg(\alpha\wedge\beta)&\mbox{given}\cr
+2&\neg(\alpha\wedge\gamma)&\mbox{given}\cr
+3&\neg(\alpha\wedge\neg\beta\wedge\neg\gamma)&\mbox{given}\cr
+4&\neg(\alpha\wedge\neg\beta)&\mbox{given}\cr
+%
+\multispan3\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&5&\alpha&\mbox{hypothesis}&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&6&\beta&\mbox{hypothesis}&\cr
+&7&\alpha\wedge\beta&\wedge I(5,6)&\cr
+&8&\bot&\bot I(1,7)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&9&\neg\beta&\neg I(6,8)&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&10&\gamma&\mbox{hypothesis}&\cr
+&11&\alpha\wedge\gamma&\wedge I(4,10)&\cr
+&12&\bot&\bot I(2,11)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&13&\neg\gamma&\neg I(9,12)&\cr
+&14&\alpha\wedge\neg\beta&\wedge I(4,8)&\cr
+&15&\alpha\wedge\neg\beta\wedge\neg\gamma&\wedge I(14,13)&\cr
+&16&\bot&\bot I(3,15)&\cr
+%
+\noalign{\hrule}}}\,\cr
+%
+17&\neg\alpha&\neg I(4,16)\cr
+}}\]
+\end{minipage}%
+\begin{minipage}[c]{.5\linewidth}
+\[\vbox{\offinterlineskip\halign{
+&\tabskip=1.5em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\tabskip=0em\cr
+%
+1&\neg(\alpha\wedge\beta)&\mbox{given}\cr
+2&\neg(\alpha\wedge\gamma)&\mbox{given}\cr
+3&\neg(\alpha\wedge\neg\beta\wedge\neg\gamma)&\mbox{given}\cr
+4&\neg(\alpha\wedge\neg\beta)&\mbox{given}\cr
+%
+\multispan3\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&5&\alpha&\mbox{hypothesis}&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&6&\gamma&\mbox{hypothesis}&\cr
+&7&\alpha\wedge\gamma&\wedge I(5,6)&\cr
+&8&\bot&\bot I(2,7)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&9&\neg\gamma&\neg I(6,8)&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&10&\beta&\mbox{hypothesis}&\cr
+&11&\alpha\wedge\beta&\wedge I(4,10)&\cr
+&12&\bot&\bot I(1,11)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&13&\neg\beta&\neg I(9,12)&\cr
+&14&\alpha\wedge\neg\beta&\wedge I(4,13)&\cr
+&15&\alpha\wedge\neg\beta\wedge\neg\gamma&\wedge I(14,8)&\cr
+&16&\bot&\bot I(3,15)&\cr
+%
+\noalign{\hrule}}}\,\cr
+%
+17&\neg\alpha&\neg I(4,16)\cr
+}}\]
+\end{minipage}
+
+\begin{minipage}[c]{.5\linewidth}
+GAP: \cmark
+
+GAPX: \xmark
+\end{minipage}%
+\begin{minipage}[c]{.5\linewidth}
+GAP: \cmark
+
+GAPX: \cmark
+\end{minipage}%
+\caption{Proofs showing that imposing an ordering on the sibling derivations makes the extension definition results dependent on that ordering\label{fig:gaph}}
+\end{figure}
+
+Different results are produced just by swapping the order of the sibling derivations. This is because in the $[\gamma ... \bot]$ box, in the first proof, $\neg\beta$ is available and can be used in conjunction with the last bit of theory $\neg(\alpha\wedge\neg\beta)$; in the second proof, it is not available at the time.
+
+The conclusion so far is that by involving sibling hypotheses and imposing an ordering, the different derivations are made dependent on each other and their relative position. By changing the ordering of sibling derivations, GAPX can give different answers. This may be considered unintuitive, so another definition will be given later. For now, call this definition "Human GAP" or "GAPH". As seen from the example above, GAPH "remembers" past conversations (argument branches/siblings) and can always bring them up if they have been discussed already. This might be considered closer to human nature, as people tend to refer back to examples they've talked about recently! If they have yet to talk about those examples, then they simply cannot use them (hence the ordering) and the conversation may take a different route.
+
+The next definition of GAPX may seem fairer to siblings because it makes them independent unless they reference each other explicitly. The definition is $T\cup\{\phi_1, ..., \phi_k\}\cup\{\neg\psi_1, ..., \neg\psi_l\}\cup\{\neg\chi_1, ..., \neg\chi_m\}\nvdash_{MRA}\bot$, where $\chi_i$ has explicitly been referenced by line number in the current box/derivation, so obviously $\chi_i < \phi$ although that is not very important. So the difference is that siblings not referring to each other are completely independent and do not influence the outcome. The intuition will be given later, but for now the example given in \autoref{fig:gaph} will be revisited in \autoref{fig:gapx}. In this figure, GAPH is the previous definition of GAPX, GAPX is now the latest definition. GAP remains the classic definition given in the technical report.
+
+\begin{figure}[htp]
+\begin{minipage}[c]{.5\linewidth}
+\[\vbox{\offinterlineskip\halign{
+&\tabskip=1.5em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\tabskip=0em\cr
+%
+1&\neg(\alpha\wedge\beta)&\mbox{given}\cr
+2&\neg(\alpha\wedge\gamma)&\mbox{given}\cr
+3&\neg(\alpha\wedge\neg\beta\wedge\neg\gamma)&\mbox{given}\cr
+4&\neg(\alpha\wedge\neg\beta)&\mbox{given}\cr
+%
+\multispan3\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&5&\alpha&\mbox{hypothesis}&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&6&\beta&\mbox{hypothesis}&\cr
+&7&\alpha\wedge\beta&\wedge I(5,6)&\cr
+&8&\bot&\bot I(1,7)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&9&\neg\beta&\neg I(6,8)&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&10&\gamma&\mbox{hypothesis}&\cr
+&11&\alpha\wedge\gamma&\wedge I(5,10)&\cr
+&12&\bot&\bot I(2,11)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&13&\neg\gamma&\neg I(9,12)&\cr
+&14&\alpha\wedge\neg\beta&\wedge I(4,9)&\cr
+&15&\alpha\wedge\neg\beta\wedge\neg\gamma&\wedge I(14,13)&\cr
+&16&\bot&\bot I(3,15)&\cr
+%
+\noalign{\hrule}}}\,\cr
+%
+17&\neg\alpha&\neg I(5,16)\cr
+}}\]
+\end{minipage}%
+\begin{minipage}[c]{.5\linewidth}
+\[\vbox{\offinterlineskip\halign{
+&\tabskip=1.5em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\tabskip=0em\cr
+%
+1&\neg(\alpha\wedge\beta)&\mbox{given}\cr
+2&\neg(\alpha\wedge\gamma)&\mbox{given}\cr
+3&\neg(\alpha\wedge\neg\beta\wedge\neg\gamma)&\mbox{given}\cr
+4&\neg(\alpha\wedge\neg\beta)&\mbox{given}\cr
+%
+\multispan3\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&5&\alpha&\mbox{hypothesis}&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&6&\gamma&\mbox{hypothesis}&\cr
+&7&\alpha\wedge\gamma&\wedge I(5,6)&\cr
+&8&\bot&\bot I(2,7)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&9&\neg\gamma&\neg I(6,8)&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&10&\beta&\mbox{hypothesis}&\cr
+&11&\alpha\wedge\beta&\wedge I(5,10)&\cr
+&12&\bot&\bot I(1,11)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&13&\neg\beta&\neg I(9,12)&\cr
+&14&\alpha\wedge\neg\beta&\wedge I(4,13)&\cr
+&15&\alpha\wedge\neg\beta\wedge\neg\gamma&\wedge I(14,9)&\cr
+&16&\bot&\bot I(3,15)&\cr
+%
+\noalign{\hrule}}}\,\cr
+%
+17&\neg\alpha&\neg I(5,16)\cr
+}}\]
+\end{minipage}
+
+\begin{minipage}[c]{.5\linewidth}
+GAP: \cmark
+
+GAPH: \xmark
+
+GAPX: \cmark
+\end{minipage}%
+\begin{minipage}[c]{.5\linewidth}
+GAP: \cmark
+
+GAPH: \cmark
+
+GAPX: \cmark
+\end{minipage}
+
+\begin{minipage}[c]{.5\linewidth}
+\[\vbox{\offinterlineskip\halign{
+&\tabskip=1.5em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\tabskip=0em\cr
+%
+1&\neg(\alpha\wedge\beta)&\mbox{given}\cr
+2&\neg(\alpha\wedge\gamma)&\mbox{given}\cr
+3&\neg(\alpha\wedge\neg\beta\wedge\neg\gamma)&\mbox{given}\cr
+4&\neg(\alpha\wedge\neg\beta)&\mbox{given}\cr
+%
+\multispan3\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&5&\alpha&\mbox{hypothesis}&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&6&\beta&\mbox{hypothesis}&\cr
+&7&\alpha\wedge\beta&\wedge I(5,6)&\cr
+&8&\bot&\bot I(1,7)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&9&\neg\beta&\neg I(6,8)&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&10&\gamma&\mbox{hypothesis}&\cr
+&11&\alpha\wedge\neg\beta&\wedge I(5,8)&\cr
+&12&\bot&\bot I(4,11)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&13&\neg\gamma&\neg I(9,12)&\cr
+&14&\alpha\wedge\neg\beta&\wedge I(4,9)&\cr
+&15&\alpha\wedge\neg\beta\wedge\neg\gamma&\wedge I(14,13)&\cr
+&16&\bot&\bot I(3,15)&\cr
+%
+\noalign{\hrule}}}\,\cr
+%
+17&\neg\alpha&\neg I(5,16)\cr
+}}\]
+\end{minipage}
+
+\begin{minipage}[c]{1\linewidth}
+GAP: undefined
+
+GAPH: \xmark
+
+GAPX: \xmark
+\end{minipage}
+\caption{Comparisson of different candidate definitions for extending the Genuine Absurdity Property\label{fig:gapx}}
+\end{figure}
+
+In the first proof, the classic GAP says that $[\gamma ... \bot]$ follows the property as it ignores completely the sibling derivation and the presence of $\neg\beta$ (as it follows the strict version of natural deduction that forbids shortcuts). GAPX says that $[\beta ... \bot]$ had nothing to do with $[\gamma ... \bot]$ so it should stay independent of it. In other words, the sibling derivation was not referenced, so it should bear no effect on the result. The second proof probably needs no explanation. For the third proof, the difference (between that and the first) is that the $[\beta ... \bot]$ derivation does indeed get involved in the $[\gamma ... \bot]$ derivation, providing a way to prove contradiction without using the hypothesis. Hence the check now for GAPX becomes $T\cup\{\alpha\}\cup\{\}\cup\{\neg\beta\}\nvdash_{MRA}\bot$ which fails. For the first proof, the check for GAPX was $T\cup\{\alpha\}\cup\{\}\cup\{\}\nvdash_{MRA}\bot$ because there was no cross-referencing.
+
+So what is the intuition here? The intuition is that classic GAP does not take siblings into account because it works on a natural deduction that forbids the use of the substitution rule. If a sibling were to be used, it had to be copied in the current derivation and act as a child derivation. The natural deduction style used in this paper simulates copying of sibling derivations by allowing their referencing. Thus referencing a sibling derivation really makes it a child (under the pure natural deduction sense). Thus for GAPX, the $\{\neg\chi_1, ..., \neg\chi_m\}$ set is an extended child set for the derivation/box under examination, that includes all sibling derivations (nothing more, nothing less) that would otherwise be child derivations (and in the $\{\neg\psi_1, ..., \neg\psi_l\}$ set) if the restricted natural deduction was employed. In other words, GAPX is a convenient workaround that fakes copying sibling derivations as child derivations, allowing the user to work in a more expressive and concise environment. Sibling derivations that are not referenced are the derivations that would not have appeared as children in the classic GAP.
+
+Having said that, there is one slight adjustment that needs to be made. So far, only direct sibling derivations were considered, that is, boxes next to the box under consideration. How about referencing an ancestor's sibling conclusion? The natural deduction style used here allows this kind of referencing. Consider the figure shown in \autoref{fig:gapxx}:
+
+\begin{figure}[thp]
+\[\vbox{\offinterlineskip\halign{
+&\tabskip=1.5em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\tabskip=0em\cr
+%
+1&\neg(\alpha\wedge\beta)&\mbox{given}\cr
+2&\neg(\alpha\wedge\gamma\wedge\neg\delta)&\mbox{given}\cr
+3&\neg(\alpha\wedge\neg\beta\wedge\neg\gamma)&\mbox{given}\cr
+4&\neg(\delta\wedge\neg\beta)&\mbox{given}\cr
+%
+\multispan3\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&5&\alpha&\mbox{hypothesis}&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&6&\beta&\mbox{hypothesis}&\cr
+&7&\alpha\wedge\beta&\wedge I(5,6)&\cr
+&8&\bot&\bot I(1,7)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&9&\neg\beta&\neg I(6,8)&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&10&\gamma&\mbox{hypothesis}&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&11&\delta&\mbox{hypothesis}&\cr
+&12&\delta\wedge\neg\beta&\wedge I(11,9)&\cr
+&13&\bot&\bot I(4,12)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&14&\neg\delta&\neg I(11,13)&\cr
+&15&\alpha\wedge\gamma&\wedge I(5,10)&\cr
+&16&\alpha\wedge\gamma\wedge\neg\delta&\wedge I(15,14)&\cr
+&17&\bot&\bot I(2,16)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&18&\neg\gamma&\neg I(10,17)&\cr
+&19&\alpha\wedge\neg\beta&\wedge I(4,9)&\cr
+&20&\alpha\wedge\neg\beta\wedge\neg\gamma&\wedge I(19,18)&\cr
+&21&\bot&\bot I(3,21)&\cr
+%
+\noalign{\hrule}}}\,\cr
+%
+22&\neg\alpha&\neg I(5,21)\cr
+}}\]
+\caption{Referencing of an ancestor's sibling (uncle) derivation\label{fig:gapxx}}
+\end{figure}
+
+It can be seen that $[\beta ... \bot]$ is not a sibling to $[\delta ... \bot]$ but rather an ancestor's sibling (or uncle) derivation. In this case, current GAPX does not apply. It can therefore simply extend the $\{\neg\chi_1 ... \neg\chi_m\}$ set to contain any sibling derivation (that came before) of any ancestor up the "tree" that has been referenced, as once again, such derivation would be copied as a child derivation if it were a strict natural deduction proof that forbids shortcuts.
+
+\section{Definition of Genuine Absurdity Property Extension}
+The previous section showed the thinking behind the arrival at the final definition for the Genuine Absurdity Property extension. This definition is given below:
+
+A certain (sub)derivation $[\phi ... \bot]$ follows the extended Genuine Absurdity Property if $T\cup\{\phi_1, ..., \phi_k\}\cup\{\neg\psi_1, ..., \neg\psi_l\}\cup\{\neg\chi_1, ..., \neg\chi_m\}\nvdash_{MRA}\bot$, where $\chi_i$ is any sibling or any ancestor's sibling derivation hypothesis whose conclusion is referenced by the (sub)derivation currently examined. Child derivations must also follow this property.
+
+\section{Correctness of Genuine Absurdity Property Extension}
+Take an arbitrary (sub)derivation in the proof under examination. It can be categorized as either making no references to siblings, or indeed referring to sibling derivations.
+
+\subsection{Case 1: Not Referencing Sibling Derivations}
+If the derivation makes no references to siblings then, the classic Genuine Absurdity Property is defined as $T\cup\{\phi_1, ..., \phi_k\}\cup\{\neg\psi_1, ..., \neg\psi_l\}\nvdash_{MRA}\bot$. The extension is defined as $T\cup\{\phi_1, ..., \phi_k\}\cup\{\neg\psi_1, ..., \neg\psi_l\}\cup\{\}\nvdash_{MRA}\bot$. This is because the $\chi$-set is empty, since in this case there are no references to siblings.
+
+The two definitions/checks match and so are equivalent for this case.
+
+\subsection{Case 2: Referencing Sibling Derivations}
+If the derivation makes references to siblings, then the extension is defined as $T\cup\{\phi_1, ..., \phi_k\}\cup\{\neg\psi_1, ..., \neg\psi_l\}\cup\{\neg\chi_1, ... \neg\chi_m\}\nvdash_{MRA}\bot$. The classic definition is not defined as the box makes use of a shortcut, but take the equivalent strict natural deduction proof where siblings are re-proven inside this derivation as children $\neg\psi_{l+1}, ..., \neg\psi_{l+1+m}$. The classic definition is then defined as $T\cup\{\phi_1, ..., \phi_k\}\cup\{\neg\psi_1, ..., \neg\psi_{l+1+m}\}\nvdash_{MRA}\bot$ or $T\cup\{\phi_1, ..., \phi_k\}\cup\{\neg\psi_1, ..., \neg\psi_l\}\cup\{\neg\psi_{l+1}, ... \neg\psi_m\}\nvdash_{MRA}\bot$ if we break the child-set into two sets containing the old children and the new. But $\{\neg\psi_{l+1}, ... \neg\psi_m\} = \{\neg\chi_1, ... \neg\chi_m\}$ since the former set contains all the siblings that were now included as further children in the strict natural deduction equivalent.
+
+The two definitions/checks are ultimately the same for this case as well.
+
+%Another way to prove this is by using well-founded induction. Assume that the extended definition works (ie is equivalent to the classic definition) for $m-1$ sibling references, thus there are referenced sibling derivations $\neg\chi_1, ... \neg\chi_{m-1}$. Now it must be proven that the case for $m$ referenced sibling derivations works. 
+
+\subsection{Assumption of Proof Sketch}
+This proof assumes that an equivalent proof can always be generated that does not make use of any substitutions. Removing a substitution from a (sub)derivation can always be done by replacing the reference to the other derivation by one that points to a local copy of that derivation. The generated proof is always a valid natural deduction proof; however, a proof of this will not be given in this paper.
+
+\section{Details of Implementation}
+Compared to the classic implementation of the Genuine Absurdity Property, the extension implementation remains largely the same. The differences lie in that the initial checks do not include the use of substitution check (since shortcuts are allowed here) and that intermediate steps in the proof are not ignored because they may reference external (sibling) hypotheses.
+
+\begin{lstlisting}[caption={Checking whether a proof is follows the extended Genuine Absurdity Property},label=lst:gapxcheck]
+% Checks that the given proof follows the extended GAP property
+checkGAPX(Proof) :- 
+	reverse(Proof, RevProof), 
+	checkRAND(RevProof), !,
+	checkRestrictedRules(RevProof), !,
+	getTheoryAndRevBox(RevProof, Theory, RevBox), !,
+	checkRestrictedTheory(Theory), !,
+	checkGAPX(Theory, _, [], [], [], RevBox, RevBox, _), !.
+checkGAPX(Theory, _, AncestorHypotheses, ChildHypotheses, SiblingHypotheses, [], _, _) :-
+	a4(Theory, AncestorHypotheses, ChildHypotheses, SiblingHypotheses, Context),
+	not(proveMRA(Context, [falsity], _)).
+checkGAPX(Theory, _, AncestorHypotheses, ChildHypotheses, SiblingHypotheses, [step(H, [hypothesis], HL)|Proof], WholeProof, _) :-
+	!, checkGAPX(Theory, H, AncestorHypotheses, ChildHypotheses, SiblingHypotheses, Proof, WholeProof, HL).
+checkGAPX(Theory, Hypothesis, AncestorHypotheses, ChildHypotheses, SiblingHypotheses, [step(_, [_|Reason], _)|Proof], WholeProof, HL) :-
+	getUsedSiblingHypotheses(Theory, Reason, WholeProof, HL, NewHypotheses),
+	a2(NewHypotheses, SiblingHypotheses, NewSiblingHypotheses),
+	checkGAPX(Theory, Hypothesis, AncestorHypotheses, ChildHypotheses, NewSiblingHypotheses, Proof, WholeProof, HL).
+checkGAPX(Theory, Hypothesis, AncestorHypotheses, ChildHypotheses, SiblingHypotheses, [box(BoxProof)|Proof], WholeProof, HL) :-
+	checkGAPX(Theory, _, [Hypothesis|AncestorHypotheses], [], [], BoxProof, WholeProof, _),
+	BoxProof = [step(ChildHypothesis, [hypothesis], _)|_],
+	(
+		ChildHypothesis = n(X),
+		NegatedChildHypothesis = X;
+		
+		NegatedChildHypothesis = n(ChildHypothesis)
+	),
+	checkGAPX(Theory, Hypothesis, AncestorHypotheses, [NegatedChildHypothesis|ChildHypotheses], SiblingHypotheses, Proof, WholeProof, HL).
+\end{lstlisting}
+
+\autoref{lst:gapxcheck} shows that the implementation is comparable to the implementation of the original definition (compare with \autoref{lst:gaptoppred} and \autoref{lst:gapgapcheck}). Line 15 scans the line references of intermediate steps in the current derivation to find references to sibling derivations. The scanning and gathering of referenced siblings is done by \lstinline$getUsedSiblingHypotheses/5$ which is shown in \autoref{lst:sibmining}.
+
+\begin{lstlisting}[caption={Gathering of referenced sibling derivations for the extended Genuine Absurdity Property definition},label=lst:sibmining]
+% Uses the line references to find referenced sibling derivations
+getUsedSiblingHypotheses(_, [], _, _, []) :- !.
+getUsedSiblingHypotheses(Theory, Reason, WholeProof, HL, NewHypotheses) :-
+	length(Theory, L),
+	findall(R, (m2(R, Reason), R < HL, R >= L), External),
+	findall([H, E], (m2(E, External), getStep(E, WholeProof, step(H, [notI|_], _))), HLN),
+	unzip(Hs, LNs, HLN),
+	subtract(External, LNs, Rest),
+	findall(Reason2, (m2(R2, Rest), getStep(R2, WholeProof, step(_, [_|Reason2], _))), Reasons),
+	append(Reasons, Reasons2),
+	getUsedSiblingHypotheses(Theory, Reasons2, WholeProof, HL, NewHypotheses2),
+	append(Hs, NewHypotheses2, NewHypotheses).
+	
+unzip([], [], []).
+unzip([L|Ls], [R|Rs], [[L,R]|Ps]) :- unzip(Ls, Rs, Ps).
+\end{lstlisting}
+
+The predicate \lstinline$getUsedSiblingHypotheses/5$ works by measuring the size of the theory in steps (line 4 of the code). Any line references smaller than this number indicate a reference to the theory (since the theory appears first in the proof, its line numbers are always smaller than the size of the theory in steps). When called, this predicate knows the line number of the hypothesis of the current derivation. Any reference to a line greater than (or equal to) the line number of the current hypothesis indicates an internal reference and can therefore be ignored. This filtering is done by line 5, that only gathers extraneous references that do not point to the theory. Out of these, all steps that are conclusions are filtered and stored (line 6). These constitute sibling conclusion references (indirectly, references to sibling hypotheses). The remaining extraneous references are recursively explored by line 11 of the code until the recursion bottoms out. The extracted sibling conclusions from the recursion at deeper levels are appended to the ones found in the current level of recursion and when the recursion bubbles back up, all sibling hypotheses referenced by the examined step are returned.
+
+\section{Remarks}
+The extension to the original Genuine Absurdity Property definition considers only consistent theories and proofs that use conjunction and negation only. It may not necessarily be the case that the extension works for more general proofs. Testing its correctness for inconsistent proofs or when using more connectors (and subsequent amendments in case it proves not to be correct) remains future work.
 
 \chapter{Visualization of Genuine Absurdity Property Proofs}
 \label{chap:viz}
-The Argumentation Logic paper does not provide a formal algorithm for visualizing proofs but rather the idea that proofs having the Genuine Absurdity Property can be seen from an argumentative point of view and any abstract argumentation framework can be visualized as shown previously in \autoref{subsec:aafviz}, where an example was given by \autoref{fig:aafviz}. This chapter documents the attempt to provide an algorithm for the visualization of proofs.
+The Argumentation Logic paper does not provide a formal algorithm for visualizing proofs but rather the idea that proofs having the Genuine Absurdity Property can be seen from an argumentative point of view and any abstract argumentation framework can be visualized as shown previously in \autoref{subsec:aafviz}, where an example was given by \autoref{fig:aafviz}. This chapter documents the attempt to provide an algorithm for the visualization of proofs that both follow the original Genuine Absurdity Property or the extension given in \autoref{chap:gapx}.
 
 \section{Assumptions Made by Algorithm}
-The algorithm provided here assumes that the proofs supplied all follow the Genuine Absurdity Property. This property ensures that arguments made in the (corresponding argumentation framework of the) proof are relevant. It might be possible to visualize proofs that do not have this property.
+The algorithm provided here assumes that the proofs supplied all follow the Genuine Absurdity Property. This property ensures that arguments made in the (corresponding argumentation framework of the) proof are relevant. It might be possible to visualize proofs that do not have this property. The algorithm can deal with proofs that follow the extended version of the property as well.
 
 A consequence of this assumption is that the formulas in the proofs consist of conjunctions and negations only, as the Genuine Absurdity Property is defined only for proofs consisting of those constructs.
 
@@ -1086,7 +1706,7 @@ The initial argument will be found at the top of the outer-most box - the hypoth
 
 $\beta$ is the defense against $\neg\beta$, and at the bottom of the first inner box the attack(s) against it can be found. The conjunction consists of itself and $\alpha$, which is a previous defense. So, after ignoring the hypothesis itself, $\alpha$ remains as the attack. Because this attack was used previously as a defense, it makes no sense to try and defend against it. Thus this part of the algorithm ends here.
 
-$\gamma$ is the defense against $\neg\gamma$, and at the bottom of the second inner box the attack(s) against it can be found. The conjunction here consists of itself and $\neg\beta$. The defense against it and the attack against that can be found in the first inner box and so this part of the algorithm repeats as before.
+$\gamma$ is the defense against $\neg\gamma$, and at the bottom of the second inner box the attack(s) against it can be found. The conjunction here consists of itself and $\neg\beta$. The defense against it and the attack against that can be found in the first inner box and so this part of the algorithm repeats as before. Note that the use of $\neg\beta$ refers to the sibling derivation $[\beta ... \bot]$. This is normally forbidden by the classic definition of the Genuine Absurdity Property but allowed by the extension. The algorithm finds the defense against $\neg\beta$ regardless of its relative position as it is indicated by the line reference in the justification of the attack.
 
 At the end, the following abstract argumentation framework is extracted, which is drawn in \autoref{fig:vizex}:
 \begin{itemize}
@@ -1120,13 +1740,13 @@ forestyle
 \section{Observations, Remarks and Future Work}
 It may be obvious by now that a certain mapping can be established between the hypotheses and contradictions and defenses and attacks. A hypothesis in the proof always represents a defense from the argumentation point of view, and the individual atoms, negated atoms and negated subformulas whose conjunction (along with the negation of their conjunction) forms the contradiction represent the attack from the argumentation point of view. Some of these atoms, negated atoms and formulas can be traced back to conclusions of $\neg I$ rules, thus it can be said that conclusions of $\neg I$ rules (ie the results of the boxes) form some part of an attack.
 
-When using this algorithm, there is always one attack per argument, but there can be many defenses. Each defense is the negation of an atom of an attack (argument). Both the attacks and defenses follow their respective definitions as described in the original paper and in \autoref{subsec:alfdef} and \autoref{subsec:alfdef2}.
+When using this algorithm, there is always one attack per argument, but there can be many defenses. Each defense is the negation of an atom of an attack (argument). Both the attacks and defenses follow their respective definitions as described in the original paper and in \autoref{subsec:alfdef} (\nameref{subsec:alfdef} and \nameref{subsec:alfdef2}).
 
 When considering the formulas of the conjunction that constitutes an attack, all formulas that are part of the theory or the argument under attack are ignored. Absence of any remaining formulas signifies an attack by the empty set. This is shown by the example in \autoref{fig:emptysetattack}.
 
 Although the argumentation framework shown in \autoref{fig:vizex} could have been drawn so that argument $\{\beta\}$ on the left side of the ramification attacks $\{\neg\beta\}$ on the right, the algorithm repeats the whole branch in the drawing. This choice has a couple of implications. Firstly the generated diagram is always a tree, as chains of arguments are "expanded" or "ironed out" regardless of whether natural deduction proofs made use of sibling $\neg I$ applications. Take the example given in \autoref{fig:vizexproof}. The second inner box makes use of the conclusion $\neg\beta$ that was derived from the first inner box in order to reduce redundancy. The algorithm turns this proof into a framework where the first inner box is essentially cloned (duplicated) into the second box. Because of this "expansion", the visualization algorithm does not distinguish between the proof in \autoref{fig:vizexproof} and the redundant proof in \autoref{fig:vizexproof2}; both proofs when visualized would give the result shown in \autoref{fig:vizex}.
 
-The algorithm behaves in accordance to the Argumentation Logic technical report. Using a sibling derivation can be considered a shortcut in natural deduction which is used to avoid repeating the same part of the proof twice. The Argumentation Logic paper uses natural deduction in its "pure" form, where this shortcut is not allowed, and proofs where the conclusion of a sibling derivation is used in another derivation do not exist as such. This is the reason why the definition of the Genuine Absurdity Property (\autoref{subsec:gap}) does not take into account sibling derivations. For flexibility purposes, the algorithm "irons out" proofs that do make use of sibling derivations instead of rejecting them.
+The algorithm behaves in accordance to the Argumentation Logic technical report. Using a sibling derivation can be considered a shortcut in natural deduction which is used to avoid repeating the same part of the proof twice. The Argumentation Logic paper uses natural deduction in its "pure" form, where this shortcut is not allowed, and proofs where the conclusion of a sibling derivation is used in another derivation do not exist as such. This is the reason why the definition of the Genuine Absurdity Property (\autoref{subsec:gap}) does not take into account sibling derivations. For flexibility purposes, the algorithm "irons out" proofs that do make use of sibling derivations instead of rejecting them, since they do follow the extended Genuine Absurdity Property definition that allows the use of shortcuts. Essentially, what the algorithm does, is to remove the shortcuts and produce an argument that would correspond to the corresponding proof that does not make use of shortcuts. Therefore regardless of whether shortcuts were used or not, the argument retains the same logical form.
 
 The algorithm could be made instead to draw an attack from $\{\beta\}$ on the left branch to $\{\gamma\}$ on the right. This would remove the redundancy and produce different visualizations for the different proofs in \autoref{fig:vizexproof} and \autoref{fig:vizexproof2}. The resulting visualizations however would not necessarily be trees. An interesting topic is the detection of similar subtrees in argument attack/defense chains and their pruning, resulting in less redundant and more concise proofs when the arguments are converted back into proofs. In addition, attacks and defenses could be moved to shallower levels in the tree if possible, in order for their corresponding boxes in the proof to appear in a shallower box-nesting level, so that their conclusions can be used in a wider context. Of course, this pruning and relocating of nodes in the tree must be done carefully, so that the resulting proofs always follow the Genuine Absurdity Property. This topic remains part of future work and is not discussed further in the report.
 
@@ -1850,7 +2470,7 @@ There is also a small bit of housekeeping that takes place in the process as wel
 \section{Observations, Remarks and Future Work}
 It may be obvious by now that the proof extraction algorithm works as a counterpart of the visualization algorithm discussed previously in \autoref{chap:viz}. The algorithm ensures that the right boxes are created at the right parts of the proof so that the inverse of the mapping discussed in the visualization algorithm is followed.
 
-Recall from \autoref{chap:viz} that some information is lost when converting a proof to an argument regarding sibling proofs and child proofs. The visualization algorithm makes no distinction between the two, so the generated arguments seem "spread out". Thus, when converting back to a proof from the generated argument, only proofs that refer to child and ancestor hypotheses are created. 
+Recall from \autoref{chap:viz} that some information is lost when converting a proof to an argument regarding sibling proofs and child proofs. The visualization algorithm makes no distinction between the two, so the generated arguments seem "spread out". Thus, when converting back to a proof from the generated argument, only proofs that refer to child and ancestor hypotheses are created since shortcuts are effectively eliminated. Extracted proofs from arguments generated by visualizing proofs that were valid only under the extended definition of the Genuine Absurdity Property will now also follow the original definition.
 
 Another bit of information that is dropped when visualizing proofs is the exact part of theory that may have been used along with the attack to reach a contradiction. This is because each argument (node) in the tree shows only its own claims, and hides the part of the theory with which, along with the defense under attack, lead to a contradiction. The example in \autoref{fig:extrex2} shows two proofs that visualize to the same argument using the visualization algorithm, and either of those proofs can be extracted from the argument using the proof extraction algorithm. Note that the difference only lies in the theory used by the outermost box.
 
@@ -2355,7 +2975,7 @@ deregisterQueries :-
 :- json_object step(derivation, reason, line) + [type=step].
 :- json_object box(proof) + [type=box].
 :- json_object proof_query(theory, goal) + [type=proof_query].
-:- json_object gap_query(proof) + [type=gap_query].
+:- json_object gap_query(proof, check) + [type=gap_query].
 :- json_object arg_view_query(proof) + [type=arg_view_query].
 :- json_object arg('1', '2') + [type=arg].
 :- json_object gap_view_query(arg, theory) + [type=gap_view_query].
@@ -2376,10 +2996,16 @@ serveGenerateProofs(Request) :-
 
 serveGAPCheck(Request) :-
 	http_read_json(Request, JSONIn),
-	json_to_prolog(JSONIn, gap_query(Proof)),
+	json_to_prolog(JSONIn, gap_query(Proof, Check)),
 	reverseRecursive(Proof, RevProof),
 	(
-		checkGAP(RevProof),
+		(
+			Check = classic, 
+			checkGAP(RevProof);
+			
+			Check = extended,
+			checkGAPX(RevProof)
+		),
 		prolog_to_json('approved', JSONOut);
 		
 		prolog_to_json('disproved', JSONOut)
@@ -2421,13 +3047,13 @@ on line 35, \lstinline$jsonEcho/1$ is used to check that the server is set up pr
 \item
 on line 41, \lstinline$serveGenerateProofs/1$ is used to take a theory and a goal and respond with all the proofs that prove the goal using the given theory (\autoref{chap:prover})
 \item
-on line 48, \lstinline$serveGAPCheck/1$ takes a proof and responds appropriately depending on whether the proof follows the Genuine Absurdity Property or not (\autoref{chap:gapcheck})
+on line 48, \lstinline$serveGAPCheck/1$ takes a proof and responds appropriately depending on whether the proof follows the (extended) Genuine Absurdity Property or not (\autoref{chap:gapcheck}, \autoref{chap:gapx})
 \item
-on line 60, \lstinline$serveGAPToArg/1$ takes a proof that follows the Genuine Absurdity Property and returns a visualization (\autoref{chap:viz})
+on line 66, \lstinline$serveGAPToArg/1$ takes a proof that follows the Genuine Absurdity Property and returns a visualization (\autoref{chap:viz})
 \item
-on line 68, \lstinline$serveArgToGAP/1$ takes an argument (a visualization) and the theory it is based on and extracts a proof that when visualized again, provides the same argument (\autoref{chap:extractor})
+on line 74, \lstinline$serveArgToGAP/1$ takes an argument (a visualization) and the theory it is based on and extracts a proof that when visualized again, provides the same argument (\autoref{chap:extractor})
 \item
-on line 76, \lstinline$serveProvable/1$ takes a theory and a goal and checks whether the goal can be proven; no proof is sent back to the client; used by the argument builder to check for consistent attacks provided by the user (\autoref{chap:argbuilder})
+on line 82, \lstinline$serveProvable/1$ takes a theory and a goal and checks whether the goal can be proven; no proof is sent back to the client; used by the argument builder to check for consistent attacks provided by the user (\autoref{chap:argbuilder})
 \end{itemize} 
 
 \section{Remarks}

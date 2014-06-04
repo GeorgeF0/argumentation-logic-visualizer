@@ -117,7 +117,17 @@ The command input, now enabled, should look like this:
 </div>
 <p>Simply amend the command and try again.</p>
 <h3>Check GAP Tab</h3>
-<p>This tab is used to validate proofs as following the Genuine Absurdity Property. Drag a proof from the Clipboard that has not already been verified onto the thumbnail placeholder under that tab. The placeholder will then be filled in with the proof. Click on the Check GAP button in order to check whether the supplied proof follows the property. If it does, the proof will be given a certification ribbon as shown below:</p>
+<p>This tab is used to validate proofs as following the Genuine Absurdity Property. Drag a proof from the Clipboard that has not already been verified onto the thumbnail placeholder under that tab. The placeholder will then be filled in with the proof. Select the version of the Genuine Absurdity Property you would like to use. This could be either the original definition or the extended definition. The selection dropdown looks like this:</p>
+<div class="btn-group">
+	<button type="button" class="btn btn-default dropdown-toggle navbar-btn" data-toggle="dropdown">
+	    <span class="glyphicon glyphicon-certificate"></span> Select GAP semantics <span class="caret"></span>
+	</button>
+	<ul class="dropdown-menu" role="menu">
+	    <li><a href="#">Classic GAP</a></li>
+	    <li><a href="#">Extended GAP</a></li>
+	</ul>
+</div>
+<p>Click on the Check GAP button in order to check whether the supplied proof follows the property. If it does, the proof will be given a certification ribbon as shown below:</p>
 <div style="width:400px;height:500px;padding-left:15px;padding-bottom:15px;position:relative">
 	<div class="thumbnail" style="height:100%;white-space:nowrap;overflow:auto">0  a  given<br> 1  !a  hypothesis<br> 2  falsity  _I(0,1)<br> 3  falsity  check(2)<br>4  !!a  !I(1,3)<br>5  a  !E(4)<br><img src="img/gap-certificate.png" style="position:absolute;right:0;bottom:15px" draggable="false">
 	</div>
