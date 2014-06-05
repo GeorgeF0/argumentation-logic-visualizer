@@ -249,7 +249,7 @@ Assume theory $T = \{\alpha\rightarrow\beta\rightarrow\neg\gamma, \neg\gamma\wed
 9&\neg\alpha&\neg I(3,8)\cr
 }}\]
 
-A box is used to contain the hypotheses, derivations inside which cannot be used outside. Each derivation is numbered on the left, and reasons (i.e. rules used) for each derivation are given on the right, following the rules defined in the previous section. Theory is indicated as "given", and assumptions (hypotheses) are indicated as "hypothesis" at the beginning of a sub-derivation (inner box).
+A box is used to contain the hypotheses, derivations inside which cannot be used outside. Each derivation is numbered on the left, and reasons (i.e. rules used) for each derivation are given on the right, following the rules defined in the previous section. Theory is indicated as "given", and assumptions (hypotheses) are indicated as "hypothesis" at the beginning of a sub-derivation (inner box). Sub-derivations can also be indicated as $[\phi ... \bot]$ in the text, where $\phi$ is the hypothesis.
 
 \subsection{Automated Theorem Proving and Proof Search}
 Despite what the name implies, proof theory in general does not work with natural deduction calculi as the expressiveness of natural deduction comes at a price in terms of its unrestricted search space \citep*[pp. 140-141]{siegfried}. Hilbert systems and natural deduction are said to be inappropriate for automated theorem proving since they both exhibit the modus ponens rule \citep*[p. 95]{autobots}. Natural deduction calculi that are indeed used in theorem proving or proof search have special properties and restrictions in their search space in order to provide a good strategic method of achieving their goals \citep*[pp. 140-141]{siegfried}.
@@ -561,7 +561,7 @@ Consider as an example, theory $T = \{\alpha\rightarrow\bot, \beta\rightarrow\bo
 
 This proof can be visualized as a tree with the root being the outer derivation of $\neg\gamma$ and with children the (sub-)derivations of $\neg\alpha$ and $\neg\beta$, as shown in \autoref{fig:randviz}. The exact algorithm for visualizing a proof will be given in \autoref{chap:viz}.
 
-\begin{figure}
+\begin{figure}[thp]
 \centerline{\begin{forest}
 forestyle
 [,tikz={\node[pos=0,font=\sffamily,anchor=west,xshift=12pt,yshift=1pt]{$\{\gamma\}$};}
@@ -584,7 +584,7 @@ For a directly consistent theory, if $NACC^T(\{\phi\},\{\})$ holds for some $\ph
 \label{subsec:gap}
 For the rest of this section, theories are assumed to be expressed using conjunction and negation only. This gives rise to the following property: all sub-derivations of any derivation of a theory are RAND sub-derivations. The following notation (adapted from the technical report) can be used to represent RAND derivations:
 
-\[[\phi:\phi_1, ..., \phi_k; \neg\psi_1, ..., \neg\psi_l: \bot]\]
+\[[\phi:c(\phi_1), ..., c(\phi_k); \neg\psi_1, ..., \neg\psi_l: \bot]\]
 where $k, l \geq 0$ and
 \begin{itemize}
 \item
@@ -595,17 +595,20 @@ $\phi_i$ are the hypothesis of parent derivations that this derivation has acces
 $\psi_i$ are the hypotheses of the children derivations, the negations of which can be used by this derivation
 \end{itemize}
 
+A very important thing to note is that such derivation contains copies of ancestor hypotheses that were explicitly copied into the sub-derivation. It does not necessarily hold all of its ancestor hypotheses. This is indicated by $c(\phi_i)$ instead of just $\phi_i$ in the notation above. In the Argumentation Logic paper, there is an explicit copy rule that copies a hypothesis from an ancestor in order to be used inside the sub-derivation. Copying in the natural deduction style used in this paper will be explained later.
+
 This notation can also nest derivations inside one another. From the last example with theory $T = \{\alpha\rightarrow\bot, \beta\rightarrow\bot, \neg\alpha\wedge\neg\beta\wedge\gamma\rightarrow\bot\}$ and proof of $\neg\gamma$, the RAND derivations that took place can be described as follows, using this notation:
-\[[\gamma:-;[\alpha:\gamma;-:\bot],[\beta:\gamma;-:\bot]:\bot]\]
+\[[\gamma:-;[\alpha:c(\gamma);-:\bot],[\beta:c(\gamma);-:\bot]:\bot]\]
 
-Note that the outer derivation has no inherited ancestral hypotheses, and the inner derivations (which correspond to the leaves in the tree) have no child hypotheses; therefore "-" is used to represent empty sequences in the notation.
+Note that the outer derivation has no inherited ancestral hypotheses, and the inner derivations (which correspond to the leaves in the tree) have no child hypotheses; therefore "-" is used to represent empty sequences in the notation. Note the copies of the hypothesis $\gamma$ of the ancestor derivation $[\gamma ... \bot]$ in the sub-derivations $[\alpha ... \bot]$ and $[\beta ... \bot]$.
 
-As a consequence of a RAND derivation, $T\cup\{\phi\}\cup\{\phi_1, ..., \phi_k\}\cup\{\neg\psi_1, ..., \neg\psi_l\}\vdash_{MRA}\bot$. That is to say, the theory along with the hypothesis of that derivation and the assistance of parent and child hypotheses can be used to derive a contradiction (which gives ground for the deduction of $\neg\phi$ using the Reductio ad Absurdum rule). 
+As a consequence of a RAND derivation, $T\cup\{\phi\}\cup\{\phi_1, ..., \phi_k\}\cup\{\neg\psi_1, ..., \neg\psi_l\}\vdash_{MRA}\bot$. That is to say, the theory along with the hypothesis of that derivation and the assistance of parent and child hypotheses can be used to derive a contradiction (which gives ground for the deduction of $\neg\phi$ using the Reductio ad Absurdum rule).
 
-The Genuine Absurdity Property then states that a RAND derivation satisfies this property if the hypothesis of the derivation must be used in order to derive a contradiction. In other words, the hypothesis must be relevant and without it a contradiction cannot be established in any way. In formal notation this means that $T\cup\{\phi_1, ..., \phi_k\}\cup\{\neg\psi_1, ..., \neg\psi_l\}\nvdash_{MRA}\bot$ (note the absence of $\phi$). In addition, all RAND sub-derivations must also follow this property, making it a recursive property.
+The Genuine Absurdity Property then states that a RAND derivation satisfies this property if the hypothesis of the derivation must be used in order to derive a contradiction. In other words, the hypothesis must be relevant and without it a contradiction cannot be established in any way. In formal notation this means that $T\cup\{\phi_1, ..., \phi_k\}\cup\{\neg\psi_1, ..., \neg\psi_l\}\nvdash_{MRA}\bot$ (note the absence of $\phi$). In addition, all RAND sub-derivations must also follow this property, making it a recursive property. Note that the set $\{\phi_1, ..., \phi_k\}$ contains only the ancestor hypotheses copied into the sub-derivation, not necessarily all of them.
 
 In terms of argumentation, the violation of the genuine absurdity property can be thought of an argument with premises irrelevant to the conversation at hand (as was discussed in \autoref{subsec:relevance}). RAND derivations satisfying the genuine absurdity property are not guaranteed to exist, except for classically consistent theories \citep*[p. 9]{alpaper}. It can be shown that for a directly consistent theory, if there is a RAND derivation of $\neg\phi$ that fully satisfies the genuine absurdity property then $NACC^T(\{\phi\},\{\})$ holds \citep*[p. 19]{alpaper}.
 
+\subsubsection{Genuine Absurdity Property and Substitution Shortcut}
 A very important thing to note is that the Genuine Absurdity Property is defined only in natural deduction that does not make use of the substitution shortcut (which can be thought of as similar to a cut in sequent calculus). This shortcut is useful in avoiding to re-prove parts of the derivation by proving them once in a more general context and then using them repeatedly in (possibly) more specific contexts. To illustrate the use of the shortcut, consider the two proofs shown in \autoref{fig:shortcut}.
 
 \begin{figure}[htp]
@@ -718,7 +721,114 @@ A very important thing to note is that the Genuine Absurdity Property is defined
 \caption{Proofs showing the use of a shortcut in natural deduction. The proof on the right derives $\neg\beta$ again whereas the proof on the left simply reuses the previous derivation of $\neg\beta$\label{fig:shortcut}}
 \end{figure}
 
-These two proofs are the same in a sense. The difference lies in that the first proof does not derive $\neg\beta$ again by re-using the derivation made on lines 5-8. The second proof is more explicit, by re-proving $\neg\beta$ inside the derivation of $\neg\gamma$. Too see how this affects the definition of the Genuine Absurdity Property, take the child hypotheses for the derivation of $\neg\gamma$ for each proof. In the former proof, there is none, whereas in the latter, there is $\beta$. The definition of the Genuine Absurdity Property depends on the set of children hypotheses of each (sub)derivation, and allowing the use of the shortcut affects that set. This is because in the first proof the check for the property will be $T\cup\{\alpha\}\cup\{\}\nvdash_{MRA}\bot$, whereas in the second it will be $T\cup\{\alpha\}\cup\{\neg\beta\}\nvdash_{MRA}\bot$. The fact that $\neg\beta$ is excluded from the check could affect whether the proof is correctly attributed as following the Genuine Absurdity Property or not. This is addressed in \autoref{chap:gapx} where an extension is given to this definition so that proofs that use the shortcut can still follow this property.
+These two proofs are the same in a sense. The difference lies in that the first proof does not derive $\neg\beta$ again by re-using the derivation made on lines 5-8. The second proof is more explicit, by re-proving $\neg\beta$ inside the derivation of $\neg\gamma$. To see how this affects the definition of the Genuine Absurdity Property, take the child hypotheses for the derivation of $\neg\gamma$ for each proof. In the former proof, there is none, whereas in the latter, there is $\beta$. The definition of the Genuine Absurdity Property depends on the set of children hypotheses of each (sub)derivation, and allowing the use of the shortcut affects that set. This is because in the first proof the check for the property will be $T\cup\{\alpha\}\cup\{\}\nvdash_{MRA}\bot$, whereas in the second it will be $T\cup\{\alpha\}\cup\{\neg\beta\}\nvdash_{MRA}\bot$. The fact that $\neg\beta$ is excluded from the check could affect whether the proof is correctly attributed as following the Genuine Absurdity Property or not. This is addressed in \autoref{chap:gapx} where an extension is given to this definition so that proofs that use the shortcut can still follow this property.
+
+\subsubsection{Copying of Ancestor Hypotheses}
+In the Argumentation Logic paper, sub-derivations have access to ancestor hypotheses by copying them explicitly in the derivation, indicated by a line $c(\phi_i)$ where $\phi_i$ is the ancestor derivation being copied. This paper does not have an explicit "copy" rule, therefore the copying of ancestor hypotheses will happen implicitly. If a sub-derivation features a step that has a line reference in its reason (justification) pointing to a hypothesis, then that hypothesis can be considered as having been implicitly copied into the sub-derivation. An example is shown in \autoref{fig:copy}.
+
+\begin{figure}[htp]
+\begin{minipage}[c]{.33\linewidth}
+\[\vbox{\offinterlineskip\halign{
+&\tabskip=1.5em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\tabskip=0em\cr
+%
+1&\neg(\alpha\wedge\beta)&\mbox{given}\cr
+2&\neg(\alpha\wedge\neg\beta)&\mbox{given}\cr
+3&\neg\beta&\mbox{given}\cr
+%
+\multispan3\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&4&\alpha&\mbox{hypothesis}&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&5&\beta&\mbox{hypothesis}&\cr
+&6&\alpha\wedge\beta&\wedge I(4,5)&\cr
+&7&\bot&\bot I(1,6)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&8&\neg\beta&\neg I(5,7)&\cr
+&9&\alpha\wedge\neg\beta&\wedge I(4,8)&\cr
+&10&\bot&\bot I(2,9)&\cr
+%
+\noalign{\hrule}}}\,\cr
+%
+11&\neg\alpha&\neg I(4,10)\cr
+}}\]
+\end{minipage}%
+\begin{minipage}[c]{.33\linewidth}
+\[\vbox{\offinterlineskip\halign{
+&\tabskip=1.5em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\tabskip=0em\cr
+%
+1&\neg(\alpha\wedge\beta)&\mbox{given}\cr
+2&\neg(\alpha\wedge\neg\beta)&\mbox{given}\cr
+3&\neg\beta&\mbox{given}\cr
+%
+\multispan3\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&4&\alpha&\mbox{hypothesis}&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&5&\beta&\mbox{hypothesis}&\cr
+&6&\bot&\bot I(3,5)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&7&\neg\beta&\neg I(5,6)&\cr
+&8&\alpha\wedge\neg\beta&\wedge I(4,7)&\cr
+&9&\bot&\bot I(2,8)&\cr
+%
+\noalign{\hrule}}}\,\cr
+%
+10&\neg\alpha&\neg I(4,9)\cr
+}}\]
+\end{minipage}%
+\begin{minipage}[c]{.33\linewidth}
+\[\vbox{\offinterlineskip\halign{
+&\tabskip=1.5em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\tabskip=0em\cr
+%
+1&\neg(\alpha\wedge\beta)&\mbox{given}\cr
+2&\neg(\alpha\wedge\neg\beta)&\mbox{given}\cr
+3&\neg\beta&\mbox{given}\cr
+%
+\multispan3\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&4&\alpha&\mbox{hypothesis}&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&5&\beta&\mbox{hypothesis}&\cr
+&6&\alpha\wedge\beta&\wedge I(4,5)&\cr
+&7&\bot&\bot I(3,5)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&8&\neg\beta&\neg I(5,7)&\cr
+&9&\alpha\wedge\neg\beta&\wedge I(4,8)&\cr
+&10&\bot&\bot I(2,9)&\cr
+%
+\noalign{\hrule}}}\,\cr
+%
+11&\neg\alpha&\neg I(4,10)\cr
+}}\]
+\end{minipage}
+\caption{Proofs showing the implicit use of copying of ancestor hypotheses: the proof in the middle makes no reference to the ancestor hypothesis $\alpha$ whereas the other two implicitly copy it\label{fig:copy}}
+\end{figure}
+
+\autoref{fig:copy} shows the proof on the left implicitly copying the ancestor hypothesis $\alpha$ because line 6 of the $[\beta ... \bot]$ sub-derivation refers to line 4 in its justification ($\wedge I(4,5)$). The proof on the right implicitly copies the ancestor hypothesis too, albeit not using it (note that line 7 refers to lines 3 and 5 of the proof, not line 6). The middle proof makes no mention of the ancestor hypothesis $\alpha$ whatsoever and so it does not implicitly copy it.
 
 \subsubsection{Acceptability Semantics With Respect to Propositional Logic}
 The technical report presents a series of theorems and proofs that closely relate Argumentation Logic's acceptability semantics to propositional logic \citep*[pp. 10-11]{alpaper}. Below is a summary of properties of the notions of acceptability that demonstrate their connection to notions in propositional logic:
@@ -942,14 +1052,16 @@ Moreover, recall that the Genuine Absurdity Property forms a kind of relevance b
 
 \[T\cup\{\phi_1, ..., \phi_k\}\cup\{\neg\psi_1, ..., \neg\psi_l\}\nvdash_{MRA}\bot\]
 
-Recall, further, that the Genuine Absurdity Property is a recursive property in that any sub-derivations of an application of the Reductio ad Absurdum rule must also follow this property, and finally, that this property is defined only over proofs using conjunction and negation only.
+Recall, further, that the Genuine Absurdity Property is a recursive property in that any sub-derivations of an application of the Reductio ad Absurdum rule must also follow this property, and finally, that this property is defined only over proofs using conjunction and negation only. Note once again, that the set $\{\phi_1, ..., \phi_k\}$ includes all ancestor hypotheses copied from outside the sub-derivation.
 
 \section{Short Description of Algorithm}
 In a nutshell, the algorithm for checking for the Genuine Absurdity Property traverses the proof and keeps track of ancestor hypotheses and child hypotheses as well as the theory given initially. At the beginning the algorithm checks that the given proof is a RAND proof and that it only contains conjunctions and negations of atoms. In addition, it checks that the proof does not make use of any shortcuts. Those are dealt in the extended version of the Genuine Absurdity Property discussed in \autoref{chap:gapx}.
 
-At the end of each application of the Reductio ad Absurdum rule the Genuine Absurdity Property is checked by asking the theorem prover in \autoref{chap:prover} to try and prove a contradiction using the given theory, and the ancestor and (negations of the) child hypotheses. That is, we ask the prover to prove that $T\cup\{\phi_1, ..., \phi_k\}\cup\{\neg\psi_1, ..., \neg\psi_l\}\vdash_{MRA}\bot$. If that succeeds, then we know that a contradiction could have been reached without the use of the hypothesis in the current application of the Reductio ad Absurdum rule, thus making the proof not follow the property under check.
+The ancestor hypotheses are tracked by crawling the proof backwards from each line in the sub-derivation, using the justifications as (potentially forking) paths to guide the search. The child hypotheses are tracked by reading the hypothesis at the top of each sub-derivation and negating it.
 
-Before reaching the end of the current application of the $\neg I$ rule, each sub-derivation is also checked that it follows the Genuine Absurdity Property by calling the algorithm again recursively, while adding the current hypothesis to the tracked formulas.
+Before reaching the end of the current application of the $\neg I$ rule, each sub-derivation is also checked that it follows the Genuine Absurdity Property by calling the algorithm again recursively.
+
+At the end of each application of the Reductio ad Absurdum rule the Genuine Absurdity Property is checked by asking the theorem prover in \autoref{chap:prover} to try and prove a contradiction using the given theory, and the ancestor and (negations of the) child hypotheses. That is, we ask the prover to prove that $T\cup\{\phi_1, ..., \phi_k\}\cup\{\neg\psi_1, ..., \neg\psi_l\}\vdash_{MRA}\bot$. If that succeeds, then we know that a contradiction could have been reached without the use of the hypothesis in the current application of the Reductio ad Absurdum rule, thus making the proof not follow the property under check.
 
 \section{Details of Implementation}
 The overall algorithm is split into four stages. The first stage involves checking whether the given proof is a RAND proof. That is, apart from the theory, the proof should only contain an application of the Reductio ad Absurdum rule on the top level. The second stage involves checking whether the given proof has formulas consisting of only conjunction and negation. The third stage checks that the proof does not make any use of the substitution rule. The fourth and final stage is the actual check which verifies the Genuine Absurdity Theory.
@@ -1038,15 +1150,19 @@ checkPureND(L, LN, [box(BoxProof)|Proof], WholeProof) :-
 The final part of the algorithm deals with the definition of the Genuine Absurdity Property directly.
 
 \begin{lstlisting}[caption={Checking whether a proof follows the Genuine Absurdity Property},label=lst:gapgapcheck]
-checkGAP(Theory, _, AncestorHypotheses, ChildHypotheses, []) :-
-	a3(Theory, AncestorHypotheses, ChildHypotheses, Context),
+% Checks for the actual GAP for each (sub)derivation in the proof
+checkGAP(Theory, AncestorHypotheses, ChildHypotheses, SiblingHypotheses, [], _, _) :-
+	a4(Theory, AncestorHypotheses, ChildHypotheses, SiblingHypotheses, Context),
 	not(proveMRA(Context, [falsity], _)).
-checkGAP(Theory, _, AncestorHypotheses, ChildHypotheses, [step(H, [hypothesis], _)|Proof]) :-
-	!, checkGAP(Theory, H, AncestorHypotheses, ChildHypotheses, Proof).
-checkGAP(Theory, Hypothesis, AncestorHypotheses, ChildHypotheses, [step(_, _, _)|Proof]) :-
-	checkGAP(Theory, Hypothesis, AncestorHypotheses, ChildHypotheses, Proof).
-checkGAP(Theory, Hypothesis, AncestorHypotheses, ChildHypotheses, [box(BoxProof)|Proof]) :-
-	checkGAP(Theory, _, [Hypothesis|AncestorHypotheses], [], BoxProof),
+checkGAP(Theory, [], ChildHypotheses, SiblingHypotheses, [step(_, [hypothesis], HL)|Proof], WholeProof, _) :-
+	!, checkGAP(Theory, [], ChildHypotheses, SiblingHypotheses, Proof, WholeProof, HL).
+checkGAP(Theory, AncestorHypotheses, ChildHypotheses, SiblingHypotheses, [step(_, [_|Reason], _)|Proof], WholeProof, HL) :-
+	getUsedHypotheses(Theory, Reason, WholeProof, HL, NewAncHypotheses, NewSibHypotheses),
+	a2(NewSibHypotheses, SiblingHypotheses, NewSiblingHypotheses),
+	a2(NewAncHypotheses, AncestorHypotheses, NewAncestorHypotheses),
+	checkGAP(Theory, NewAncestorHypotheses, ChildHypotheses, NewSiblingHypotheses, Proof, WholeProof, HL).
+checkGAP(Theory, AncestorHypotheses, ChildHypotheses, SiblingHypotheses, [box(BoxProof)|Proof], WholeProof, HL) :-
+	checkGAP(Theory, [], [], [], BoxProof, WholeProof, _),
 	BoxProof = [step(ChildHypothesis, [hypothesis], _)|_],
 	(
 		ChildHypothesis = n(X),
@@ -1054,19 +1170,49 @@ checkGAP(Theory, Hypothesis, AncestorHypotheses, ChildHypotheses, [box(BoxProof)
 		
 		NegatedChildHypothesis = n(ChildHypothesis)
 	),
-	checkGAP(Theory, Hypothesis, AncestorHypotheses, [NegatedChildHypothesis|ChildHypotheses], Proof).
+	checkGAP(Theory, AncestorHypotheses, [NegatedChildHypothesis|ChildHypotheses], SiblingHypotheses, Proof, WholeProof, HL).
 \end{lstlisting}
 
 The format of the proof passed in this predicate is the opposite of that output by the theorem prover in \autoref{chap:prover} in that the steps are in increasing order as one would read the proof on paper. This is due to the work of the \lstinline$getTheoryAndRevBox/3$ predicate called before the check as shown in \autoref{lst:gaptoppred}.
 
-The clause on line 4 of \autoref{lst:gapgapcheck} makes a note of the hypothesis. It is the one and only clause that Prolog chooses upon entering a new box (application of the Reductio ad Absurdum rule). All intermediate steps bear little significance and are hence ignored by this predicate as shown on the clause defined on line 6. This is because it is known from the previous check for the lack of substitutions (shortcuts) that there are no references to external conclusions (sibling derivations).
+The clause on line 4 of \autoref{lst:gapgapcheck} makes a note of the location (line number) of the hypothesis. It is the one and only clause that Prolog chooses upon entering a new box (application of the Reductio ad Absurdum rule). All intermediate steps bear little significance in what they actually do, but it is very important to check what steps of the proof they refer to, and extract potential ancestor hypotheses. This is done by the clause on line 7, using \lstinline$getUsedHypotheses/6$, which returns the ancestor and sibling hypotheses used. The latter set will of course be empty and will not affect the check for the original definition. This is because it is known from the previous check for the lack of substitutions (shortcuts) that there are no references to external conclusions (sibling derivations).
 
-Child proofs however must be checked for the Genuine Absurdity Property as well as this property is recursive. Line 7 takes that into account. It adds the hypothesis of the current context into the ancestor hypotheses of a new call to the \lstinline$checkGAP/5$ predicate (line 9). If the sub-derivation follows the property, the algorithm continues to add the negation of the sub-derivation hypothesis to the child hypotheses. 
+Child proofs however must be checked for the Genuine Absurdity Property as well as this property is recursive. Line 7 takes that into account. It adds the hypothesis of the current context into the ancestor hypotheses of a new call to the \lstinline$checkGAP/7$ predicate (line 9). If the sub-derivation follows the property, the algorithm continues to add the negation of the sub-derivation hypothesis to the child hypotheses. 
 
-At the end of the current context, when all the child hypotheses have been gathered and checked that they follow the property, the algorithm checks that the property holds for this context as well. This is done by the clause on line 1. The predicate \lstinline$a3/4$ ("append 3 lists") on line 2 merges the theory, ancestor hypotheses and child hypotheses gathered so far into one bundle, and calls for the theorem prover to try and prove a contradiction while purposely excluding the hypothesis of the current context from the bundle (line 3). That is, the theorem prover is given the task of proving $T\cup\{\phi_1, ..., \phi_k\}\cup\{\neg\psi_1, ..., \neg\psi_l\}\vdash_{MRA}\bot$. If it succeeds, then the Genuine Absurdity Theory does not hold. If it fails, then so far the property holds.
+At the end of the current context, when all the child hypotheses have been gathered and checked that they follow the property, the algorithm checks that the property holds for this context as well. This is done by the clause on line 2. The predicate \lstinline$a3/4$ ("append 3 lists") on line 3 merges the theory, ancestor hypotheses and child hypotheses gathered so far into one bundle, and calls for the theorem prover to try and prove a contradiction while purposely excluding the hypothesis of the current context from the bundle (line 4). That is, the theorem prover is given the task of proving $T\cup\{\phi_1, ..., \phi_k\}\cup\{\neg\psi_1, ..., \neg\psi_l\}\vdash_{MRA}\bot$. If it succeeds, then the Genuine Absurdity Theory does not hold. If it fails, then so far the property holds.
+
+Line 8 scans the line references of intermediate steps in the current derivation to find references to sibling derivations. The scanning and gathering of referenced siblings is done by \lstinline$getUsedSiblingHypotheses/6$ which is shown in \autoref{lst:ancmining}.
+
+\begin{lstlisting}[caption={Gathering of referenced ancestor derivations for the original Genuine Absurdity Property definition},label=lst:ancmining]
+% Uses the line references to find referenced sibling derivations
+getUsedHypotheses(_, [], _, _, [], []) :- !.
+getUsedHypotheses(Theory, Reason, WholeProof, HL, NewAncHypotheses, NewSibHypotheses) :-
+	length(Theory, L),
+	findall(R, (m2(R, Reason), R < HL, R >= L), External),
+	findall([H1, E1], (m2(E1, External), getStep(E1, WholeProof, step(H1, [notI|_], _))), HLN1),
+	unzip(Hs1, LNs1, HLN1),
+	subtract(External, LNs1, Rest1),
+	findall([H2, E2], (m2(E2, Rest1), getStep(E2, WholeProof, step(H2, [hypothesis], _))), HLN2),
+	unzip(Hs2, LNs2, HLN2),
+	subtract(Rest1, LNs2, Rest2),
+	findall(Reason2, (m2(R2, Rest2), getStep(R2, WholeProof, step(_, [_|Reason2], _))), Reasons),
+	append(Reasons, Reasons2),
+	getUsedHypotheses(Theory, Reasons2, WholeProof, HL, NewAncHypotheses2, NewSibHypotheses2),
+	append(Hs1, NewSibHypotheses2, NewSibHypotheses),
+	append(Hs2, NewAncHypotheses2, NewAncHypotheses).
+	
+unzip([], [], []).
+unzip([L|Ls], [R|Rs], [[L,R]|Ps]) :- unzip(Ls, Rs, Ps).
+\end{lstlisting}
+
+The predicate \lstinline$getUsedSiblingHypotheses/6$ works by measuring the size of the theory in steps (line 4 of the code). Any line references smaller than this number indicate a reference to the theory (since the theory appears first in the proof, its line numbers are always smaller than the size of the theory in steps). When called, this predicate knows the line number of the hypothesis of the current derivation. Any reference to a line greater than (or equal to) the line number of the current hypothesis indicates an internal reference and can therefore be ignored. This filtering is done by line 5, that only gathers extraneous references that do not point to the theory. 
+
+Out of these, all steps that are conclusions are filtered and stored (line 6). These constitute sibling conclusion references (indirectly, references to sibling hypotheses). Since the check performed by the \lstinline$checkPureND/2$ guarantees that there are no references to siblings, this line has no effect. This piece of code plays an important role in the extended version of the Genuine Absurdity Property discussed in \autoref{chap:gapx}.
+
+The remaining extraneous references are checked whether they point to an ancestor hypothesis (line 9) and if that is the case, the hypothesis is stored. The remaining extraneous references are then recursively explored by lines 12-14 of the code until the recursion bottoms out. The extracted ancestor conclusions from the recursion at deeper levels are appended to the ones found in the current level of recursion and when the recursion bubbles back up, all ancestor hypotheses referenced by the examined step are returned. The sibling hypotheses returned when checking for the original definition of the property is just an empty list.
 
 \section{Example Walkthrough}
-This example will focus on the \lstinline$checkGAP/5$ predicate shown in \autoref{lst:gapgapcheck}. Consider a proof with theory $\{\neg(\beta\wedge\alpha), \neg(\alpha\wedge\gamma), \neg(\alpha\wedge\neg\beta\wedge\neg\gamma)\}$ and goal $\neg\alpha$. The proof is given below: 
+This example will focus on the \lstinline$checkGAP/7$ predicate shown in \autoref{lst:gapgapcheck}. Consider a proof with theory $\{\neg(\beta\wedge\alpha), \neg(\alpha\wedge\gamma), \neg(\alpha\wedge\neg\beta\wedge\neg\gamma)\}$ and goal $\neg\alpha$. The proof is given below: 
 
 \[\vbox{\offinterlineskip\halign{
 &\tabskip=1.5em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\tabskip=0em\cr
@@ -1115,73 +1261,91 @@ This example will focus on the \lstinline$checkGAP/5$ predicate shown in \autore
 
 The \lstinline$checkGAP/5$ predicate is called with theory $[\neg(\beta\wedge\alpha), \neg(\alpha\wedge\gamma), \neg(\alpha\wedge\neg\beta\wedge\neg\gamma)]$, and empty lists for the ancestor and child hypotheses. It is also given the outer box (lines 4 to 15 of the proof). 
 
-Line 4 of the code in \autoref{lst:gapgapcheck} picks up the hypothesis $\alpha$ on line 4 of the proof while at the same time consuming this line of the proof and calling itself again, passing in the hypothesis just picked up. The current context looks like this:
+Line 5 of the code in \autoref{lst:gapgapcheck} picks up the location (line number ) of the hypothesis $\alpha$ on line 4 of the proof while at the same time consuming this line of the proof and calling itself again, passing in the hypothesis location just picked up. The current context looks like this:
 \begin{itemize}
 \item
-hypothesis: $\alpha$
+hypothesis line number: 4
 \item
 ancestor hypotheses: $\emptyset$
 \item
 child hypotheses: $\emptyset$
 \end{itemize}
 
-Right away a box is encountered, and the clause on line 8 of the code is executed, which calls itself again and adding the current hypothesis $\alpha$ to the ancestor hypotheses for the recursive call.
+Right away a box is encountered, and the clause on line 12 of the code is executed, which calls itself again and re-initializing the ancestor and child hypotheses to an empty list for the recursive call.
 
-Inside the recursive call, in the new context, line 4 executes again, which picks up the new hypothesis $\beta$ and consumes line 5 of the proof. The current context looks like this:
+Inside the recursive call, in the new context, line 5 executes again, which picks up the new hypothesis $\beta$ location and consumes line 5 of the proof. The current context looks like this:
 \begin{itemize}
 \item
-hypothesis: $\beta$
+hypothesis line number : 5
+\item
+ancestor hypotheses: $\emptyset$
+\item
+child hypotheses: $\emptyset$
+\end{itemize}
+
+Next, the clause on line 7 executes which uses \lstinline$getSiblingHypotheses/6$ to find the reference (the implicit copy) of ancestor hypothesis $\alpha$. The aforementioned predicate explores all line references smaller than the current hypothesis line number (5 in this case) to find referenced ancestor hypotheses. The hypothesis is then added to the ancestor hypotheses set. The current context, after consuming line 6 of the proof looks like this: 
+\begin{itemize}
+\item
+hypothesis line number : 5
 \item
 ancestor hypotheses: $\{\alpha\}$
 \item
 child hypotheses: $\emptyset$
 \end{itemize}
 
-Next, the clause on line 6 executes twice in a row, consuming lines 6 and 7 of the proof, essentially ignoring them. The box is now empty.
+Line 7 of the code executes again for line 7 of the proof but no change is made as this line makes only internal references. The box is now empty.
 
-Since the box is now empty, the first clause (line 1) is executed, which checks that a contradiction cannot be proven just by using the theory and ancestor hypothesis $\alpha$ without the need for the current hypothesis $\beta$. That is, it checks that $T\cup\{\alpha\}\nvdash_{MRA}\bot$.
+Since the box is now empty, the first clause (line 2) is executed, which checks that a contradiction cannot be proven just by using the theory and ancestor hypothesis $\alpha$ without the need for the current hypothesis $\beta$. That is, it checks that $T\cup\{\alpha\}\nvdash_{MRA}\bot$.
 
-Having dealt with the child derivation, the algorithm bubbles back up to the execution of line 10 of the code where it previously left off. The box containing lines 5-7 of the proof has been consumed. The child hypothesis is extracted and the negation of it is added to the child hypotheses before recursively calling itself once more. Note that in this context $\alpha$ is the hypothesis and is not a member of the ancestor hypotheses. The current context looks like this:
+Having dealt with the child derivation, the algorithm bubbles back up to the execution of line 13 of the code where it previously left off. The box containing lines 5-7 of the proof has been consumed. The child hypothesis is extracted and the negation of it is added to the child hypotheses before recursively calling itself once more. Note that in this context $\alpha$ is the hypothesis and is not a member of the ancestor hypotheses. The current context looks like this:
 \begin{itemize}
 \item
-hypothesis: $\alpha$
+hypothesis line number: 4
 \item
 ancestor hypotheses: $\emptyset$
 \item
 child hypotheses: $\{\neg\beta\}$
 \end{itemize}
 
-Line 6 of the code steps over line 8 of the proof.
+Line 7 of the code steps over line 8 of the proof.
 
-Here, another box is encountered and the clause on line 8 executes once more, adding the current hypothesis $\alpha$ to the ancestor hypotheses for the recursive call.
+Here, another box is encountered and the clause on line 12 executes once more, re-initializing the ancestor and child hypotheses for the recursive call.
 
-Inside the recursive call, in the new context, line 4 executes again, which picks up the new child hypothesis $\gamma$ and consumes line 9 of the proof. The current context looks like this:
+Inside the recursive call, in the new context, line 5 executes again, which picks up the new hypothesis $\gamma$ line number and consumes line 9 of the proof. The current context looks like this:
 \begin{itemize}
 \item
-hypothesis: $\gamma$
+hypothesis line number: 9
+\item
+ancestor hypotheses: $\emptyset$
+\item
+child hypotheses: $\emptyset$
+\end{itemize}
+
+Lines 10 and 11 of the proof are handled by the clause on line 7 of the code listing. In the first line consumed the copied hypothesis $\alpha$ is found and the current context looks like the following: 
+\begin{itemize}
+\item
+hypothesis line number: 9
 \item
 ancestor hypotheses: $\{\alpha\}$
 \item
 child hypotheses: $\emptyset$
 \end{itemize}
 
-Lines 10 and 11 of the proof are ignored by the clause on line 6 of the code listing. They are consumed and the box is now empty.
+Since this box is now empty, the first clause (line 2) is executed and checks that a contradiction cannot be proven just by using the theory and ancestor hypothesis $\alpha$ without the need for the current hypothesis $\gamma$. That is, it checks that $T\cup\{\alpha\}\nvdash_{MRA}\bot$.
 
-Since this box is now empty, the first clause (line 1) is executed and checks that a contradiction cannot be proven just by using the theory and ancestor hypothesis $\alpha$ without the need for the current hypothesis $\gamma$. That is, it checks that $T\cup\{\alpha\}\nvdash_{MRA}\bot$.
-
-This child derivation is dealt with as well and the algorithm goes back to the execution of line 10 of the code where it left off. The box containing lines 9-11 of the proof has been consumed, and the negation of the child hypothesis $\neg\gamma$ is added to the list of child hypotheses. The current context looks like this:
+This child derivation is dealt with as well and the algorithm goes back to the execution of line 13 of the code where it left off. The box containing lines 9-11 of the proof has been consumed, and the negation of the child hypothesis $\neg\gamma$ is added to the list of child hypotheses. The current context looks like this:
 \begin{itemize}
 \item
-hypothesis: $\alpha$
+hypothesis line number: 4
 \item
 ancestor hypotheses: $\emptyset$
 \item
 child hypotheses: $\{\neg\beta, \neg\gamma\}$
 \end{itemize}
 
-Lines 12-15 of the proof are ignored by the clause on line 6 of the code listing, which results in an empty box.
+Lines 12-15 of the proof are processed in vain by the clause on line 7 of the code listing, which results in an empty box.
 
-The empty box calls for the clause on line 1 of the code, which checks that a contradiction cannot be proven just by using the theory and children hypotheses $\neg\beta$ and $\neg\gamma$ without the need for the current hypothesis $\alpha$. That is, it checks that $T\cup\{\neg\beta, \neg\gamma\}\nvdash_{MRA}\bot$. After this check, the algorithm ends as the top-level RAND derivation has been proven to follow the Genuine Absurdity Property.
+The empty box calls for the clause on line 2 of the code a final time, which checks that a contradiction cannot be proven just by using the theory and children hypotheses $\neg\beta$ and $\neg\gamma$ without the need for the current hypothesis $\alpha$. That is, it checks that $T\cup\{\neg\beta, \neg\gamma\}\nvdash_{MRA}\bot$. After this check, the algorithm ends as the top-level RAND derivation has been proven to follow the Genuine Absurdity Property.
 
 \section{Remarks and Limitation of Genuine Absurdity Property Definition}
 It is worth noting that for the algorithm to work, the theorem prover must return true whenever $T\cup\{\phi_1, ..., \phi_k\}\cup\{\neg\psi_1, ..., \neg\psi_l\}\vdash_{MRA}\bot$ is the case. This means that the theorem prover must be complete, in addition to being sound. If the use of an incomplete theorem prover is employed, then a proof might be deemed to be following the Genuine Absurdity Property because the theorem prover might fail to prove the contradiction of a $\neg I$ rule application (without the hypothesis), rather than because it really might be the case that $T\cup\{\phi_1, ..., \phi_k\}\cup\{\neg\psi_1, ..., \neg\psi_l\}\nvdash_{MRA}\bot$. 
@@ -1575,13 +1739,21 @@ If the derivation makes references to siblings, then the extension is defined as
 
 The two definitions/checks are ultimately the same for this case as well.
 
+\subsection{Effects of More Specific Context of Implicitly Copied Siblings}
+\label{subsec:gap4ever}
+Copying a sibling derivation does not change the derivation itself, and does not affect its Genuine Absurdity Property status either. That is to say, when a sub-derivation is copied to a new (more specific) context, then it exhibits the Genuine Absurdity Property if it did where it was located initially.
+
+Despite the addition of new context, namely the new ancestor hypotheses that surround the copy of the sub-derivation, the sub-derivation retains its property status because of the definition of the Genuine Absurdity Property. The property definition says that the check is $T\cup\{\phi_1, ..., \phi_k\}\cup\{\neg\psi_1, ..., \neg\psi_l\}\nvdash_{MRA}\bot$ where $\{\phi_1, ..., \phi_k\}$ refers to only the ancestor hypotheses references (implicitly) copied by the sub-derivation. Since the referenced sub-derivation existed in a more general context, it can not make use of the new (more specific) context it has been copied into, and therefore the same check will still be performed if the Genuine Absurdity Property is checked again, resulting in the same status as the original sub-derivation in its original context.
+
+This perhaps is easier to show using an example. Consider again the proof in \autoref{fig:gapxx}. The sub-derivation $[\delta ... \bot]$ implicitly copies the sub-derivation $[\beta ... \bot]$ into its own context. The context of the copied sub-derivation in its original location contains ancestor hypothesis $\alpha$ only. The context in the imported location (inside sub-derivation $[\delta ... \bot]$) includes ancestor hypotheses $\{\alpha, \gamma, \delta\}$. The new additions (ie the more specific context) $\{\gamma, \delta\}$ will not affect whether the sub-derivation $[\beta ... \bot]$ follows the Genuine Absurdity Property in its new environment because it is oblivious to that new context as it was imported from a more general one. Thus its Genuine Absurdity Property check will still be $T\cup\{\alpha\}\cup\{\}\nvdash_{MRA}\bot$ in either context, yielding the same results. The same would apply to its children sub-derivations if it had any.
+
 %Another way to prove this is by using well-founded induction. Assume that the extended definition works (ie is equivalent to the classic definition) for $m-1$ sibling references, thus there are referenced sibling derivations $\neg\chi_1, ... \neg\chi_{m-1}$. Now it must be proven that the case for $m$ referenced sibling derivations works. 
 
 \subsection{Assumption of Proof Sketch}
 This proof assumes that an equivalent proof can always be generated that does not make use of any substitutions. Removing a substitution from a (sub)derivation can always be done by replacing the reference to the other derivation by one that points to a local copy of that derivation. The generated proof is always a valid natural deduction proof; however, a proof of this will not be given in this paper.
 
 \section{Details of Implementation}
-Compared to the classic implementation of the Genuine Absurdity Property, the extension implementation remains largely the same. The differences lie in that the initial checks do not include the use of substitution check (since shortcuts are allowed here) and that intermediate steps in the proof are not ignored because they may reference external (sibling) hypotheses.
+Compared to the classic implementation of the Genuine Absurdity Property, the extension implementation remains largely the same. The differences lie in that the initial checks do not include the use of substitution check (since shortcuts are allowed here) and that intermediate steps may also reference external sibling hypotheses.
 
 \begin{lstlisting}[caption={Checking whether a proof is follows the extended Genuine Absurdity Property},label=lst:gapxcheck]
 % Checks that the given proof follows the extended GAP property
@@ -1592,28 +1764,9 @@ checkGAPX(Proof) :-
 	getTheoryAndRevBox(RevProof, Theory, RevBox), !,
 	checkRestrictedTheory(Theory), !,
 	checkGAPX(Theory, _, [], [], [], RevBox, RevBox, _), !.
-checkGAPX(Theory, _, AncestorHypotheses, ChildHypotheses, SiblingHypotheses, [], _, _) :-
-	a4(Theory, AncestorHypotheses, ChildHypotheses, SiblingHypotheses, Context),
-	not(proveMRA(Context, [falsity], _)).
-checkGAPX(Theory, _, AncestorHypotheses, ChildHypotheses, SiblingHypotheses, [step(H, [hypothesis], HL)|Proof], WholeProof, _) :-
-	!, checkGAPX(Theory, H, AncestorHypotheses, ChildHypotheses, SiblingHypotheses, Proof, WholeProof, HL).
-checkGAPX(Theory, Hypothesis, AncestorHypotheses, ChildHypotheses, SiblingHypotheses, [step(_, [_|Reason], _)|Proof], WholeProof, HL) :-
-	getUsedSiblingHypotheses(Theory, Reason, WholeProof, HL, NewHypotheses),
-	a2(NewHypotheses, SiblingHypotheses, NewSiblingHypotheses),
-	checkGAPX(Theory, Hypothesis, AncestorHypotheses, ChildHypotheses, NewSiblingHypotheses, Proof, WholeProof, HL).
-checkGAPX(Theory, Hypothesis, AncestorHypotheses, ChildHypotheses, SiblingHypotheses, [box(BoxProof)|Proof], WholeProof, HL) :-
-	checkGAPX(Theory, _, [Hypothesis|AncestorHypotheses], [], [], BoxProof, WholeProof, _),
-	BoxProof = [step(ChildHypothesis, [hypothesis], _)|_],
-	(
-		ChildHypothesis = n(X),
-		NegatedChildHypothesis = X;
-		
-		NegatedChildHypothesis = n(ChildHypothesis)
-	),
-	checkGAPX(Theory, Hypothesis, AncestorHypotheses, [NegatedChildHypothesis|ChildHypotheses], SiblingHypotheses, Proof, WholeProof, HL).
 \end{lstlisting}
 
-\autoref{lst:gapxcheck} shows that the implementation is comparable to the implementation of the original definition (compare with \autoref{lst:gaptoppred} and \autoref{lst:gapgapcheck}). Line 15 scans the line references of intermediate steps in the current derivation to find references to sibling derivations. The scanning and gathering of referenced siblings is done by \lstinline$getUsedSiblingHypotheses/5$ which is shown in \autoref{lst:sibmining}.
+\autoref{lst:gapxcheck} shows that the implementation is comparable to the implementation of the original definition (compare with \autoref{lst:gaptoppred} and \autoref{lst:gapgapcheck}). As mentioned in the previous chapter the code checking for the Genuine Absurdity Property (in \autoref{lst:gapgapcheck}) scans the line references of intermediate steps in the current derivation to find references to sibling derivations. The scanning and gathering of referenced siblings is done by \lstinline$getUsedSiblingHypotheses/6$ which is shown again in \autoref{lst:sibmining}.
 
 \begin{lstlisting}[caption={Gathering of referenced sibling derivations for the extended Genuine Absurdity Property definition},label=lst:sibmining]
 % Uses the line references to find referenced sibling derivations
@@ -1633,10 +1786,12 @@ unzip([], [], []).
 unzip([L|Ls], [R|Rs], [[L,R]|Ps]) :- unzip(Ls, Rs, Ps).
 \end{lstlisting}
 
-The predicate \lstinline$getUsedSiblingHypotheses/5$ works by measuring the size of the theory in steps (line 4 of the code). Any line references smaller than this number indicate a reference to the theory (since the theory appears first in the proof, its line numbers are always smaller than the size of the theory in steps). When called, this predicate knows the line number of the hypothesis of the current derivation. Any reference to a line greater than (or equal to) the line number of the current hypothesis indicates an internal reference and can therefore be ignored. This filtering is done by line 5, that only gathers extraneous references that do not point to the theory. Out of these, all steps that are conclusions are filtered and stored (line 6). These constitute sibling conclusion references (indirectly, references to sibling hypotheses). The remaining extraneous references are recursively explored by line 11 of the code until the recursion bottoms out. The extracted sibling conclusions from the recursion at deeper levels are appended to the ones found in the current level of recursion and when the recursion bubbles back up, all sibling hypotheses referenced by the examined step are returned.
+The predicate \lstinline$getUsedSiblingHypotheses/6$ works much in the same way as it works for the original definition of the Genuine Absurdity Property, with the only difference being that line 6 of the code may actually yield results. Sibling hypotheses are more or less treated the same way as ancestor hypotheses, in that they are dug up in this predicate, given back to \lstinline$checkGAP/7$, carried over until the sub-derivation under check is consumed and then merged with the other (ancestor and child) hypotheses in order to perform the provability check.
 
 \section{Remarks}
 The extension to the original Genuine Absurdity Property definition considers only consistent theories and proofs that use conjunction and negation only. It may not necessarily be the case that the extension works for more general proofs. Testing its correctness for inconsistent proofs or when using more connectors (and subsequent amendments in case it proves not to be correct) remains future work.
+
+Consider again the proof in \autoref{fig:gapxx}. The reason the sub-derivation $[\beta ... \bot]$ can be used in $[\delta ... \bot]$ is because it came before (in a more general context) it. Thus in an iterative implementation of the Genuine Absurdity Property checker, $[\beta ... \bot]$ will already be checked if it followed the property before considering checking $[\delta ... \bot]$. As an optimization checking for the Genuine Absurdity Property for sibling derivations can be avoided, as it remains constant (see \autoref{subsec:gap4ever}) for all of their implicit copies. This optimization is performed by the extended Genuine Absurdity Property checker.
 
 \chapter{Visualization of Genuine Absurdity Property Proofs}
 \label{chap:viz}
