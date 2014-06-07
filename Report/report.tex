@@ -196,6 +196,7 @@ forestyle
 \end{figure}
 
 \section{Natural Deduction}
+\label{sec:nd}
 Recommended Reading: \citep*[pp. 17-225]{languageproofandlogic}
 
 \subsection{Rules for Propositional Logic}
@@ -3233,15 +3234,209 @@ A completely different approach would be to implement the graphical user interfa
 
 \chapter{Client Module}
 \label{chap:client}
-TODO
+The purpose of the client module is to wrap around the core module in order to provide a better and easier experience than running the different Prolog predicates of the core on a Prolog command line interface.
+
+The client is written in HTML, JavaScript and CSS, and is loaded upon a web browser request from the server (\autoref{chap:server}).
+
 \section{Features}
+The main features of the client are the following:
+\begin{itemize}
+\item
+easy-to-use interface that allows users to not worry about using the core predicates properly, what their inputs should look like and how to make sense of the output returned by Prolog, since modern UI elements and visualization of the output guide the user
+\item
+syntax parser and various input checkers that prevent the user from inputting incorrect theory, goals, attacks, and other forms of input into the system
+\item
+modern user interface that allows for intuitive use of the application
+\item
+data management functionality such as saving generated results (proofs, visualizations, etc), deleting, importing or exporting them
+\item
+additional tools for building proofs and arguments
+\item
+a help section with useful information on how to use the client's features
+\end{itemize}
+
+The next section shows how to use the client module and introduces the interface equivalents of the core module predicates, while \autoref{chap:proofbuilder} and \autoref{chap:argbuilder} are dedicated to using the additional proof builder and argument builder tools respectively, that are exclusive to the client module.
+
 \section{Usage}
-\section{Remarks}
+This section demonstrates the different components of the client and shows how it can be used.
+
+\begin{figure}[htp]
+\centerline{\includegraphics[scale=0.3,angle=90]{img/scr-client-all.png}}
+\caption{The client GUI showing the workbench on the right, the clipboard on the left and the options on the top right corner\label{fig:scrclientall}}
+\end{figure}
+
+\subsection{Clipboard}
+The clipboard holds proofs and other items that need to be retained. It acts as storage but also acts as a pool of available items to use on the Workbench.
+
+The clipboard is always visible on the right hand side of client application as shown in \autoref{fig:scrclientall}.
+
+\subsubsection{Thumbnails}
+Each item is rendered in its own thumbnail, and can be dragged to its appropriate placeholder on the "workbench" (explained later) or on the "Clear Clipboard" or "Export Clipboard" buttons described later. \autoref{fig:scrclientthumb} shows three different items, each rendered in a thumbnail: a proof, another proof that follows the Genuine Absurdity Property, and finally, an argument.
+
+\begin{figure}[htp]
+\centerline{\includegraphics[scale=0.4]{img/scr-client-thumb.png}}
+\caption{Three thumbnails, from left to right: a proof, a verified Genuine Absurdity Property proof, and an argument\label{fig:scrclientthumb}}
+\end{figure}
+
+\subsubsection{Persistent Storage}
+The application makes use of HTML 5's \href{http://en.wikipedia.org/wiki/Web\_storage}{web storage}\footnote{http://en.wikipedia.org/wiki/Web\_storage} feature in order to provide persistent storage for the items in the clipboard. The content of the clipboard remains intact even if the webpage is closed or reloaded. However, this storage may be deleted if the browser clears its data, so it should not be heavily relied upon. There is an export clipboard feature that can export the items stored in the clipboard.
+
+The web storage keeps the clipboard in sync with itself. Whenever an item is added or deleted, or when the clipboard is cleared using the "Clear Clipboard" button, the web storage is updated accordingly. The data is automatically loaded back into the clipboard when the page is refreshed.
+
+\subsubsection{Managing the Clipboard}
+The clipboard allows the deletion of its contents, either in its entirety or one by one. Clicking the "Clear Clipboard" button will delete all the contents of the Clipboard, but after a warning pop-up appears (as shown by \autoref{fig:scrclientcleaboard}). Dropping an item from the clipboard onto this button will delete the item from the clipboard. There is no warning pop-up for dragging a single item onto this button and that item is deleted immediately.
+
+Clicking on the "Export Clipboard" button will export the entire clipboard. A thumbnail can also be dragged and dropped onto the "Export Clipboard" button. This will open a new window with the exported item inside. The import/export facility is discussed in \autoref{subsec:uioptions}.
+
+\begin{figure}[htp]
+\centerline{\includegraphics[scale=0.6]{img/scr-client-clearclipboard.png}}
+\caption{A notification pops up when the user clicks on the "Clear Clipboard" button that asks for confirmation\label{fig:scrclientcleaboard}}
+\end{figure}
+
+\subsection{Workbench}
+The Workbench is where the different actions happen. The different tasks that can be performed have been split into tabs that all fall under the workbench. Some of these tasks require the user to input pre-made proofs or arguments from the Clipboard, or to input logic sentences or natural deduction steps. The syntax used for logic sentences and natural deduction is explained in \autoref{subsec:clyntax}. The workbench is always located on the left hand side of the screen, and occupies most of the real estate of the client screen as shown in \autoref{fig:scrclientall}.
+
+\subsubsection{Generate Proof Tab}
+The purpose of this tab is to let the user enter a theory and a goal and use the theorem prover from \autoref{chap:prover} to return all the proofs that prove the goal set by the user.
+
+The user enters a comma-separated list of formulas in the theory input box, and a single formula in the goal input box, and clicks on the "Generate Proofs" button in order to send the data to the server. If the parsed input is incorrect, the input field with the incorrect input will be highlighted so that the user can amend their input. This is shown in \autoref{fig:scrclientgenprooffail}. As soon as all the proofs are generated and sent back, the space below the text fields and button will display the proofs as shown in \autoref{fig:scrclientgenproof}. The user can then drag the preferred proofs onto the clipboard to save them.
+
+\begin{figure}[htp]
+\centerline{\includegraphics[scale=0.3]{img/scr-client-genprooffail.png}}
+\caption{Incorrect input is highlighted so that the user can revise it\label{fig:scrclientgenprooffail}}
+\end{figure}
+
+\begin{figure}[htp]
+\centerline{\includegraphics[scale=0.3]{img/scr-client-genproof.png}}
+\caption{The theorem prover generates all the proofs that arrive to the given goal using the supplied theory\label{fig:scrclientgenproof}}
+\end{figure}
+
+\subsubsection{Build Proof Tab}
+This functionality is only available in the client module. The core module does not have an equivalent function. It is described in its own separate chapter in \autoref{chap:proofbuilder}.
+
+\subsubsection{Check GAP Tab}
+This tab is used to validate proofs as following the Genuine Absurdity Property. The user can drag a proof from the clipboard that has not already been verified onto the thumbnail placeholder under that tab. The placeholder will then be filled in with the proof. The next step is to select the version of the Genuine Absurdity Property (discussed in \autoref{chap:gapcheck} and \autoref{chap:gapx}) the user would like to use. This could be either the original definition or the extended definition. This is shown by \autoref{fig:scrclientcheckgapsem}. 
+
+Finally, the user can click on the "Check GAP" button in order to check whether the proof does indeed follow the Genuine Absurdity Property by querying the server. If the proof follows the property then this is shown by a small ribbon at the bottom right edge of the thumbnail containing the proof under examination as shown in \autoref{fig:scrclientcheckgap}. The user can then drag the Genuine Absurdity Property-verified proof onto the clipboard.
+
+\begin{figure}[htp]
+\centerline{\includegraphics[scale=0.3]{img/scr-client-checkgapsem.png}}
+\caption{The user can drop an unverified proof onto the placeholder and select between the original and extended definitions for the Genuine Absurdity Property\label{fig:scrclientcheckgapsem}}
+\end{figure}
+
+\begin{figure}[htp]
+\centerline{\includegraphics[scale=0.3]{img/scr-client-checkgap.png}}
+\caption{If the proof follows the Genuine Absurdity Property it is indicated using a ribbon\label{fig:scrclientcheckgap}}
+\end{figure}
+
+\subsubsection{Visualize GAP Tab}
+This tab allows for Genuine Absurdity Property-compliant proofs to be visualized using the algorithm devised in \autoref{chap:viz}. This tab holds two placeholders. The user can drag a compliant proof from the clipboard onto the left placeholder and click on the "Visualize GAP Proof" button. The proof will then be visualized into an argument and placed onto the right placeholder so that they can be viewed side-by-side. Finally the user can drag the visualization onto the clipboard in order to save it. A proof and its corresponding argument are shown side-by-side in \autoref{fig:scrclientproofviz}.
+
+\begin{figure}[htp]
+\centerline{\includegraphics[scale=0.3]{img/scr-client-proofviz.png}}
+\caption{The Visualize GAP tab with a given verified proof and its corresponding argument\label{fig:scrclientproofviz}}
+\end{figure}
+
+\subsubsection{Extract Proof Tab}
+This tab is used to transform an argument back to a proof using the extraction algorithm in \autoref{chap:extractor}. This tab works much in the same way as the previous tab but with the input and output reversed. The user can drag a visualization (argument) onto the box on the left from the clipboard, and click on the "Extract GAP Proof" button. A proof will then be extracted from the argument and placed onto the right placeholder so that they can be viewed side-by-side. Finally the user can drag the extracted proof onto the clipboard in order to save it. An argument and its corresponding proof can be seen together in \autoref{fig:scrclientargviz}.
+
+\begin{figure}[htp]
+\centerline{\includegraphics[scale=0.3]{img/scr-client-argviz.png}}
+\caption{The Extract GAP Proof tab with a given argument and its corresponding verified proof\label{fig:scrclientargviz}}
+\end{figure}
+
+\subsubsection{Build Argument Tab}
+This functionality is only available in the client module. The core module does not have an equivalent function. It is described in its own separate chapter in \autoref{chap:argbuilder}.
+
+\subsection{Options}
+\label{subsec:uioptions}
+Options can be accessed via the top-right dropdown menu above the clipboard as shown in \autoref{fig:scrclientall}. A summary of the options is given below:
+
+\begin{tabular}[htp]{|l|l|}
+\hline
+Option & Description\\
+\hline
+Import to Clipboard & Used to import exported items back to the Clipboard \\
+\hline
+Export Clipboard & Exports the current items in the Cliboard\\
+\hline
+Help & Opens a help page in a new tab with the user manual\\
+\hline
+About & Displays a pop-up with acknowledgments\\
+\hline
+\end{tabular}
+
+The importing-exporting facility is described below.
+
+\subsubsection{Exporting from the Clipboard}
+The data stored in the clipboard can be exported as strings of JSON text and can be saved/distributed/etc. Clicking on the "Export Clipboard" drop-down menu (or button on the clipboard) will export the entire contents of the clipboard. The data will be opened in a new window. If only one of the items on the clipboard needs to be exported, simply drag that item onto the clipboard's "Export Clipboard" button. Note that exporting items from the clipboard does not delete them from it.
+
+\subsubsection{Importing to the Clipboard}
+The text exported by the "Export Clipboard" drop-down menu or button can be imported back into the clipboard by clicking on the "Import to Clipboard" drop-down menu. A pop-up appears with an input field that allows to paste the JSON text in (see \autoref{fig:scrclientimport}). Clicking on the "Import to Clipboard" button will validate the pasted text and if the validation succeeds, the parsed data will be added back to the clipboard. If the validation fails however, the input field will turn red, giving the user the chance to fix the errors and try again.
+
+\begin{figure}[htp]
+\centerline{\includegraphics[scale=0.6]{img/scr-client-import.png}}
+\caption{A pop-up shows when the user clicks the "Import to Clipboard" button on the options dropdown menu\label{fig:scrclientimport}}
+\end{figure}
+
+\subsection{Logic Syntax and Natural Deduction in Client Module}
+\label{subsec:clyntax}
+This section introduces the syntax used for propositional logic by the client, and how a natural deduction proof is represented.
+\subsubsection{Symbols for Propositional Logic}
+In order to make the application appear the same on different devices with different character encoding abilities ASCII characters were used to represent logical connectives. \autoref{tab:clyntax} summarizes the different symbols used and what they represent.
+
+\begin{figure}[htp]
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+Symbol & Meaning\\
+\hline
+$!$ & Negation\\
+\hline
+$\&$ & Conjunction\\
+\hline
+$|$ & Disjunction\\
+\hline
+$->$ & Implication\\
+\hline
+$\_$ & Falsity (Contradiction)\\
+\hline
+$()$ & Precedence (Grouping)\\
+\hline
+\end{tabular}
+\end{center}
+\caption{The logical symbols used by the client application \label{tab:clyntax}}
+\end{figure}
+
+The same symbols are used by the parser as well.
+
+\subsubsection{Entering Propositional Formulas}
+Single propositional formulas can be entered by typing in the formula using the symbols shown above. This is usually required when entering a goal to be proven. A list of propositional formulas is a comma-separated list of formulas. Space characters are ignored. Lists of formulas are usually required when specifying the theory (which might consist of more than just one formula).
+
+\subsubsection{Natural Deduction Format}
+With the exception of the symbols used to indicate logic constructs, natural deduction is represented in the same way as it is represented in this paper. In \autoref{sec:nd} a summary of the rules used by the client as well as an example on how the natural deduction proofs look like are provided. The boxes (sub-derivations) are represented with an indentation rather than an actual drawn box. The greater the indentation, the deeper the sub-derivation is.
+
 \section{Alternatives}
 \label{sec:clientalt}
+There is a wide variety of alternate implementations for the user interface. Among them exist the following:
+\begin{itemize}
+\item
+\href{http://en.wikipedia.org/wiki/Swing\_(Java)}{Java Swing}\footnote{http://en.wikipedia.org/wiki/Swing\_(Java)}
+\item
+\href{http://www.swi-prolog.org/packages/xpce/}{Prolog XPCE}\footnote{http://www.swi-prolog.org/packages/xpce/}
+\item
+\href{http://www.gtk.org/}{GTK+}\footnote{http://www.gtk.org/}, \href{https://qt-project.org/}{QT}\footnote{https://qt-project.org/}, and other similar application frameworks or widget toolkits
+\end{itemize}
 
+Swing is a Java widget toolkit. It can be used to create platform-independent user interfaces written in Java, much in the same way as HTML, CSS and JavaScript can be used to make cross-platform applications. Java tends to be quite verbose however, leading to more complicated code sometimes. The major difference lies in the fact that Swing is used in Java applications, whereas JavaScript is used in web applications. Swing could have been used to create an interface that is packaged together with the server, merging the two roles in one application (ie there would be no physical separation between the client and server), if a Prolog binding library were used (like JPL). This would make the use of a web browser unnecessary.
 
+Prolog XPCE is a SWI-Prolog library for creating graphical user interfaces. This would be the most preferable option since the interface could have imported the core module directly, rendering the server obsolete. Prolog code tends to be very concise, unlike graphical user interface code in general. However, the look and feel of the interfaces produced by XPCE is a bit dated, and more modern alternatives are out there that could offer a better overall experience.
 
+GTK+, Qt and other similar widget toolkits have been proven by various well-known applications for their wide variety of interface elements and overall flexibility. These libraries tend to be very fast, since they are written in C or C++. This however, makes it difficult to produce bug-free interfaces because of their complexity and code size. There have been efforts to create bindings to other high-level programming languages such as Python (\href{http://www.riverbankcomputing.com/software/pyqt/intro}{PyQt}\footnote{http://www.riverbankcomputing.com/software/pyqt/intro} and \href{http://www.pygtk.org/}{PyGTK}\footnote{http://www.pygtk.org/}) that drastically simplify the making of graphical user interfaces with the aforementioned libraries.
+
+The major advantage of building a web application, and the major disadvantage of desktop applications, is deployment. For web applications, updates do not need to be pushed down to the client, and the client itself does not need to seek updates from a server. That is because a web application is served by the server directly, and so application updates can be hot-swapped whenever they become available. A simple page refresh is all that is required. Thus the major advantage of choosing HTML, JavaScript and CSS is that it allows for the option of hosting the project on a public webserver, and allowing the client to be sent to the user's web browser as a web application. This is not possible with the aforementioned alternatives.
+
+In addition, web development has become very fast, with different toolkits and libraries available that speed up development and significantly increase productivity. Web applications can now run at very high speeds due to sophisticated JavaScript engines incorporated by web browsers. In this respect, the current solution does not lack in terms of performance, productivity or appearance, and has the distinct advantage of quick and easy distribution.
 
 \chapter{Proof Builder}
 \label{chap:proofbuilder}
@@ -3268,9 +3463,19 @@ Even if the input is syntactically correct, mistakes can still happen. Assuming 
 As mentioned above, feedback is given immediately after the user enters a command. Even if the feedback is not very specific, it is adequate for the user to understand what went wrong with just a brief inspection of their input. Since feedback is available immediately after each command entered, and because no progress can be made if the command is not valid, the user can easily identify the mistake.
 
 \section{Usage}
-The user starts by navigating to the "Build Proof" tab of the Workbench. There, two input boxes can be found. In the first one, a comma-separated list of formulas can be entered for the theory. In the second input field, a single formula may be entered for the goal of the proof. This is used by the proof builder to identify when the proof is complete. The user clicks on the "Build Proof" button and the proof construction begins if the theory and goal parse correctly. If not, then whichever field contains erroneous input is highlighted. If the parsing succeeds then the command input field is enabled and is ready for use. The theory is already filled in with "given" being the reasons of the steps of the proof. TODO shows this state.
+The user starts by navigating to the "Build Proof" tab of the Workbench. There, two input boxes can be found. In the first one, a comma-separated list of formulas can be entered for the theory. In the second input field, a single formula may be entered for the goal of the proof. This is used by the proof builder to identify when the proof is complete. The user clicks on the "Build Proof" button and the proof construction begins if the theory and goal parse correctly. If not, then whichever field contains erroneous input is highlighted. If the parsing succeeds then the command input field is enabled and is ready for use. The theory is already filled in with "given" being the reasons of the steps of the proof. \autoref{fig:scrclientproofbuilder} shows this state.
 
-The user can type commands in the command input field below the rendered proof under construction and enter them by pressing the Enter key. If the command is accepted, it is executed. Otherwise, the command input field glows red to indicate an error. This is shown in TODO. There are three supported commands:
+\begin{figure}[htp]
+\centerline{\includegraphics[scale=0.3]{img/scr-client-proofbuilder.png}}
+\caption{The proof builder already fills in the theory as steps for the proof that the user is about to build\label{fig:scrclientproofbuilder}}
+\end{figure}
+
+The user can type commands in the command input field below the rendered proof under construction and enter them by pressing the Enter key. If the command is accepted, it is executed. Otherwise, the command input field glows red to indicate an error. This is shown in \autoref{fig:scrclientproofbuilderr}. There are three supported commands:
+
+\begin{figure}[htp]
+\centerline{\includegraphics[scale=0.3]{img/scr-client-proofbuilderr.png}}
+\caption{The proof builder indicates an error when the user input is incorrect\label{fig:scrclientproofbuilderr}}
+\end{figure}
 
 \begin{itemize}
 \item
@@ -3339,9 +3544,24 @@ The argument builder features automatic generation of defenses, and termination 
 \section{Usage}
 The construction of an argument involves a mini-game where the user gives the argument builder the theory and initial argument (the first "defense", or the first argument of the "proponent"). Then it is the job of the user to attack the computer, specifying attack claims. Claims that form good attacks, are accepted and added to the tree. The "proponent" (the computer) then automatically generates the defenses, since they are very well predictable and specified (\autoref{subsec:alfdef2}, \nameref{subsec:alfdef2}). When all branches have been closed off (blocked by a terminal attack), the mini-game ends and the user can save the constructed argument.
 
-The user starts off by entering the theory and argument that should be defended by the computer. The user then clicks the Build Argument button in order to begin the construction of the argument. If an error in the input is detected by the parser, the offending input box is highlighted. Upon the beginning of the construction, the first argument of the proponent is visualized. The attack claim input field is then enabled and the program awaits the user's attack. This state is shown in TODO. The user can make an attack claim by first specifying what the attack is going to be. In order to do that, the user enters the attack in the attack input box and presses the Enter key on the keyboard. If the attack makes sense (does not contradict the theory itself), then it is accepted, otherwise the input field glows red to indicate a bad attack. This is similar to entering an incorrect command in the command input field of the proof builder.
+The user starts off by entering the theory and argument that should be defended by the computer. The user then clicks the Build Argument button in order to begin the construction of the argument. If an error in the input is detected by the parser, the offending input box is highlighted. Upon the beginning of the construction, the first argument of the proponent is visualized. The attack claim input field is then enabled and the program awaits the user's attack. This state is shown in \autoref{fig:scrclientargbuilder}. The user can make an attack claim by first specifying what the attack is going to be. In order to do that, the user enters the attack in the attack input box and presses the Enter key on the keyboard. If the attack makes sense (does not contradict the theory itself), then it is accepted, otherwise the input field glows red to indicate a bad attack. This is similar to entering an incorrect command in the command input field of the proof builder.
 
-Green nodes represent defenses, and these are generated by the computer. Red nodes indicate attacks, and these are added by the user. If the attack is accepted, then a blue node appears on the bottom left corner of the visualized argument under construction to indicate an attack claim. This state is shown in TODO. The user can now drag the attack claim (blue node) onto eligible nodes in the argument tree. Eligible nodes are leaf defenses. As soon as the user starts dragging the blue node, all eligible nodes will be indicated by a faint red drop zone, where the user can drop the blue node. A bright red temporary link will also link the attack claim and defense if the attack claim is hovering over its drop zone. This is shown by TODO. The user can let go of the blue node to issue the attack. The attack is checked that it reaches a contradiction when combined with the defense it is attacking. If that is the case, the tree is redrawn and the attack claim is "set in stone" as it is drawn underneath the defense as a red node.
+\begin{figure}[htp]
+\centerline{\includegraphics[scale=0.3]{img/scr-client-argbuilder.png}}
+\caption{The argument builder draws the initial argument and enables the attack input field awaiting for the user's command\label{fig:scrclientargbuilder}}
+\end{figure}
+
+Green nodes represent defenses, and these are generated by the computer. Red nodes indicate attacks, and these are added by the user. If the attack is accepted, then a blue node appears on the bottom left corner of the visualized argument under construction to indicate an attack claim. This state is shown in \autoref{fig:scrclientargttack}. The user can now drag the attack claim (blue node) onto eligible nodes in the argument tree. Eligible nodes are leaf defenses. As soon as the user starts dragging the blue node, all eligible nodes will be indicated by a faint red drop zone, where the user can drop the blue node. A bright red temporary link will also link the attack claim and defense if the attack claim is hovering over its drop zone. This is shown by \autoref{fig:scrclientfinishhim}. The user can let go of the blue node to issue the attack. The attack is checked that it reaches a contradiction when combined with the defense it is attacking. If that is the case, the tree is redrawn and the attack claim is "set in stone" as it is drawn underneath the defense as a red node.
+
+\begin{figure}[htp]
+\centerline{\includegraphics[scale=0.3]{img/scr-client-argttack.png}}
+\caption{The argument builder draws the initial argument and enables the attack input field awaiting for the user's command\label{fig:scrclientargttack}}
+\end{figure}
+
+\begin{figure}[htp]
+\centerline{\includegraphics[scale=0.3]{img/scr-client-finishhim.png}}
+\caption{The user is about to attack the computer's argument; a red link shows the node the attack will be against if the user drops the attack node\label{fig:scrclientfinishhim}}
+\end{figure}
 
 When the user makes a successful attack, the computer checks if the attack is a subset of the parent defenses, according to the $NACC$ semantics of Argumentation Logic (\autoref{subsec:nacc}). If it does, it is considered a terminal attack. This means that no defenses are generated to defend against that attack and hence that branch of the tree is effectively closed off. If the attack is not a terminal attack, then defenses are generated according to the $NACC$ semantics once more. The defenses are predictable, since the definition of a defense is to take the opposite stance of a component of the attack (\autoref{subsec:alfdef2}).
 
