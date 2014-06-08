@@ -253,10 +253,12 @@ Assume theory $T = \{\alpha\rightarrow\beta\rightarrow\neg\gamma, \neg\gamma\wed
 A box is used to contain the hypotheses, derivations inside which cannot be used outside. Each derivation is numbered on the left, and reasons (i.e. rules used) for each derivation are given on the right, following the rules defined in the previous section. Theory is indicated as "given", and assumptions (hypotheses) are indicated as "hypothesis" at the beginning of a sub-derivation (inner box). Sub-derivations can also be indicated as $[\phi ... \bot]$ in the text, where $\phi$ is the hypothesis.
 
 \subsection{Automated Theorem Proving and Proof Search}
+\label{subsec:nnd}
 Despite what the name implies, proof theory in general does not work with natural deduction calculi as the expressiveness of natural deduction comes at a price in terms of its unrestricted search space \citep*[pp. 140-141]{siegfried}. Hilbert systems and natural deduction are said to be inappropriate for automated theorem proving since they both exhibit the modus ponens rule \citep*[p. 95]{autobots}. Natural deduction calculi that are indeed used in theorem proving or proof search have special properties and restrictions in their search space in order to provide a good strategic method of achieving their goals \citep*[pp. 140-141]{siegfried}.
 
 \subsection{Example of a Proof Search Implementation}
-The \href{http://www.cs.cmu.edu/~cogito/cptproject.html}{Carnegie Melon Proof Tutor}\footnote{http://www.cs.cmu.edu/~cogito/cptproject.html} is an example of an automated proof search program that can formulate proofs in natural deduction by employing a wide range of natural deduction proofs. A summary of its ruleset (with a slight adjustment to the notation) is given below:
+\label{subsec:carnage}
+The \href{http://www.cs.cmu.edu/~cogito/cptproject.html}{Carnegie Mellon Proof Tutor}\footnote{http://www.cs.cmu.edu/~cogito/cptproject.html} is an example of an automated proof search program that can formulate proofs in natural deduction by employing a wide range of natural deduction proofs. A summary of its ruleset (with a slight adjustment to the notation) is given below:
 
 Using the notation in Sieg and Scheine's article \citep{siegfried}, $\alpha;\beta?G$ is a triplet describing the following:
 \begin{itemize}
@@ -324,7 +326,7 @@ $\bot_F: \alpha;\beta?\bot, \phi\in F \Rightarrow \alpha;\beta?\phi\, AND\, \alp
 (if the goal is a contradiction, prove it by taking any subformula in the set $\alpha\beta$ and prove both that subformula and its negation)
 \end{itemize}
 
-The last rule mentions $F$; this is the finite class of formulas that consist of all subformulas of elements in the subsequence $\alpha\beta$. The theorem prover built for this project (\autoref{chap:prover}) will base some of its rules on the Carnegie Melon Proof Tutor.
+The last rule mentions $F$; this is the finite class of formulas that consist of all subformulas of elements in the subsequence $\alpha\beta$. The theorem prover built for this project (\autoref{chap:prover}) will base some of its rules on the Carnegie Mellon Proof Tutor.
 
 \section{Argumentation Logic}
 Recommended Reading: \citep*{alpaper}
@@ -1034,7 +1036,305 @@ Argument Builder(\autoref{chap:argbuilder}): provides a method of allowing the u
 
 \chapter{Theorem Proving System}
 \label{chap:prover}
-TODO
+The first step in approaching this project is to build a theorem prover or a proof search system capable of generating proofs given a set of theory and a goal. Most existing implementations of such software use a different proof theory system (other than natural deduction) in order to generate proofs. Natural deduction, as discussed in \autoref{subsec:nnd}, is not the favorite choice for creating proofs. There are still however, a few implementations of a natural deduction theorem prover, but they did not meet all the requirements of this project and therefore were not suitable to use.
+
+Different natural deduction provers use different sets of rules, some of which are derived. There are different styles of natural deduction as well, for example the Gentzen style that looks like sequent calculus where proofs following this format resemble trees, and the Fitch style natural deduction which resembles the format used in this paper. 
+
+Apart from these variations, the ability to turn off a few rules, such as the Reductio ad Absurdum rule (and the derived "proof by contradiction" rule which combines a Reductio ad Absurdum rule and a $\neg E$ rule), in order to enable $\vdash_{MRA}$ (or $\nvdash_{MRA}$) proving used by the Genuine Absurdity Property (\autoref{chap:gapcheck}).
+
+The theorem prover should also be flexible enough so that it can be used to stitch together sub-proofs in order to form a larger proof as required by the proof extraction algorithm discussed in \autoref{chap:extractor}.
+
+\section{Ruleset Used}
+The implementation tries to approach the proof both backwards (from the bottom up) and forwards (from the top down). Several backwards and forwards rules have been implemented. Backwards rules try to close the gap between the theory and the goal from the bottom, and they are the ones that complete goals in order to finish the proof. The forwards rules are there in order to break down complicated formulas that have already been derived so that the backwards rules can complete their work. The forwards rules do not progress the proof in the sense that they never deal with the goal. They just provide simpler formulas that can be of use to the backwards rules.
+
+The implementation was partly modeled after (or at the very least inspired by) the Carnegie Mellon Proof Tutor (introduced in \autoref{subsec:carnage}, the full paper is \citep{siegfried}). However, the implementation follows a Fitch-style natural deduction. There are also explicit rules for contradiction. No distinction exists between the available assumptions $\alpha$ and derivable (using elimination rules) context $\beta$. Thus the whole context $\alpha\beta$ will be referred to as $\kappa$. In addition, instead of having one goal at a time, there can be several. Thus for the implementation, $G$ (as used so far) is a list of goals, and $\gamma|G$ indicates the first goal in the list $\gamma$ and the tail of the list $G$. The same notation will be used as much as possible.
+
+Listed below are the forward rules:
+
+\begin{itemize}
+\item
+$\wedge E: \kappa?G, \phi_1\wedge\phi_2\in\kappa, \phi_i\notin\kappa \Rightarrow \kappa,\phi_i?G, i = 1\, or\, 2\, or\, both$
+
+(this rule is the same as the one used in the Carnegie Mellon Proof Tutor)
+\item
+$\neg E: \kappa?G, \neg\neg\phi\in\kappa, \phi\notin\kappa \Rightarrow \kappa\phi?G$
+
+(if a double-negated formula is in the context, add the sub-formula without the double negation)
+\item
+$\bot I: \kappa?G, \phi\in\kappa, \neg\phi\in\kappa, \bot\notin\kappa \Rightarrow \kappa,\bot?G$
+
+(if two opposite formulas are in the context, add a contradiction)
+\end{itemize}
+
+None of the forward rules touches the goal(s). They just simplify derived conjunctions, double negations and add a contradiction if one can be established.
+
+The backward rules are listed here:
+
+\begin{itemize}
+\item
+$\checkmark: \kappa?\gamma|G, \gamma\in\kappa \Rightarrow \kappa?G$
+
+(if the current goal is already derived, move on to the next)
+\item
+$\wedge I: \kappa?\gamma_1\wedge\gamma_2|G, \gamma_i\notin\kappa \Rightarrow \kappa?\gamma_i|G, i = 1\, or\, 2\, or\, both$
+
+(if the goal is a conjunction, then prove whatever constituent parts are missing)
+\item
+$\bot E: \kappa?\gamma|G, \bot\in\kappa \Rightarrow \kappa?G$
+
+(anything can be derived if a contradiction has already been established)
+\item
+$\rightarrow I: \kappa?\gamma_1\rightarrow\gamma_2|G \kappa,\gamma_1?\gamma_2, \kappa?G$
+
+(this rule is the same as the one used in the Carnegie Mellon Proof Tutor)
+\item
+$\neg I: \kappa?\neg\gamma|G \Rightarrow \kappa,\gamma?\bot, \kappa?G$
+
+(this rule is the same as the one used in the Carnegie Mellon Proof Tutor)
+\item
+$\rightarrow E: \kappa?G, \phi_1\rightarrow\phi_2\in\kappa \Rightarrow \kappa?\phi_1, \kappa,\phi_2?G$
+
+(this rule lies in between the forward and backward rule category, since it does not consume any of the goals, but it does however require that $\phi_1$ be proven; what it says is try to prove the first part of the implication, and hence add the second part to the context before moving on to prove the goal)
+\item
+$PC: \kappa?\gamma|G, \gamma\neq\bot \Rightarrow \kappa,\neg\gamma?\bot, \kappa?G$
+
+(proof by contradiction, implemented as a combination of $\neg I$ and $\neg E$ rules - this rule is the same as the one used in the Carnegie Mellon Proof Tutor)
+
+\item
+$\bot IE: \kappa?\gamma|G, \bot\notin\kappa, \neg\phi\in\kappa \Rightarrow \kappa?\phi, \kappa?G$
+
+(take any negated formula and try to prove its positive subformula, essentially proving a contradiction; the goal is then vacuously true - composite rule implemented using $\bot I$ and $\bot E$ rules)
+\end{itemize}
+
+\section{Propositional Logic Format}
+This implementation uses Prolog predicates in order to specify the different logic constructs. \autoref{fig:prolol} summarizes these predicates.
+
+\begin{figure}[tph]
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+Logic Construct & Prolog Term Used By Implementation\\
+\hline
+Conjunction & \lstinline$and(A, B)$\\
+\hline
+Disjunction & \lstinline$or(A, B)$\\
+\hline
+Implication & \lstinline$implies(A, B)$\\
+\hline
+Negation & \lstinline$n(A, B)$\\
+\hline
+Contradiction & \lstinline$falsity$\\
+\hline
+\end{tabular}
+\end{center}
+\caption{The Prolog constructs accepted and used by the theorem prover\label{fig:prolol}}
+\end{figure}
+
+As an example, consider the formula $a\wedge b\rightarrow\neg c$. This would be represented by the following data structure: \lstinline$implies(and(a, b), n(c))$.
+
+\section{High-Level Description of Implementation}
+The theorem prover was built to be quite modular and offers both high-level and low level predicates. For the most part, high-level predicates are enough to cover the needs of the different algorithms created to check for the Genuine Absurdity Property, or to aid the building of an argument. It was necessary however at some point to use the low-level plumbing of the theorem prover in order to stitch together specific proofs generated with more complicated context for the proof extractor algorithm.
+
+A summary of the high-level predicates is given below:
+
+\begin{itemize}
+\item
+\lstinline$prove(Givens, Goal, Proof)$: The user supplies the theory as a list of formulas and a goal as a singleton list of one formula that needs to be proven. The predicate returns with \lstinline$Proof$ bound to one possible proof. The \lstinline$prove/3$ predicate offers choice-points, with each choice-point offering one solution. All solutions for the given theory and goal can be acquired by executing a \lstinline$findall/3$ predicate like this: \lstinline$findall(Proof, prove([and(a,b)], [and(b,a)], Proof), AllProofs)$ with \lstinline$AllProofs$ containing all the proofs what prove the goal.
+\item
+\lstinline$proveMRA(Givens, Goal, Proof)$: This works in the same way as \lstinline$prove/3$, but it makes no use of the $\neg I$ and (derived) proof by contradiction rules. This can be used to check for the Genuine Absurdity Property or to help build arguments (\autoref{chap:argbuilder}).
+\item
+\lstinline$provable(Givens, Goal, MRA, Verdict)$ This works similarly to the above predicates, but instead of supplying a proof upon return, it only responds with a \lstinline$yes$ or \lstinline$no$ atom, depending on whether the supplied goal can be proven using the given theory. The \lstinline$MRA$ field takes a \lstinline$yes$ or \lstinline$no$ atom and defines whether $\vdash$ or $\vdash_{MRA}$ is used to prove the goal (ie whether $\neg I$ and proof by contradiction can be used). This predicate always finishes without any choice-points.
+\end{itemize}
+
+The above predicates handle the burden of converting the input into steps (see \autoref{sec:outputformat}), and then calling the necessary low-level predicate to fire off the process. The theorem prover however was built to work even if the user chooses to execute a low-level predicate instead (assuming correct input was given). This enables the user to, for example, start a proof with the application of a particular rule. The available low-level predicates are summarized below:
+
+\begin{itemize}
+\item
+\lstinline$backwardProve(MRA, Steps, Context, Extras, Goals, Proof)$: This predicate starts the backwards proving of the goal(s), by trying to use any of the available rules depending on whether \lstinline$MRA$ is set to \lstinline$yes$ or \lstinline$no$. The steps parameter contains the actual steps of the current context, and the context parameter specifies additional context (that was inherited by ancestors).
+\item
+\lstinline$check(MRA, Steps, Context, Extras, Goals, Proof)$
+\item
+\lstinline$falsityI(MRA, Steps, Context, Extras, Goals, Proof)$
+\item
+\lstinline$andI(MRA, Steps, Context, Extras, Goals, Proof)$
+\item
+\lstinline$impliesI(MRA, Steps, Context, Extras, Goals, Proof)$
+\item
+\lstinline$notI(MRA, Steps, Context, Extras, Goals, Proof)$
+\item
+\lstinline$forward(MRA, Steps, Context, Extras, Goals, Proof)$
+\item
+\lstinline$falsityIE(MRA, Steps, Context, Extras, Goals, Proof)$
+\item
+\lstinline$impliesE(MRA, Steps, Context, Extras, Goals, Proof)$
+\item
+\lstinline$proofByContradiction(MRA, Steps, Context, Extras, Goals, Proof)$
+\end{itemize}
+
+All of the backward rules are available to be called immediately by the user, and they will generate a proof with an initial application of that rule. If given the right input the rules will take care of the rest of the proof as well and come back with a complete proof of the goal(s). The "forward rule" is a "rule" that tries to apply all the forward rules and call \lstinline$backwardProve/6$ again.
+
+\section{Output Format}
+\label{sec:outputformat}
+The output of the theorem prover is a Prolog list of steps or boxes. A step is defined as \lstinline$step(Derivation, Reason, LineNumber)$ where \lstinline$Derivation$ is a formula using Prolog terms, the reason is a list with at least one element inside, and a line number is just a non-negative number that is used to uniquely identify the step (so that other steps' reasons can reference that step). A box contains sub-proofs (that begin with a hypothesis) that are essentially lists of more steps and boxes (defined as \lstinline$box(SubProof)$).
+
+The reason is a list where the first element is the name of the justification for the derivation in that step as a Prolog atom. Some reasons are required to reference other steps in the proof in order to fully justify how the formula in the step was derived. For example, for an application of the $\wedge I$ rule, both subformulas of the conjunction need to be referenced by including the numbers of the steps containing those subformulas in the list.
+
+Reasons include the natural deduction rules specified before. They also contain a few more reasons such as \lstinline$hypothesis$ to indicate a hypothesis or \lstinline$given$ to indicate a part of the theory. \autoref{fig:output} lists the reasons and the number of reference line numbers required by each reason.
+
+\begin{figure}[tph]
+\begin{center}
+\begin{tabular}{|l|l|l|}
+\hline
+Reason Prolog Term & Reference Line Numbers & Description\\
+\hline
+\lstinline$check$ & 1 & Reiteration of an existing formula\\
+\hline
+\lstinline$andI$ & 2 & $\wedge I$ from subformulas on referenced lines\\
+\hline
+\lstinline$andE$ & 1 & $\wedge E$ from conjunction on referenced line\\
+\hline
+\lstinline$impliesI$ & 2 & $\rightarrow I$ from subformulas on referenced lines\\
+\hline
+\lstinline$impliesE$ & 2 & $\rightarrow E$ from implication and its first part\\
+&& indicated by referenced lines\\
+\hline
+\lstinline$notI$ & 2 & $\neg I$ from hypothesis and contradiction on \\
+&& referenced lines\\
+\hline
+\lstinline$notE$ & 1 & $\neg E$ from double-negated formula on referenced\\
+&& line\\
+\hline
+\lstinline$falsityI$ & 2 & $\bot I$ from opposite formulas on referenced lines\\
+\hline
+\lstinline$falsityE$ & 1 & $\bot E$ from contradiction indicated by referenced\\
+&& line\\
+\hline
+\lstinline$hypothesis$ & 0 & a hypothesis put forth\\
+\hline
+\lstinline$given$ & 0 & part of the theory\\
+\hline
+\end{tabular}
+\end{center}
+\caption{The Prolog constructs accepted and used by the theorem prover\label{fig:output}}
+\end{figure}
+
+The list contains elements in the opposite order as one would read a proof on paper. That is, the first element in the list will be the conclusion of the proof, and the last elements of the list will be the givens (theory) that are always located at the beginning of the proof. The reason as to why the proof is in the opposite order is that Prolog offers a concise way to append elements to a list, and the backward rules tend to add steps to the end of the proof instead of the beginning. Therefore the proof is build backwards in a sense. Predicates are provided that can flip the proof as necessary and are indeed used when responding to the client with generated proofs from the theorem prover.
+
+As an example of the output generated by the theorem prover, consider the proof and its corresponding data structure as generated by the theorem prover in \autoref{fig:ndvstp}.
+
+\begin{figure}[htp]
+\begin{minipage}[c]{.35\linewidth}
+\[\vbox{\offinterlineskip\halign{
+&\tabskip=1.5em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\tabskip=0em\cr
+%
+1&\neg(\alpha\wedge\beta)&\mbox{given}\cr
+2&\neg(\alpha\wedge\neg\beta)&\mbox{given}\cr
+3&\neg\beta&\mbox{given}\cr
+%
+\multispan3\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&4&\alpha&\mbox{hypothesis}&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&5&\beta&\mbox{hypothesis}&\cr
+&6&\alpha\wedge\beta&\wedge I(4,5)&\cr
+&7&\bot&\bot I(1,6)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&8&\neg\beta&\neg I(5,7)&\cr
+&9&\alpha\wedge\neg\beta&\wedge I(4,8)&\cr
+&10&\bot&\bot I(2,9)&\cr
+%
+\noalign{\hrule}}}\,\cr
+%
+11&\neg\alpha&\neg I(4,10)\cr
+}}\]
+\end{minipage}%
+\begin{minipage}[c]{.65\linewidth}
+\begin{lstlisting}
+[
+	step(n(a), [notI, 4, 10], 11),
+	box([
+		step(falsity, [falsityI, 2, 9], 10),
+		step(and(a, n(b)), [andI, 4, 8], 9),
+		step(n(b), [notI, 5, 7], 8),
+		box([
+			step(falsity, [falsityI, 1, 6], 7),
+			step(and(a, b), [andI, 4, 5], 6),
+			step(b, [hypothesis], 5)
+		]),
+		step(a, [hypothesis], 4)
+	]),
+	step(n(b), [given], 3),
+	step(n(and(a, n(b))), [given], 2),
+	step(n(and(a, b)), [given], 1)
+]
+\end{lstlisting}
+\end{minipage}
+\caption{A natural deduction proof and the corresponding output from the theorem prover\label{fig:ndvstp}}
+\end{figure}
+
+\section{Remarks}
+\label{sec:tpeval}
+
+\subsection{Correctness}
+In terms of correctness, the theorem prover should be both sound and complete regarding its implemented logic constructs. It uses the Carnegie Mellon Proof Tutor as a starting point which is itself sound and complete. The deviations do not lead to unsound proofs, and completeness should still be maintained. As with any piece of software however, there exists a possibility of errors. No software is perfect, and hence the theorem prover may suffer from bugs. In order to be completely sure that the software works, formal verification methods should be employed. However, such methods take too much time and require a great deal of effort. The theorem prover is critical to the project, however it is not its main focus. The main focus remains the Argumentation Logic. In place of formal verification methods, testing has been applied in order to try and eliminate as many errors as possible and to provide a good starting point for when upgrades or other changes are made to the current version of the prover.
+
+In order to test the implementation \href{http://www.swi-prolog.org/pldoc/package/plunit.html}{plunit}\footnote{http://www.swi-prolog.org/pldoc/package/plunit.html} was used as the unit test framework of choice. Thankfully, the team behind SWI-Prolog created this unit test framework that works quite well with their Prolog implementation. Several tests were laid out both trying to test that the theorem prover can prove goals that are provable (given the necessary theory) and that it cannot (and should not) prove goals that can't be reached (given again the necessary theory). For the sake of brevity, the test suites will not be included in the report, but are available in the source code of the project.
+
+\subsection{Performance, Pruning and Optimization}
+The theorem prover works well in general. It does sometimes seem to get slow on complicated theories and proofs that exhibit a very large search space. The purpose of the theorem prover is to be able to provide "all" proofs that prove a goal given a theory. However it is very difficult to exactly specify what "all" means. Obviously there can be infinite proofs for any goal given to the theorem prover (at the very least, the theorem prover could take any atom from the theory and start building an infinite conjunction chain, chaining together that very atom to produce infinite proofs). Instead, the theorem prover tries to produce all (close to) normal proofs. This means that it tries not to take detours by imposing restrictions in its ruleset (see restricted rules in \autoref{subsec:carnage}). This ensures that a finite set of proofs can be generated for a particular goal. Still, that set could be very large, as any (allowed) permutation in a Fitch-style natural deduction proof can be considered a completely different proof. 
+
+The next step could be to prune the search space and drop proofs that are not good. However, ambiguity is faced when it comes to defining "good" proofs. Consider the proofs in \autoref{fig:topruneornottoprune} for defining the measure "good":
+
+\begin{figure}[htp]
+\begin{minipage}[c]{.5\linewidth}
+\[\vbox{\offinterlineskip\halign{
+&\tabskip=1.5em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\tabskip=0em\cr
+%
+1&\alpha&\mbox{given}\cr
+2&\alpha&\checkmark\cr
+}}\]
+\end{minipage}%
+\begin{minipage}[c]{.5\linewidth}
+\[\vbox{\offinterlineskip\halign{
+&\tabskip=1.5em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\tabskip=0em\cr
+%
+1&\alpha&\mbox{given}\cr
+%
+\multispan3\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&2&\neg\alpha&\mbox{hypothesis}&\cr
+&3&\bot&\bot I(1,2)&\cr
+%
+\noalign{\hrule}}}\,\cr
+%
+4&\neg\neg\alpha&\neg I(2,3)\cr
+5&\alpha&\neg E(4)\cr
+}}\]
+\end{minipage}
+
+\caption{Pruning could potentially trim proofs of potential importance regarding Argumentation Logic\label{fig:topruneornottoprune}}
+\end{figure}
+
+One could argue that the second proof is unnecessary and could be trimmed since it is just a detour from the first proof. However, it is sometimes these scenic routes that are the best routes, and in Argumentation Logic it is no different. The proof on the right happens to follow the Genuine Absurdity Property and can therefore be visualized (see \autoref{chap:viz}). If it were to be pruned, the remaining results would be of little use.
+
+It is therefore necessary to devise pruning algorithms and optimizations that do not reduce the amount of generated proofs that follow the Genuine Absurdity Property, as they are the most valuable proofs. Argumentation Logic-compatible pruning and optimizations remain part of future work.
+
+One optimization that was implemented that does not change the number of generated proofs is an optimization that grades all of the negated formulas in the current context of a proof, when the theorem prover decides to use the $\bot IE$ rule. This rule gathers all negated formulas and tries to prove their positive sub-formulas in an attempt to prove the goal using a contradiction. The optimization tries to find the number of subformulas of the positive sub-formula that have not been proven yet. Then it rates each negated formula with a number, which is the number of to-be-proven sub-formulas. The theorem prover then orders the negated formulas according to their rating and attempts to use the most promising negated formula first; ie the one that has the fewest sub-formulas remaining to be proven. This is most of the times a great heuristic that guides the search but does not prune it in any way. 
+
+\subsection{Improvements and Extensions}
+As mentioned before, one of the improvements that could be made is to increase the performance of the theorem prover. This could involve either a more efficient implementation altogether, or the introduction of optimizations with regards to the search space or pruning of (paths that lead to) "bad" proofs. The latter would involve defining explicitly what "bad" proofs are with respect to Argumentation Logic.
+
+The theorem prover currently does not support disjunction. This was done in order to save time that was allocated to extending the Genuine Absurdity Property definition. Since this property does not make use of the implication and disjunction logic constructs, supporting them may be regarded as unnecessary. However, even for the sake of completeness over all logic constructs, disjunction could be introduced to the supported connectives.
 
 \chapter{Checking for Genuine Absurdity Property}
 \label{chap:gapcheck}
@@ -1790,6 +2090,7 @@ unzip([L|Ls], [R|Rs], [[L,R]|Ps]) :- unzip(Ls, Rs, Ps).
 The predicate \lstinline$getUsedSiblingHypotheses/6$ works much in the same way as it works for the original definition of the Genuine Absurdity Property, with the only difference being that line 6 of the code may actually yield results. Sibling hypotheses are more or less treated the same way as ancestor hypotheses, in that they are dug up in this predicate, given back to \lstinline$checkGAP/7$, carried over until the sub-derivation under check is consumed and then merged with the other (ancestor and child) hypotheses in order to perform the provability check.
 
 \section{Remarks}
+\label{sec:remarx}
 The extension to the original Genuine Absurdity Property definition considers only consistent theories and proofs that use conjunction and negation only. It may not necessarily be the case that the extension works for more general proofs. Testing its correctness for inconsistent proofs or when using more connectors (and subsequent amendments in case it proves not to be correct) remains future work.
 
 Consider again the proof in \autoref{fig:gapxx}. The reason the sub-derivation $[\beta ... \bot]$ can be used in $[\delta ... \bot]$ is because it came before (in a more general context) it. Thus in an iterative implementation of the Genuine Absurdity Property checker, $[\beta ... \bot]$ will already be checked if it followed the property before considering checking $[\delta ... \bot]$. As an optimization checking for the Genuine Absurdity Property for sibling derivations can be avoided, as it remains constant (see \autoref{subsec:gap4ever}) for all of their implicit copies. This optimization is performed by the extended Genuine Absurdity Property checker.
@@ -1894,6 +2195,7 @@ forestyle
 \end{figure}
 
 \section{Observations, Remarks and Future Work}
+\label{sec:vizmarks}
 It may be obvious by now that a certain mapping can be established between the hypotheses and contradictions and defenses and attacks. A hypothesis in the proof always represents a defense from the argumentation point of view, and the individual atoms, negated atoms and negated subformulas whose conjunction (along with the negation of their conjunction) forms the contradiction represent the attack from the argumentation point of view. Some of these atoms, negated atoms and formulas can be traced back to conclusions of $\neg I$ rules, thus it can be said that conclusions of $\neg I$ rules (ie the results of the boxes) form some part of an attack.
 
 When using this algorithm, there is always one attack per argument, but there can be many defenses. Each defense is the negation of an atom of an attack (argument). Both the attacks and defenses follow their respective definitions as described in the original paper and in \autoref{subsec:alfdef} (\nameref{subsec:alfdef} and \nameref{subsec:alfdef2}).
@@ -2624,6 +2926,7 @@ The algorithm takes the final pair $\{\alpha\}$ - $\{\neg\beta, \neg\gamma\}$. O
 There is also a small bit of housekeeping that takes place in the process as well. This is mainly to ensure that the line numbers of the sub-proofs are updated when included in higher-level proofs, and that references to givens that constituted parent defenses are rewired to point to the actual parent hypotheses as they become available by including sub-proofs in higher-level proofs. As a final step before returning the proof, the theory is stitched to the beginning of the proof and the line numbers are updated again.
 
 \section{Observations, Remarks and Future Work}
+\label{sec:proofmarks}
 It may be obvious by now that the proof extraction algorithm works as a counterpart of the visualization algorithm discussed previously in \autoref{chap:viz}. The algorithm ensures that the right boxes are created at the right parts of the proof so that the inverse of the mapping discussed in the visualization algorithm is followed.
 
 Recall from \autoref{chap:viz} that some information is lost when converting a proof to an argument regarding sibling proofs and child proofs. The visualization algorithm makes no distinction between the two, so the generated arguments seem "spread out". Thus, when converting back to a proof from the generated argument, only proofs that refer to child and ancestor hypotheses are created since shortcuts are effectively eliminated. Extracted proofs from arguments generated by visualizing proofs that were valid only under the extended definition of the Genuine Absurdity Property will now also follow the original definition.
@@ -3213,6 +3516,7 @@ on line 82, \lstinline$serveProvable/1$ takes a theory and a goal and checks whe
 \end{itemize} 
 
 \section{Remarks}
+\label{sec:remarklet}
 As seen from the previous section, the server is quite simple to use and due to the fact that it is very minimalistic, it requires virtually no maintenance. Its requirements in terms of its host environment are very low. A full installation of SWI-Prolog and its libraries suffices to run the server. No other software or libraries are necessary. Throughout the construction of the application, the server has proven to be very reliable and resilient, and no bugs or any type of problems were detected.
 
 \section{Alternatives}
@@ -3239,6 +3543,7 @@ The purpose of the client module is to wrap around the core module in order to p
 The client is written in HTML, JavaScript and CSS, and is loaded upon a web browser request from the server (\autoref{chap:server}).
 
 \section{Features}
+\label{sec:cleatures}
 The main features of the client are the following:
 \begin{itemize}
 \item
@@ -3563,7 +3868,12 @@ Green nodes represent defenses, and these are generated by the computer. Red nod
 \caption{The user is about to attack the computer's argument; a red link shows the node the attack will be against if the user drops the attack node\label{fig:scrclientfinishhim}}
 \end{figure}
 
-When the user makes a successful attack, the computer checks if the attack is a subset of the parent defenses, according to the $NACC$ semantics of Argumentation Logic (\autoref{subsec:nacc}). If it does, it is considered a terminal attack. This means that no defenses are generated to defend against that attack and hence that branch of the tree is effectively closed off. If the attack is not a terminal attack, then defenses are generated according to the $NACC$ semantics once more. The defenses are predictable, since the definition of a defense is to take the opposite stance of a component of the attack (\autoref{subsec:alfdef2}).
+\begin{figure}[htp]
+\centerline{\includegraphics[scale=0.3]{img/scr-client-fatality.png}}
+\caption{The user gives a terminal attack on the left branch, leaving only the right branch open; after a terminal attack on the right branch, the argument is complete\label{fig:scrclientfatality}}
+\end{figure}
+
+When the user makes a successful attack, the computer checks if the attack is a subset of the parent defenses, according to the $NACC$ semantics of Argumentation Logic (\autoref{subsec:nacc}). If it does, it is considered a terminal attack. This means that no defenses are generated to defend against that attack and hence that branch of the tree is effectively closed off (\autoref{fig:scrclientfatality}). If the attack is not a terminal attack, then defenses are generated according to the $NACC$ semantics once more. The defenses are predictable, since the definition of a defense is to take the opposite stance of a component of the attack (\autoref{subsec:alfdef2}).
 
 The mini-game ends when all branches are closed off and no unattacked defenses remain. The attack claim input field is then disabled and the constructed argument can be dragged to the clipboard in order to be saved. The arguments generated by the argument builder have the exact same format as those generated by the visualization algorithm (\autoref{chap:viz}) and can be used in the same way.
 
@@ -3578,10 +3888,51 @@ It is therefore only a viable solution if a good strategy can be devised that ca
 
 \chapter{Evaluation}
 \label{chap:eval}
-TODO
+Evaluation of this project cannot be based on user feedback. The implementation is not addressed at a general audience, hence statistics like number of downloads on an online store, or feedback and ratings on a particular website do not apply. At the same time, the implementation is not a piece of software that is meant to run something in a very optimized way, so statistics like frames per second, time intervals, etc are of no use either. It is difficult to evaluate the project since it is based one Argumentation Logic, that is not yet widely known. The project is mostly exploratory. Ideally the evaluation for the project should be written one or two years after its submission.
+
+The overall project will therefore be evaluated on its correctness, stability and on its contributions, as well as on whether it fulfilled the objectives it set out to complete. This evaluation section will start its criticism by evaluating the different components, procedures and algorithms of the project and move up to its aims and objectives in general.
+
+\section{Theorem Prover}
+A critical evaluation of the theorem prover was made in \autoref{sec:tpeval} in more depth. A summary of that follows. The theorem prover strives to be sound and complete over the logic constructs it currently supports. However as with any implementation, bugs may interfere. Formal verification was deemed too taxing in terms of time, so plenty of unit tests were used instead to limit the possibility of errors. The theorem prover works, though sometimes it is slow when the search space becomes too complex. This is because the implementation does not prune any proofs because they may be valuable from an Argumentation Logic point of view. Argumentation Logic-compliant pruning (and other performance enhancements) and the introduction of disjunction are among the future improvements.
+
+\section{Other Algorithms and Procedures}
+Other algorithms and procedures include the (extended) Genuine Absurdity Property checker, the proof visualization algorithm, the proof extraction algorithm and the proof and argument builders.
+
+Unit testing was once again employed for the Genuine Absurdity Property checkers. This is a very important procedure, so great care was taken in order for this check to be correct. Both the original definition and the extended share a great deal of similarities, and that is reflected in the conciseness and code reuse of different parts of the code.
+
+Manual tests were plenty and thorough for all of the above procedures and algorithms. Performance was very dependent on the theorem prover. Most of the runtime of the code was spent inside the theorem prover than any of the above procedures. The runtime of these procedures was found to be negligible, suggesting very optimal solutions. The opportunity to optimize the extended version of the Genuine Absurdity Property checker was taken and the result is that siblings do not need to be rechecked whenever referenced. More details about this optimization can be found in \autoref{sec:remarx}.
+
+Improvements include the ability to create arguments that distinguish between child derivations and sibling derivations for the visualization algorithm if that is found to be more preferable. In that way, generated arguments will contain the information that certain parts of the attacks and their defenses came from references to siblings instead of children. More information about this can be found in \autoref{sec:vizmarks}. Identifying repeating arguments and creating shorter proofs that reuse one instance of such arguments is a potential upgrade to the current proof extraction algorithm as discussed in \autoref{sec:proofmarks}.
+
+\section{Server}
+The server is a very stable and simple unit of code. It was indirectly tested extensively when testing the client (since the server was always running behind the scenes to support it). As discussed in \autoref{sec:remarklet}, it requires virtually no maintenance and a very limited amount of requirements to run.
+
+\section{Client and User Interface}
+The client strikes a balance between bells and whistles and minimalistic and intuitive interface. It is easy to use and is quite stable. No unit testing was employed in favor of manual testing, since automated GUI testing is non-trivial and quite time-consuming. In the worst case simply hitting F5 (usual shortcut for a page refresh) on the keyboard solves all problems. It has a variety of features that enhance the client's usability, listed in \autoref{sec:cleatures}.
+
+Improvements could include database support for storing proofs and arguments. This would impose a burden on the server however, since user identification and a database setup and connection would be necessary.
+
+\section{Overall Software Engineering Evaluation}
+Despite the fact that software engineering was not the main focus of the project, great effort was made to keep the different logical modules separate, independent and extensible. The overall architecture of the project is simple and explained in \autoref{chap:solover}. The core can be used standalone, however the client provides a good wrap-around that simplifies the overall procedure of using the functionality offered by the system. Deployment is made easy because of the client-server infrastructure. Stability is not an issue, as there is a seamless interaction between the client and the server (and core). The only noticeable problem is that sometimes the server is slow to reply to the client after a request was made because the theorem prover takes longer than usual to run.
+
+\section{Project Aims and Objectives}
+One of the main objectives of the project was to explore Argumentation Logic. Argumentation Logic is a relatively new concept. 
+
+Contributions to this concept include the extension of the Genuine Absurdity Property to work with natural deduction proofs that make use of the substitution shortcut that allows sub-derivations to refer to sibling derivations instead of re-proving what they have already proven. The extension explains how an optimization can be achieved by not re-checking sibling sub-derivations for the Genuine Absurdity Property as it does not change with respect to the content they are imported to.
+
+Another contribution was the invention of the visualization algorithm. This algorithm or procedure, provides an exact definition as to how a proof bearing the Genuine Absurdity Property can be converted into an argument. This algorithm is also consistent with the extension of the property. This algorithm creates a mapping between attacks and defenses with respect to arguments, and contradictions and hypotheses with respect to proofs.
+
+Along the contributions made by the project is a constructive algorithm that can turn an argument back into a proof, and this relies on the visualization algorithm definition, namely on the mapping it defines.
+
+The final contribution of this project is the creation of a software tool that implements the aforementioned concepts and algorithms in order to provide a playground in which learners of Argumentation Logic can practice. 
+
+The software tool also provides a proof builder and an argument builder (for Argumentation Logic), and so at a lesser degree, it can be used to learn about propositional logic and maybe argumentation.
+
+Unfortunately, there was not enough time to explore the more challenging concepts of Argumentation Logic, namely its effort to work well in a paraconsistent environment. This topic however is still somewhat under construction, and is therefore volatile and subject to change. Among the future work is to explore this part of Argumentation Logic.
 
 \chapter{Conclusion}
 \label{chap:chiliconclusion}
+% move future work from Evaluation to here, add things like "i have found a great way to visualize stuff", "i have found a way to extend GAP to work with shortcuts", etc
 
 \listoffigures
 
