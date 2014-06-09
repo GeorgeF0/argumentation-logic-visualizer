@@ -1,21 +1,40 @@
 \documentclass[11pt,twoside,a4paper]{report}
 
-\usepackage{fullpage}
+\usepackage[margin=1.15in]{geometry}
 \usepackage{amssymb}
 \usepackage{pifont}
+\usepackage{fancyhdr}
 \usepackage{hyperref}
 \usepackage{forest}
 \usepackage{listings}
+\usepackage{tocbibind}
 \usepackage{color}
 \usepackage[round]{natbib}
+ 
+\renewcommand{\chaptermark}[1]{\markboth{#1}{}}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[RE,LO]{\small\nouppercase{\leftmark}}
+\fancyfoot[CE,CO]{\thepage}
+ 
+\renewcommand{\headrulewidth}{1pt}
+\renewcommand{\footrulewidth}{0.5pt}
 
 \newcommand{\cmark}{\ding{51}}
 \newcommand{\xmark}{\ding{55}}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+\definecolor{orange}{rgb}{1,0.5,0}
 
 \hypersetup{
     colorlinks=true, %set true if you want colored links
     linktoc=all,     %set to all if you want both sections and subsections linked
     linkcolor=blue,  %choose some color if you want links to stand out
+    citecolor=dkgreen,
+    urlcolor=orange
 }
 \hypersetup{linktocpage} %in order to make only the numbers in the table of contents clickable
 
@@ -44,10 +63,6 @@ forestyle/.style={
 every node/.style={anchor=west,right,font=\sffamily,xshift=7pt,yshift=1pt}
 }
 
-\definecolor{dkgreen}{rgb}{0,0.6,0}
-\definecolor{gray}{rgb}{0.5,0.5,0.5}
-\definecolor{mauve}{rgb}{0.58,0,0.82}
-
 \lstset{frame=tb,
   language=Prolog,
   aboveskip=3mm,
@@ -70,8 +85,59 @@ every node/.style={anchor=west,right,font=\sffamily,xshift=7pt,yshift=1pt}
 \author{Giorgos Flourentzos}
 \title{Argumentation Logic Visualizer}
 \begin{document}
-\maketitle
+
+\begin{titlepage}
+\begin{center}
+
+\includegraphics[scale=0.25]{img/pimperial.png}~\\[1cm]
+
+\textsc{\LARGE Imperial College London}\\[1.5cm]
+
+\textsc{\Large Final year project}\\[0.5cm]
+
+% Title
+\rule{\linewidth}{0.5mm} \\[0.4cm]
+{ \huge \bfseries An Interactive Theorem Prover for Argumentation Logic \\[0.4cm] }
+
+\rule{\linewidth}{0.5mm} \\[1.5cm]
+
+% Author and supervisor
+\begin{minipage}{0.4\textwidth}
+\begin{flushleft} \large
+\emph{Author:}\\
+Giorgos \textsc{Flourentzos}
+\end{flushleft}
+\end{minipage}
+\begin{minipage}{0.4\textwidth}
+\begin{flushright} \large
+\emph{Supervisors:} \\
+Dr.~Krysia \textsc{Broda}\\
+Dr.~Francesca \textsc{Toni}
+\end{flushright}
+\end{minipage}
+
+\vfill
+
+% Bottom of the page
+{\large \today}
+
+\end{center}
+\end{titlepage}
+
+\begin{abstract}
+TODO
+\end{abstract}
+
+\chapter*{Acknowledgments}
+TODO
+
 \tableofcontents
+
+\clearpage
+\fancyhf{}
+\fancyhead[RE,LO]{\small\nouppercase{\leftmark}}
+\fancyhead[LE,RO]{\small\nouppercase{\rightmark}}
+\fancyfoot[CE,CO]{\thepage}
 
 \chapter{Introduction}
 
@@ -1047,7 +1113,7 @@ The theorem prover should also be flexible enough so that it can be used to stit
 \section{Ruleset Used}
 The implementation tries to approach the proof both backwards (from the bottom up) and forwards (from the top down). Several backwards and forwards rules have been implemented. Backwards rules try to close the gap between the theory and the goal from the bottom, and they are the ones that complete goals in order to finish the proof. The forwards rules are there in order to break down complicated formulas that have already been derived so that the backwards rules can complete their work. The forwards rules do not progress the proof in the sense that they never deal with the goal. They just provide simpler formulas that can be of use to the backwards rules.
 
-The implementation was partly modeled after (or at the very least inspired by) the Carnegie Mellon Proof Tutor (introduced in \autoref{subsec:carnage}, the full paper is \citep{siegfried}). However, the implementation follows a Fitch-style natural deduction. There are also explicit rules for contradiction. No distinction exists between the available assumptions $\alpha$ and derivable (using elimination rules) context $\beta$. Thus the whole context $\alpha\beta$ will be referred to as $\kappa$. In addition, instead of having one goal at a time, there can be several. Thus for the implementation, $G$ (as used so far) is a list of goals, and $\gamma|G$ indicates the first goal in the list $\gamma$ and the tail of the list $G$. The same notation will be used as much as possible.
+The implementation was partly modeled after (or at the very least inspired by) the Carnegie Mellon Proof Tutor (introduced in \autoref{subsec:carnage}, the full paper is \citep{siegfried}). However, the implementation follows a Fitch-style natural deduction. There are also explicit rules for contradiction. No distinction exists between the available assumptions $\alpha$ and derivable (using elimination rules) context $\beta$. Thus the whole context $\alpha\beta$ will be referred to as $\kappa$. The same notation will be used as much as possible.
 
 Listed below are the forward rules:
 
@@ -1066,42 +1132,54 @@ $\bot I: \kappa?G, \phi\in\kappa, \neg\phi\in\kappa, \bot\notin\kappa \Rightarro
 (if two opposite formulas are in the context, add a contradiction)
 \end{itemize}
 
-None of the forward rules touches the goal(s). They just simplify derived conjunctions, double negations and add a contradiction if one can be established.
+None of the forward rules touches the goal. They just simplify derived conjunctions, double negations and add a contradiction if one can be established.
 
 The backward rules are listed here:
 
 \begin{itemize}
 \item
-$\checkmark: \kappa?\gamma|G, \gamma\in\kappa \Rightarrow \kappa?G$
+$\checkmark: \kappa?G, \gamma\in\kappa \Rightarrow \checkmark$
 
-(if the current goal is already derived, move on to the next)
+(if the current goal is already derived, the proof is essentially complete)
 \item
-$\wedge I: \kappa?\gamma_1\wedge\gamma_2|G, \gamma_i\notin\kappa \Rightarrow \kappa?\gamma_i|G, i = 1\, or\, 2\, or\, both$
+$\wedge I: \kappa?\gamma_1\wedge\gamma_2, \gamma_1\in\kappa, \gamma_2\in\kappa \Rightarrow \checkmark$
+
+$\wedge I: \kappa?\gamma_1\wedge\gamma_2, \gamma_i\notin\kappa \Rightarrow \kappa?\gamma_i, i = 1\, or\, 2\, or\, both$
 
 (if the goal is a conjunction, then prove whatever constituent parts are missing)
 \item
-$\bot E: \kappa?\gamma|G, \bot\in\kappa \Rightarrow \kappa?G$
+$\vee I: \kappa?\gamma_1\vee\gamma_2, \gamma_i\in\kappa \Rightarrow \checkmark$
+
+$\vee I: \kappa?\gamma_1\vee\gamma_2, \gamma_i\notin\kappa \Rightarrow \kappa?\gamma_i, i = \,1 or\, 2$
+
+(this rule is the same as the one used in the Carnegie Mellon Proof Tutor)
+\item
+$\vee E: \kappa?G, \phi_1\vee\phi_2\in\kappa \Rightarrow \kappa,\phi_1?G, \kappa,\phi_2?G$
+
+(use a disjunction to prove the goal using case by case analysis)
+\item
+$\bot E: \kappa?G, \bot\in\kappa \Rightarrow \checkmark$
 
 (anything can be derived if a contradiction has already been established)
 \item
-$\rightarrow I: \kappa?\gamma_1\rightarrow\gamma_2|G \kappa,\gamma_1?\gamma_2, \kappa?G$
+$\rightarrow I: \kappa?\gamma_1\rightarrow\gamma_2 \Rightarrow \kappa,\gamma_1?\gamma_2$
 
 (this rule is the same as the one used in the Carnegie Mellon Proof Tutor)
 \item
-$\neg I: \kappa?\neg\gamma|G \Rightarrow \kappa,\gamma?\bot, \kappa?G$
+$\neg I: \kappa?\neg\gamma \Rightarrow \kappa,\gamma?\bot$
 
 (this rule is the same as the one used in the Carnegie Mellon Proof Tutor)
 \item
-$\rightarrow E: \kappa?G, \phi_1\rightarrow\phi_2\in\kappa \Rightarrow \kappa?\phi_1, \kappa,\phi_2?G$
+$\rightarrow E: \kappa?G, \phi_1\rightarrow\phi_2\in\kappa \Rightarrow \kappa?\phi_1,\, \kappa,\phi_2?G$
 
-(this rule lies in between the forward and backward rule category, since it does not consume any of the goals, but it does however require that $\phi_1$ be proven; what it says is try to prove the first part of the implication, and hence add the second part to the context before moving on to prove the goal)
+(this rule lies in between the forward and backward rule category, since it does not consume the goal, but it does however require that $\phi_1$ be proven; what it says is try to prove the first part of the implication, and hence add the second part to the context before moving on to prove the goal)
 \item
-$PC: \kappa?\gamma|G, \gamma\neq\bot \Rightarrow \kappa,\neg\gamma?\bot, \kappa?G$
+$PC: \kappa?\gamma, \gamma\neq\bot \Rightarrow \kappa,\neg\gamma?\bot$
 
 (proof by contradiction, implemented as a combination of $\neg I$ and $\neg E$ rules - this rule is the same as the one used in the Carnegie Mellon Proof Tutor)
 
 \item
-$\bot IE: \kappa?\gamma|G, \bot\notin\kappa, \neg\phi\in\kappa \Rightarrow \kappa?\phi, \kappa?G$
+$\bot IE: \kappa?\gamma, \bot\notin\kappa, \neg\phi\in\kappa \Rightarrow \kappa?\phi$
 
 (take any negated formula and try to prove its positive subformula, essentially proving a contradiction; the goal is then vacuously true - composite rule implemented using $\bot I$ and $\bot E$ rules)
 \end{itemize}
@@ -1150,32 +1228,36 @@ The above predicates handle the burden of converting the input into steps (see \
 
 \begin{itemize}
 \item
-\lstinline$backwardProve(MRA, Steps, Context, Extras, Goals, Proof)$: This predicate starts the backwards proving of the goal(s), by trying to use any of the available rules depending on whether \lstinline$MRA$ is set to \lstinline$yes$ or \lstinline$no$. The steps parameter contains the actual steps of the current context, and the context parameter specifies additional context (that was inherited by ancestors).
+\lstinline$backwardProve(MRA, Steps, Context, Extras, Goal, Proof)$: This predicate starts the backwards proving of the goal, by trying to use any of the available rules depending on whether \lstinline$MRA$ is set to \lstinline$yes$ or \lstinline$no$. The steps parameter contains the actual steps of the current context, and the context parameter specifies additional context (that was inherited by ancestors).
 \item
-\lstinline$check(MRA, Steps, Context, Extras, Goals, Proof)$
+\lstinline$check(MRA, Steps, Context, Extras, Goal, Proof)$
 \item
-\lstinline$falsityI(MRA, Steps, Context, Extras, Goals, Proof)$
+\lstinline$falsityI(MRA, Steps, Context, Extras, Goal, Proof)$
 \item
-\lstinline$andI(MRA, Steps, Context, Extras, Goals, Proof)$
+\lstinline$andI(MRA, Steps, Context, Extras, Goal, Proof)$
 \item
-\lstinline$impliesI(MRA, Steps, Context, Extras, Goals, Proof)$
+\lstinline$orI(MRA, Steps, Context, Extras, Goal, Proof)$
 \item
-\lstinline$notI(MRA, Steps, Context, Extras, Goals, Proof)$
+\lstinline$orE(MRA, Steps, Context, Extras, Goal, Proof)$
 \item
-\lstinline$forward(MRA, Steps, Context, Extras, Goals, Proof)$
+\lstinline$impliesI(MRA, Steps, Context, Extras, Goal, Proof)$
 \item
-\lstinline$falsityIE(MRA, Steps, Context, Extras, Goals, Proof)$
+\lstinline$notI(MRA, Steps, Context, Extras, Goal, Proof)$
 \item
-\lstinline$impliesE(MRA, Steps, Context, Extras, Goals, Proof)$
+\lstinline$forward(MRA, Steps, Context, Extras, Goal, Proof)$
 \item
-\lstinline$proofByContradiction(MRA, Steps, Context, Extras, Goals, Proof)$
+\lstinline$falsityIE(MRA, Steps, Context, Extras, Goal, Proof)$
+\item
+\lstinline$impliesE(MRA, Steps, Context, Extras, Goal, Proof)$
+\item
+\lstinline$proofByContradiction(MRA, Steps, Context, Extras, Goal, Proof)$
 \end{itemize}
 
-All of the backward rules are available to be called immediately by the user, and they will generate a proof with an initial application of that rule. If given the right input the rules will take care of the rest of the proof as well and come back with a complete proof of the goal(s). The "forward rule" is a "rule" that tries to apply all the forward rules and call \lstinline$backwardProve/6$ again.
+All of the backward rules are available to be called immediately by the user, and they will generate a proof with an initial application of that rule. If given the right input the rules will take care of the rest of the proof as well and come back with a complete proof of the goal. The "forward rule" is a "rule" that tries to apply all the forward rules and call \lstinline$backwardProve/6$ again.
 
 \section{Output Format}
 \label{sec:outputformat}
-The output of the theorem prover is a Prolog list of steps or boxes. A step is defined as \lstinline$step(Derivation, Reason, LineNumber)$ where \lstinline$Derivation$ is a formula using Prolog terms, the reason is a list with at least one element inside, and a line number is just a non-negative number that is used to uniquely identify the step (so that other steps' reasons can reference that step). A box contains sub-proofs (that begin with a hypothesis) that are essentially lists of more steps and boxes (defined as \lstinline$box(SubProof)$).
+The output of the theorem prover is a Prolog list of steps or boxes. A step is defined as \lstinline$step(Derivation, Reason, LineNumber)$ where \lstinline$Derivation$ is a formula using Prolog terms, the reason is a list with at least one element inside, and a line number is just a non-negative number that is used to uniquely identify the step (so that other steps' reasons can reference that step). A box contains sub-proofs (that begin with a hypothesis) that are essentially lists of more steps and boxes (defined as \lstinline$box(SubProof)$). There is also a \lstinline$dbox(SubProof1, SubProof2)$) that is used only by the $\vee E$ rule which contains two boxes side by side for the case by case analysis.
 
 The reason is a list where the first element is the name of the justification for the derivation in that step as a Prolog atom. Some reasons are required to reference other steps in the proof in order to fully justify how the formula in the step was derived. For example, for an application of the $\wedge I$ rule, both subformulas of the conjunction need to be referenced by including the numbers of the steps containing those subformulas in the list.
 
@@ -1192,6 +1274,12 @@ Reason Prolog Term & Reference Line Numbers & Description\\
 \lstinline$andI$ & 2 & $\wedge I$ from subformulas on referenced lines\\
 \hline
 \lstinline$andE$ & 1 & $\wedge E$ from conjunction on referenced line\\
+\hline
+\lstinline$orI$ & 1 & $\vee I$ from subformulas on referenced lines\\
+\hline
+\lstinline$orE$ & 5 & $\vee E$ from disjunction, two subformulas of the\\
+&& disjunction as hypotheses and two\\
+&& same conclusions on referenced lines\\
 \hline
 \lstinline$impliesI$ & 2 & $\rightarrow I$ from subformulas on referenced lines\\
 \hline
@@ -1333,8 +1421,6 @@ One optimization that was implemented that does not change the number of generat
 
 \subsection{Improvements and Extensions}
 As mentioned before, one of the improvements that could be made is to increase the performance of the theorem prover. This could involve either a more efficient implementation altogether, or the introduction of optimizations with regards to the search space or pruning of (paths that lead to) "bad" proofs. The latter would involve defining explicitly what "bad" proofs are with respect to Argumentation Logic.
-
-The theorem prover currently does not support disjunction. This was done in order to save time that was allocated to extending the Genuine Absurdity Property definition. Since this property does not make use of the implication and disjunction logic constructs, supporting them may be regarded as unnecessary. However, even for the sake of completeness over all logic constructs, disjunction could be introduced to the supported connectives.
 
 \chapter{Checking for Genuine Absurdity Property}
 \label{chap:gapcheck}
@@ -1648,7 +1734,7 @@ Lines 12-15 of the proof are processed in vain by the clause on line 7 of the co
 
 The empty box calls for the clause on line 2 of the code a final time, which checks that a contradiction cannot be proven just by using the theory and children hypotheses $\neg\beta$ and $\neg\gamma$ without the need for the current hypothesis $\alpha$. That is, it checks that $T\cup\{\neg\beta, \neg\gamma\}\nvdash_{MRA}\bot$. After this check, the algorithm ends as the top-level RAND derivation has been proven to follow the Genuine Absurdity Property.
 
-\section{Remarks and Limitation of Genuine Absurdity Property Definition}
+\section{Remarks and Limitations}
 It is worth noting that for the algorithm to work, the theorem prover must return true whenever $T\cup\{\phi_1, ..., \phi_k\}\cup\{\neg\psi_1, ..., \neg\psi_l\}\vdash_{MRA}\bot$ is the case. This means that the theorem prover must be complete, in addition to being sound. If the use of an incomplete theorem prover is employed, then a proof might be deemed to be following the Genuine Absurdity Property because the theorem prover might fail to prove the contradiction of a $\neg I$ rule application (without the hypothesis), rather than because it really might be the case that $T\cup\{\phi_1, ..., \phi_k\}\cup\{\neg\psi_1, ..., \neg\psi_l\}\nvdash_{MRA}\bot$. 
 
 A limitation of the Genuine Absurdity Property as it is currently defined is that it is not defined over proofs that make use of the substitution rule, that is, reusing previously derived formulas in order to cut down on the proof length. An example of a proof that goes the long way in proving its goal and a similar one that takes a shortcut can be seen in \autoref{fig:shortcut}. This limitation is overcome by taking sibling derivations into account as discussed in \autoref{chap:gapx}.
@@ -3893,7 +3979,7 @@ Evaluation of this project cannot be based on user feedback. The implementation 
 The overall project will therefore be evaluated on its correctness, stability and on its contributions, as well as on whether it fulfilled the objectives it set out to complete. This evaluation section will start its criticism by evaluating the different components, procedures and algorithms of the project and move up to its aims and objectives in general.
 
 \section{Theorem Prover}
-A critical evaluation of the theorem prover was made in \autoref{sec:tpeval} in more depth. A summary of that follows. The theorem prover strives to be sound and complete over the logic constructs it currently supports. However as with any implementation, bugs may interfere. Formal verification was deemed too taxing in terms of time, so plenty of unit tests were used instead to limit the possibility of errors. The theorem prover works, though sometimes it is slow when the search space becomes too complex. This is because the implementation does not prune any proofs because they may be valuable from an Argumentation Logic point of view. Argumentation Logic-compliant pruning (and other performance enhancements) and the introduction of disjunction are among the future improvements.
+A critical evaluation of the theorem prover was made in \autoref{sec:tpeval} in more depth. A summary of that follows. The theorem prover strives to be sound and complete over the logic constructs it currently supports. However as with any implementation, bugs may interfere. Formal verification was deemed too taxing in terms of time, so plenty of unit tests were used instead to limit the possibility of errors. The theorem prover works, though sometimes it is slow when the search space becomes too complex. This is because the implementation does not prune any proofs because they may be valuable from an Argumentation Logic point of view. Argumentation Logic-compliant pruning (and other performance enhancements) are among the future improvements.
 
 \section{Other Algorithms and Procedures}
 Other algorithms and procedures include the (extended) Genuine Absurdity Property checker, the proof visualization algorithm, the proof extraction algorithm and the proof and argument builders.
@@ -3902,20 +3988,17 @@ Unit testing was once again employed for the Genuine Absurdity Property checkers
 
 Manual tests were plenty and thorough for all of the above procedures and algorithms. Performance was very dependent on the theorem prover. Most of the runtime of the code was spent inside the theorem prover than any of the above procedures. The runtime of these procedures was found to be negligible, suggesting very optimal solutions. The opportunity to optimize the extended version of the Genuine Absurdity Property checker was taken and the result is that siblings do not need to be rechecked whenever referenced. More details about this optimization can be found in \autoref{sec:remarx}.
 
-Improvements include the ability to create arguments that distinguish between child derivations and sibling derivations for the visualization algorithm if that is found to be more preferable. In that way, generated arguments will contain the information that certain parts of the attacks and their defenses came from references to siblings instead of children. More information about this can be found in \autoref{sec:vizmarks}. Identifying repeating arguments and creating shorter proofs that reuse one instance of such arguments is a potential upgrade to the current proof extraction algorithm as discussed in \autoref{sec:proofmarks}.
-
 \section{Server}
 The server is a very stable and simple unit of code. It was indirectly tested extensively when testing the client (since the server was always running behind the scenes to support it). As discussed in \autoref{sec:remarklet}, it requires virtually no maintenance and a very limited amount of requirements to run.
 
 \section{Client and User Interface}
 The client strikes a balance between bells and whistles and minimalistic and intuitive interface. It is easy to use and is quite stable. No unit testing was employed in favor of manual testing, since automated GUI testing is non-trivial and quite time-consuming. In the worst case simply hitting F5 (usual shortcut for a page refresh) on the keyboard solves all problems. It has a variety of features that enhance the client's usability, listed in \autoref{sec:cleatures}.
 
-Improvements could include database support for storing proofs and arguments. This would impose a burden on the server however, since user identification and a database setup and connection would be necessary.
-
 \section{Overall Software Engineering Evaluation}
 Despite the fact that software engineering was not the main focus of the project, great effort was made to keep the different logical modules separate, independent and extensible. The overall architecture of the project is simple and explained in \autoref{chap:solover}. The core can be used standalone, however the client provides a good wrap-around that simplifies the overall procedure of using the functionality offered by the system. Deployment is made easy because of the client-server infrastructure. Stability is not an issue, as there is a seamless interaction between the client and the server (and core). The only noticeable problem is that sometimes the server is slow to reply to the client after a request was made because the theorem prover takes longer than usual to run.
 
-\section{Project Aims and Objectives}
+\section{Project Aims, Objectives and Contributions}
+\label{sec:contrib}
 One of the main objectives of the project was to explore Argumentation Logic. Argumentation Logic is a relatively new concept. 
 
 Contributions to this concept include the extension of the Genuine Absurdity Property to work with natural deduction proofs that make use of the substitution shortcut that allows sub-derivations to refer to sibling derivations instead of re-proving what they have already proven. The extension explains how an optimization can be achieved by not re-checking sibling sub-derivations for the Genuine Absurdity Property as it does not change with respect to the content they are imported to.
@@ -3930,9 +4013,27 @@ The software tool also provides a proof builder and an argument builder (for Arg
 
 Unfortunately, there was not enough time to explore the more challenging concepts of Argumentation Logic, namely its effort to work well in a paraconsistent environment. This topic however is still somewhat under construction, and is therefore volatile and subject to change. Among the future work is to explore this part of Argumentation Logic.
 
-\chapter{Conclusion}
+\chapter{Conclusions and Future Work}
 \label{chap:chiliconclusion}
-% move future work from Evaluation to here, add things like "i have found a great way to visualize stuff", "i have found a way to extend GAP to work with shortcuts", etc
+Argumentation Logic is still new, but many lessons could be learned by undertaking this project and studying the concept of Argumentation Logic. Among what has been learned is how this new type of logic bridges the gap between traditional propositional logic and argumentation theory, and establishes a connection and an analogy between the two.
+
+Argumentation Logic shows how proofs can be seen as exchanges of relevant arguments, by establishing a check that enforces relevance. Subsequently, finding a way to visualize proofs by defining a mapping that allows to convert a natural deduction proof to an argument and vice versa was another interesting lesson.
+
+Argumentation Logic can be extended further to function with more flexible versions of natural deduction that can include substitution and potentially many more shortcuts and derived rules or connectives.
+
+Finally, it can be inferred that an implementation of a particular concept is a great way to help in discovering ideas and probing the concept at hand, leading to more improvements and extensions and a much better understanding of what it involves.
+
+Future work for the theorem prover includes Argumentation Logic-compliant pruning as well as other performance enhancements that will allow the theorem prover to run faster. Profiling the runtime of the theorem prover will allow to the optimization to focus on the slow-running parts of the code.
+
+Improvements include the ability to create arguments that distinguish between child derivations and sibling derivations for the visualization algorithm if that is found to be more preferable. In that way, generated arguments will contain the information that certain parts of the attacks and their defenses came from references to siblings instead of children. More information about this can be found in \autoref{sec:vizmarks}. Identifying repeating arguments and creating shorter proofs that reuse one instance of such arguments is a potential upgrade to the current proof extraction algorithm as discussed in \autoref{sec:proofmarks}.
+
+With regards to the client, improvements could include database support for storing proofs and arguments. This would impose a burden on the server however, since user identification and a database setup and connection would be necessary.
+
+Most of the future work however should be pointed towards understanding the paraconsistency realm of Argumentation Logic and perhaps upgrade the core and client to provide a playground for playing with paraconsistency. Many of the algorithms and extensions were the result of trying to use Argumentation Logic in order to build a concrete software tool around it. In the same way, by trying to implement the parts of Argumentation Logic that deal with paraconsistency, many doubts, observations, ideas and opportunities for improving Argumentation Logic will surface.
+
+\fancyhf{}
+\fancyhead[RE,LO]{\small\nouppercase{\leftmark}}
+\fancyfoot[CE,CO]{\thepage}
 
 \listoffigures
 
