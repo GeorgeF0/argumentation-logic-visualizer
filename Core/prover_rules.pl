@@ -1,7 +1,7 @@
 % Contruct a proof in Natural Deduction
 % prove is of the format prove([givens, ex: and(a,b), c, d], [goal that needs to be proven], Output proof given as variable)
-prove(Givens, Goal, Proof) :- is_list(Givens), is_list(Goal), toSteps(Givens, Steps), !, backwardProve(no, Steps, [], [[], []], Goal, Proof).
-proveMRA(Givens, Goal, Proof) :- is_list(Givens), is_list(Goal), toSteps(Givens, Steps), !, backwardProve(yes, Steps, [], [[], []], Goal, Proof).
+prove(Givens, Goal, Proof) :- is_list(Givens), is_list(Goal), toSteps(Givens, Steps), !, backwardProve(no, Steps, [], [[], [], []], Goal, Proof).
+proveMRA(Givens, Goal, Proof) :- is_list(Givens), is_list(Goal), toSteps(Givens, Steps), !, backwardProve(yes, Steps, [], [[], [], []], Goal, Proof).
 provable(Givens, Goal, yes, Verdict) :- 
 	is_list(Givens), 
 	is_list(Goal), 
@@ -88,6 +88,8 @@ backwardProve(MRA, Steps, Context, Extras, Goals, Proof) :-
 	% to try and prove your goal with any other rule. hence the cut after the falsityE rule below
 	falsityE(MRA, Steps, Context, Extras, Goals, Proof), !;
 	andI(MRA, Steps, Context, Extras, Goals, Proof);
+	orI(MRA, Steps, Context, Extras, Goals, Proof);
+	orE(MRA, Steps, Context, Extras, Goals, Proof);
 	impliesI(MRA, Steps, Context, Extras, Goals, Proof);
 	MRA = no, notI(MRA, Steps, Context, Extras, Goals, Proof);
 	forward(MRA, Steps, Context, Extras, Goals, Proof);
@@ -115,6 +117,26 @@ andI(MRA, Steps, Context, Extras, [and(A, B)|Goals], [step(and(A, B), [andI, Lin
 	backwardProve(MRA, Steps, Context, Extras, [A, B|Goals], Proof), 
 	m2(step(A, _, LineNumber1), Proof), m2(step(B, _, LineNumber2), Proof), 
 	ln(Proof, NextLineNumber).
+% OR INTRODUCTION: prove or(a,b) by proving either a or b
+orI(MRA, Steps, Context, Extras, [or(A, B)|Goals], [step(or(A, B), [orI, LineNumber], NextLineNumber)|Proof]):-
+	m3(step(A, _, LineNumber), Steps, Context),
+	!, backwardProve(MRA, Steps, Context, Extras, Goals, Proof), ln(Proof, NextLineNumber).
+orI(MRA, Steps, Context, Extras, [or(A, B)|Goals], [step(or(A, B), [orI, LineNumber], NextLineNumber)|Proof]):-
+	m3(step(B, _, LineNumber), Steps, Context),
+	!, backwardProve(MRA, Steps, Context, Extras, Goals, Proof), ln(Proof, NextLineNumber).
+% OR ELIMINATION: prove goal on a case by case basis
+orE(MRA, Steps, Context, Extras, [G|Goals], [step(G, [orE, LineNumber0, LineNumber1, LineNumber2, LineNumber3, LineNumber4], NextLineNumber), dbox(BoxProof1, BoxProof2)|Proof]) :-
+	not(m3(step(falsity, _, _), Steps, Context)),
+	nth0(2, Extras, PastTries, RestExtras),
+	bagof(or(A, B), m3(step(or(A, B), _, LineNumber0), Steps, Context), [or(X, Y)]),
+	not(m2(or(X, Y), PastTries)),
+	nth0(2, NewExtras, [or(X, Y)|PastTries], RestExtras),
+	backwardProve(MRA, Steps, Context, NewExtras, Goals, Proof),
+	ln(Proof, LineNumber1), a2(Context, Steps, NewContext),
+	backwardProve(MRA, [step(X, [hypothesis], LineNumber1)], NewContext, NewExtras, [G], BoxProof1),
+	ln(BoxProof1, LineNumber3), is(LineNumber2, LineNumber3 - 1),
+	backwardProve(MRA, [step(Y, [hypothesis], LineNumber3)], NewContext, NewExtras, [G], BoxProof2),
+	ln(BoxProof2, NextLineNumber), is(LineNumber4, NextLineNumber - 1).
 % FALSITY ELIMINATION: if contradiction has been established, vacuously prove current goal
 falsityE(MRA, Steps, Context, Extras, [G|Goals], [step(G, [falsityE, LineNumber], NextLineNumber)|Proof]) :-
 	not(G = falsity),
