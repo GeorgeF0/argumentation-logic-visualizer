@@ -27,7 +27,8 @@ makeSubProof([Nodes, AttDefs], Theory, ChildGAPs, NodeID, SubProof) :-
 	childSet(ChildGAPs, ChildSet),
 	lineFix(ParentSet, Theory, ChildGAPs, FixedChildGAPs),
 	append(FixedChildGAPs, MergedCGAPs),
-	a2(Theory, ParentSet, Context),
+	reverse(ParentSet, RevParentSet),
+	a2(Theory, RevParentSet, Context),
 	toSteps(Context, ContextSteps), !,
 	ln(ContextSteps, LineNumber1),
 	m2([[Node], NodeID], Nodes),
@@ -90,7 +91,7 @@ shiftLines(From, Offset, TheoryOffset, [box(BoxProof)|Proof], [box(FixedBoxProof
 shiftNumbers(_, _, _, [], []).
 shiftNumbers(From, Offset, TheoryOffset, [N|Numbers], [FN|FixedNumbers]) :-
 	(
-		N > From + TheoryOffset, is(FN, N + Offset - TheoryOffset - From);
+		N > From + TheoryOffset, is(FN, N + Offset - TheoryOffset);
 		
 		FN = N
 	),
