@@ -23,7 +23,7 @@ checkGAPX(Proof) :-
 % Checks for the actual GAP for each (sub)derivation in the proof
 checkGAP(Theory, AncestorHypotheses, ChildHypotheses, SiblingHypotheses, [], _, _) :-
 	a4(Theory, AncestorHypotheses, ChildHypotheses, SiblingHypotheses, Context),
-	not(proveMRA(Context, [falsity], _)).
+	not(proveMRA(Context, falsity, _)).
 checkGAP(Theory, [], ChildHypotheses, SiblingHypotheses, [step(_, [hypothesis], HL)|Proof], WholeProof, _) :-
 	!, checkGAP(Theory, [], ChildHypotheses, SiblingHypotheses, Proof, WholeProof, HL).
 checkGAP(Theory, AncestorHypotheses, ChildHypotheses, SiblingHypotheses, [step(_, [_|Reason], _)|Proof], WholeProof, HL) :-

@@ -32,7 +32,7 @@ makeSubProof([Nodes, AttDefs], Theory, ChildGAPs, NodeID, SubProof) :-
 	ln(ContextSteps, LineNumber1),
 	m2([[Node], NodeID], Nodes),
 	a2(MergedCGAPs, [step(Node, [hypothesis], LineNumber1)], HypothesisChildren),
-	backwardProve(no, HypothesisChildren, ContextSteps, [[], [], []], [falsity], BoxProof),
+	backwardProve(no, HypothesisChildren, ContextSteps, [[], [], []], falsity, BoxProof),
 	childGAPsUsed(BoxProof, Theory, [Node|ChildSet], ParentSet),
 	ln(BoxProof, NextLineNumber), is(LineNumber2, NextLineNumber - 1),
 	(

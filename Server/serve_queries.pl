@@ -41,7 +41,7 @@ jsonEcho(R) :-
 serveGenerateProofs(Request) :-
 	http_read_json(Request, JSONIn),
 	json_to_prolog(JSONIn, proof_query(Theory, Goal)),
-	findall(X, (prove(Theory, [Goal], Y), reverseRecursive(Y, X)), PrologOut),
+	findall(X, (prove(Theory, Goal, Y), reverseRecursive(Y, X)), PrologOut),
 	prolog_to_json(PrologOut, JSONOut),
 	reply_json(JSONOut).
 
