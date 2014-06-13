@@ -93,7 +93,7 @@ every node/.style={anchor=west,right,font=\sffamily,xshift=7pt,yshift=1pt}
 
 \textsc{\LARGE Imperial College London}\\[1.5cm]
 
-\textsc{\Large Final year project}\\[0.5cm]
+\textsc{\Large Department of Computing}\\[0.5cm]
 
 % Title
 \rule{\linewidth}{0.5mm} \\[0.4cm]
@@ -112,7 +112,9 @@ Giorgos \textsc{Flourentzos}
 \begin{flushright} \large
 \emph{Supervisors:} \\
 Dr.~Krysia \textsc{Broda}\\
-Dr.~Francesca \textsc{Toni}
+Dr.~Francesca \textsc{Toni}\\
+\emph{Second Marker:} \\
+Claudia \textsc{Schulz}
 \end{flushright}
 \end{minipage}
 
@@ -125,11 +127,25 @@ Dr.~Francesca \textsc{Toni}
 \end{titlepage}
 
 \begin{abstract}
-TODO
+Argumentation Logic is a new concept that tries to bridge the gap between Natural Deduction in Propositional Logic and Argumentation Theory by establishing a correspondence between the two. Ultimately, it aims to provide grounds for reasoning in paraconsistent environments.
+
+\noindent In order to help explore this concept, a collection of procedures and a graphical user interface have been implemented that allow the creation and visualization of natural deduction proofs as arguments and vice-versa.
 \end{abstract}
 
 \chapter*{Acknowledgments}
-TODO
+First and foremost I would like to wholeheartedly thank my supervisors Dr. Krysia Broda and Dr. Francesca Toni for their continuous and invaluable advice, feedback and support throughout the course of this project, as well as for all the intriguing conversations during our meetings.
+
+\medskip
+\noindent Many thanks go to Claudia Schulz, my second marker, whose feedback and advise greatly improved the quality of my report.
+
+\medskip
+\noindent I would personally like to thank Professor Antonis C. Kakas for his valuable feedback and discussions regarding Argumentation Logic, without which I would not have been able to accomplish as much as I did.
+
+\medskip
+\noindent Special thanks go to Lauren Bennett, who greatly helped me achieve and maintain a healthy balance between my personal and work life and to keep up the fight no matter what, teaching me many important life lessons in the process.
+
+\medskip
+\noindent Finally I would like to thank my family and friends for their undying love and support, as well as MeatLiquor and Patty \& Bun for the great nights out with friends!
 
 \tableofcontents
 
@@ -147,33 +163,135 @@ Argumentation Logic is a new argumentation framework proposed by Professor Anton
 
 Argumentation Logic is largely based on the already established natural deduction system. The major difference however lies in the fact that it restricts the use of the Reductio ad Absurdum (known as "not introduction") rule in a way that the assumed hypothesis must be critical to the application of that rule. Argumentation Logic can be seen from an argumentative point of view, as a debate between a proponent who puts forth arguments and defends them against an opponent, who in turn tried to attack those arguments. The arguments are sets of propositional sentences. The argument of the proponent is successful and a conclusion is therefore drawn if it can be successfully defended against the attacks made by the opponent. Argumentation Logic is a recent addition to the field of logic and remains partly unexplored.
 
-The idea is to implement a simple and flexible GUI that will allow for the construction of valid propositional Argumentation Logic natural deduction proofs. In addition, the implemented software will be able to visualize the proofs as exchanges of arguments between proponent and opponent. This is an attempt to enable further research and study of Argumentation Logic as an established method for reasoning about potentially inconsistent environments in a human-like way, with potential applications in artificial intelligence.
-The project is split into seven steps which build on top of each other.
+The idea is to implement a simple and flexible GUI that allows for the construction of valid propositional Argumentation Logic natural deduction proofs. In addition, the implemented software should be able to visualize the proofs as exchanges of arguments between proponent and opponent. This is an attempt to enable further research and study of Argumentation Logic as an established method for reasoning about potentially inconsistent environments in a human-like way, with potential applications in artificial intelligence.
 
-\section{Step 1: Basic Natural Deduction Proof System}
+The project was originally split into seven steps which build on top of each other.
+\begin{itemize}
+\item
+Step 1: Basic Natural Deduction Proof System (\autoref{chap:prover})
+
 The first step requires a natural deduction proof system that can find the steps required to reach a goal, given the theory and the goal that must be met. The aim of this step is to provide the basis on which to build the Argumentation Logic framework.
 
-\section{Step 2: Improving the Proof System}
-The second step requires the natural deduction proof system to be able to produce proofs with natural deduction rules applied with variable and configurable priorities and have the ability to look for proofs of a particular maximum length. This step might not be required depending on the implementation of the proof system in the previous step. Therefore the aim of this stage is to only facilitate the implementation of the proof system and has no bearing on the exploration of Argumentation logic.
+Consider this example: Given theory $T = \{\neg(a\wedge\neg b\wedge\neg c), \neg(a\wedge b), \neg(a\wedge c\wedge\neg d), \neg(d\wedge\neg b)\}$ and goal $\neg a$, the theorem prover could give the proof shown in \autoref{fig:scrintroproof}.
 
-\section{Step 3: Genuine Absurdity Property}
+\begin{figure}[htp]
+\centerline{\includegraphics[scale=0.4]{img/scr-intro-proof.png}}
+\caption{One of the generated proofs of the theorem prover with theory $T = \{\neg(a\wedge\neg b\wedge\neg c), \neg(a\wedge b), \neg(a\wedge c\wedge\neg d), \neg(d\wedge\neg b)\}$ and goal $\neg a$. "!" represents negation and "\&" represents conjunction\label{fig:scrintroproof}}
+\end{figure}
+\item
+Step 2: Improving the Proof System
+
+The aim of this stage is to customize the natural deduction proof system in order to facilitate its usage in the context of Argumentation Logic and its exploration.
+\item
+Step 3: Genuine Absurdity Property (\autoref{chap:gapcheck})
+
 The third step involves the processing of produced natural deduction proofs in order to check the presence of the Genuine Absurdity Property. This property is closely tied to the identification of natural deduction proofs that are compatible with (that is, supported by) Argumentation Logic. Compatible proofs can be visualized as arguments between two debaters as in the following step.
 
-\section{Step 4: Argumentation Logic Visualization}
-The fourth step requires the construction of a GUI that allows the visualization of Argumentation Logic proofs as sets of arguments. The GUI can feature several extensions such as step-by-step building of an Argumentation Logic proof, saving and loading generated proofs, conversion between natural deduction and argumentation and so on.
+For example, the proof given in the example for step 1 does indeed follow this property for reasons that will be explained in \autoref{chap:gapcheck} and the GUI will award the proof a ribbon to indicate success after the check as shown in \autoref{fig:scrintrogap}.
 
-\section{Step 5: Converting Natural Deduction Proofs to Argumentation Logic Proofs}
-The fifth step revolves around the conversion of natural deduction proofs that are unsupported by Argumentation Logic (proofs that do not follow the Genuine Absurdity Property) to compatible ones. It can be shown in the technical report on Argumentation Logic that any proof not following the Genuine Absurdity Property can be converted to one that does. The aim of this step is to allow the possibility of virtually any natural deduction proof to be visualized from an argumentative view.
+\begin{figure}[htp]
+\centerline{\includegraphics[scale=0.4]{img/scr-intro-gap.png}}
+\caption{The proof in \autoref{fig:scrintroproof}, now awarded the Genuine Absurdity Property ribbon to indicate that it follows the property. "!" represents negation and "\&" represents conjunction\label{fig:scrintrogap}}
+\end{figure}
+\item
+Step 4: Argumentation Logic Visualization (\autoref{chap:viz})
 
-\section{Step 6: Re-Introduction of Disjunction and Implication Connectives}
-The sixth step involves the introduction of the disjunction and implication connectives. It is shown in the technical report on Argumentation Logic that for consistent theories using only conjunction and negation, Propositional Logic is equivalent to Argumentation Logic. The use of disjunction and implication remain partly subject for future work. The aim of this step is to explore further this area.
+The fourth step requires the construction of a GUI (and a collection of background procedures) that allows the visualization of Argumentation Logic proofs as sets of arguments.
 
-\section{Step 7: Paraconsistency}
+Given the example in step 3, the proof can now be visualized as a futile attempt of the proponent to propose and defend the opposite of the outermost conclusion $\neg a$, $a$, successfully attacked by the opponent as shown in  \autoref{fig:scrintroviz}.
+
+\begin{figure}[htp]
+\centerline{\includegraphics[scale=0.4]{img/scr-intro-viz.png}}
+\caption{The proof in \autoref{fig:scrintrogap}, now now vizualised as an argument. Green nodes represent defenses by the proponent, and red nodes represent attacks by the opponent.\label{fig:scrintroviz}}
+\end{figure}
+
+A mapping between natural deduction proofs and argumentation theory is discussed in \autoref{chap:viz}.
+\item
+Step 5: Converting Natural Deduction Proofs to Argumentation Logic Proofs
+
+The fifth step revolves around the conversion of natural deduction proofs that are unsupported by Argumentation Logic (proofs that do not follow the Genuine Absurdity Property) to compatible ones. The aim of this step is to allow the possibility of virtually any natural deduction proof to be visualized from an argumentative view.
+\item
+Step 6: Re-Introduction of Disjunction and Implication Connectives
+
+The sixth step involves the introduction of the disjunction and implication connectives. The use of disjunction and implication remain partly subject for future work. The aim of this step is to explore further this area.
+\item
+Step 7: Paraconsistency
+
 The seventh and final step ventures into how Argumentation Logic can allow for reasoning within an inconsistent environment. The aim of this step is to probe the notion of para-consistency of Argumentation Logic.
+\end{itemize}
 
-In conclusion, this project explores the premise of Argumentation Logic, a recent framework based on natural deduction of propositional logic that allows proofs to be visualized as an exchange of arguments. To aid the understanding of Argumentation Logic, a software will be created that enables the construction and visualization of proofs that adhere to this logic. At the time of writing, there is no published work in this area, and the nature of this project is investigative.
+The final three steps were unfortunately not explored. In addition to the original steps, several others were planned and implemented during the project. The reason was to provide a better and more integrated environment with a back-and-forth flow between propositional logic and argumentation.
+\begin{itemize}
+\item
+Step 1+: Proof Builder (\autoref{chap:proofbuilder})
+
+The creation of a natural deduction proof builder was deemed necessary as users can directly input natural deduction proofs that they may have in mind into the system.
+
+A sneak peak of the proof builder is shown in \autoref{fig:scrintroproofbuilder}.
+
+\begin{figure}[htp]
+\centerline{\includegraphics[scale=0.3]{img/scr-client-proofbuilder.png}}
+\caption{The proof builder initialized to build a proof with theory $T = \{\neg(a\wedge b), \neg(a\wedge c), \neg(a\wedge\neg b \wedge\neg c)\}$ and goal $\neg a$.\label{fig:scrintroproofbuilder}}
+\end{figure}
+\item
+Step 3+: Extending the Genuine Absurdity Property (\autoref{chap:gapx})
+
+This step enables the Genuine Absurdity Property to be extended so that it covers natural deduction proofs that make use of the substitution shortcut.
+
+For example note the use of the shortcut on line 11 of the proof in \autoref{fig:scrintrogap}. This uses the substitution shortcut of natural deduction to use the sibling conclusion $\neg b$ of line 8 of the proof, which is the conclusion of the sub-derivation on lines 5 to 7. Normally, this proof is not taken into account even though it seems natural. The extension addresses this specifically.
+\item
+Step 4+: Extracting proofs from arguments (\autoref{chap:extractor})
+
+This step allows a more circular data flow by enabling the transition from arguments back to natural deduction, that complements the original step 4.
+
+For example, given the argument in \autoref{fig:scrintroviz}, this algorithm can be used to extract the proof in \autoref{fig:scrintrogap}.
+\item
+Step 4++: Argument Builder (\autoref{chap:argbuilder})
+
+Allows for the construction of arguments that follow the semantics of Argumentation Logic directly. This enables a different data entry point as the original steps only allowed proofs to be made and arguments only to be created by converting proofs.
+
+A sneak peak of the argument builder is shown in \autoref{fig:scrintroargbuilder}.
+
+\begin{figure}[htp]
+\centerline{\includegraphics[scale=0.3]{img/scr-intro-argbuilder.png}}
+\caption{The argument builder initialized with a complete argument about $a$, using theory $\neg(a\wedge b\wedge c), \neg(a\wedge\neg b), \neg(a\wedge\neg c)$.\label{fig:scrintroargbuilder}}
+\end{figure}
+\end{itemize}
+
+All of the steps are explained in greater detail in \autoref{sec:exploration}.
+
+In conclusion, this project explores the premise of Argumentation Logic, a recent framework based on natural deduction of propositional logic that allows proofs to be visualized as an exchange of arguments. To aid the understanding of Argumentation Logic, a software was created that enables the construction and visualization of proofs that adhere to this logic. At the time of writing, there is no published work in this area, and the nature of this project is investigative.
+
+\section{Contributions}
+The project contributes in several ways:
+\begin{itemize}
+\item
+A theorem prover was built to facilitate the exploration of Argumentation Logic. It can prove a goal given a theory, or fail when it cannot be proven (steps 1 and 2)
+\item
+A proof builder was created that facilitates the generation and input of proofs inside the system (step 1+)
+\item
+A check was implemented that reflects the exact definition of the Genuine Absurdity Property that can be used to evaluate proofs (step 3)
+\item
+A drawback of the Genuine Absurdity Property was identified and remedied by extending the definition to cover more proofs of natural deduction (step 3+)
+\item
+An algorithm for drawing proofs that follow the (extended) Genuine Absurdity Property was devised and implemented (step 4)
+\item
+An algorithm corresponding to the one above was devised and implemented, with the ability to take an argument and its surrounding theory and extract a proof that will yield the same argument if run through the algorithm in step 4 (step 4+)
+\item
+An argument builder feature was created in order to allow for the direct creation of arguments, according to the semantics of Argumentation Logic (step 4++)
+\item
+All of the above are wrapped in a user-friendly and intuitive GUI that provides basic usability features such as persistent storage of generated assets, exporting and importing of those assets and visual feedback to the user during constructions or general use.
+\end{itemize}
+
+\section{Structure of Remainder of Report}
+The background chapter, \autoref{chap:background} covers argumentation theory briefly, as well as natural deduction. It introduces the rules used in natural deduction throughout the paper, as well as its format and style. Argumentation Logic is then introduced, along with explanations of the relevant concepts used in this project.
+
+The project is split into a different modules, as explained by \autoref{chap:solover}, namely, the core module that includes all of the procedures that generate or manipulate proofs and arguments, the server module that imports the core module and serves requests issued by the client module and finally the client module that acts as a wrap-around for the core module, providing a comfortable and useful working environment for the user.
+
+The core implementation as well as the findings of this project are discussed from \autoref{chap:prover} to \autoref{chap:extractor}. An overview of the different processes and features implemented in the solution can be found in \autoref{sec:coreoverview}, along with the data flow between them. The server implementation is discussed in more detail in \autoref{chap:server}. The client is discussed in \autoref{chap:client}. The evaluation of this project can be found in \autoref{chap:eval}, and finally, a conclusion is drawn based on the evaluation in \autoref{chap:chiliconclusion}.
 
 \chapter{Background}
+\label{chap:background}
 
 \section{Argumentation Theory}
 \label{sec:argtheory}
@@ -398,7 +516,7 @@ The last rule mentions $F$; this is the finite class of formulas that consist of
 Recommended Reading: \citep*{alpaper}
 
 \subsection{Introduction}
-This section gives a brief introduction of the concepts behind Argumentation Logic, as found in the technical report. Section Exploring Argumentation Logic shows how these concepts are used to build the visualization tool.
+This section gives a brief introduction of the concepts behind Argumentation Logic, as found in the technical report. Section Exploring Argumentation Logic (\autoref{sec:exploration}) shows how these concepts are used to build the visualization tool.
 
 Argumentation Logic builds a bridge between argumentation theory and propositional logic. This duality is formed by combining notions from both argumentation theory and natural deduction. For consistent theories, Argumentation Logic is equivalent to propositional logic, but it also extends into a para-consistent logic for inconsistent theories. From the argumentation point of view, Argumentation Logic can be seen as arguments that are sets of propositional formulas that attack and defend against other arguments. From the propositional logic point of view, Argumentation Logic can be seen as a natural deduction system that restricts the use of the Reductio ad Absurdum rule in order to allow for relevant arguments to be used only. The rest of this section is devoted to explaining the concepts behind this new logic.
 
@@ -930,30 +1048,6 @@ $AL$-entailment leads to a form of para-consistency, since it does not trivializ
 The notion of $AL$-entailment above does not work for directly inconsistent theories, as from Argumentation Logic's point of view, the theory is in layman's terms as wrong (inconsistent) as it can get. In terms of Argumentation Logic, if the theory is directly inconsistent (in addition to being classically inconsistent as well), then no matter what argument is put forth, it can always be attacked by the empty argument since $T\vdash_{MRA}\bot$ to begin with. 
 For this reason, the entire theory cannot be considered as a whole, and hence a new notion of entailment is established, one that makes use of maximally consistent closure sets. For theory $T$, and $Cn(T) = \{\phi| T\vdash_{MRA}\phi\}$ being the set of all direct consequences of $T$, $\phi$ is $AL+$-entailed by $T$ (written as $T\vdash_{AL+}\phi$) if and only if $T'\vdash_{AL}\phi$ for all maximally directly consistent sets $T'\subseteq Cn(T)$. For directly consistent theories $AL+$-entailment is equivalent to $AL$-entailment. 
 
-\section{Exploring Argumentation Logic}
-As briefly described in the introduction to this paper, the project tries to explore Argumentation Logic in seven steps. Much of the work to be done in the latter two stages is exploratory, hence there is no clear description of the potential findings.
-
-\subsection{Step 1: Basic Natural Deduction Proof System}
-The first stage requires a natural deduction proof system that can find the steps required to reach a goal, given the theory and the goal that must be met. Natural deduction proofs will be generated using the proof system built in this step, in order to later on (in step 3) check which proofs constitute valid Argumentation Logic proofs, and which can be converted to valid Argumentation Logic proofs (step 5).
-
-\subsection{Step 2: Improving the Proof System}
-The second stage requires the natural deduction proof system to be able to produce proofs with natural deduction rules applied with variable and configurable priorities and have the ability to look for proofs of a particular maximum length. This step might not be required depending on the implementation of the proof system in the previous step. Therefore the aim of this stage is to only facilitate the implementation of the proof system and has no bearing on the exploration of Argumentation logic.
-
-\subsection{Step 3: Genuine Absurdity Property}
-The third stage involves the processing of produced natural deduction proofs (from stage 1) in order to check the presence of the Genuine Absurdity Property as discussed in the Argumentation Logic section before. This property is closely tied to the identification of natural deduction proofs that are compatible with (that is, supported by) Argumentation Logic. Compatible proofs can be visualized as arguments between two debaters as in the following step, which is the aim of the next stage.
-
-\subsection{Step 4: Argumentation Logic Visualization}
-The fourth stage requires the construction of a GUI that allows the visualization of Argumentation Logic proofs as sets of arguments. The proofs can originate from natural deduction proofs created automatically from stage 1 (with the help of stages 3 and 5), or constructed by the user using the GUI. The GUI can feature several extensions such as step-by-step building of an Argumentation Logic proof, saving and loading generated proofs, conversion between natural deduction and argumentation and so on. The visual representation of the arguments is subject to aesthetics, and will be decided during the implementation of this step. However, as an indication of the style of the argumentation map, the arguments will probably be displayed as a Dung graph with nodes containing the arguments (sets of propositional sentences) and attack or defense relations depicted as different styles of arrows connecting the nodes. The graph will have the theory at its root and the arguments will build from it. 
-
-\subsection{Step 5: Converting Natural Deduction Proofs to Argumentation Logic Proofs}
-The fifth stage revolves around the conversion of natural deduction proofs that are unsupported by Argumentation Logic (proofs that do not follow the Genuine Absurdity Property) to compatible ones (generated from stages 1 and 3). It can be shown in the technical report on Argumentation Logic that any proof not following the Genuine Absurdity Property can be converted to one that does for a consistent theory. The aim of this step is to allow the possibility of natural deduction proofs to be visualized from an argumentative view.
-
-\subsection{Step 6: Re-Introduction of Disjunction and Implication Connectives}
-The sixth stage involves the introduction of the disjunction and implication connectives. It is shown in the technical report on Argumentation Logic that for consistent theories using only conjunction and negation, Propositional Logic is equivalent to Argumentation Logic. The use of disjunction and implication remains partly subject for future work. The aim of this step is to explore further this area.
-
-\subsection{Step 7: Paraconsistency}
-The seventh and final stage ventures into how Argumentation Logic can allow for reasoning within an inconsistent environment. The aim of this step is to probe the notion of para-consistency of Argumentation Logic. An implementation of the notions of $AL$-entailment and $AL+$-entailment will be attempted in order to provide visual mapping of arguments coming from (directly or classically) inconsistent theories.
-
 \section{Existing Visual Argumentation Tools}
 \label{sec:vizargtools}
 There is a plethora of existing argumentation tools, many of which provide visualization of arguments. These tools range in purpose from academic and research or educational to commercial tools used in analyzing legal arguments for analyzing the rationality of arguments presented in a courtroom.
@@ -990,14 +1084,46 @@ Rationale
 
 Since AIF remains volatile at the time of this writing, and LKIF is only concerned with legal matters, neither of these formats will be used. The visualization tool produced as part of this project will use its own format to store data, and adoption of AIF might be revisited as a possible extension.
 
-\section{Implementation}
-Prolog is the lingua franca when it comes to creating proof systems, due to its in-built ability of backtracking and unification. Thus for the steps 1-3 and 5, a Prolog knowledgebase will be created in order to implement the natural deduction proof system.
-JavaScript is a great tool for creating graphs and GUIs, and will therefore be considered when building the GUI tool (step 4). JavaScript works in a browser sandboxed environment, which means that a webserver might be required in order to run the tool. The server could be implemented in any of a variety of languages ranging from JavaScript and Python, to C\# and Java. The server will need to interface with Prolog in order to run the proof system. 
-This client-server design will allow for the application to be hosted on a webserver for public use and community feedback, as well, which makes it a great way to introduce Argumentation Logic to the academia and industry alike.
-
 \chapter{Solution Overview}
 \label{chap:solover}
-This chapter aims to introduce the overall structure of the solution and provide justification as to the decisions made that constitute the solution.
+This chapter firstly re-introduces the steps from the introduction in more detail, and explains how each step was implemented. This chapter also aims to introduce the overall structure of the solution and provide justification as to the decisions made that constitute the solution.
+
+\section{Exploring Argumentation Logic}
+\label{sec:exploration}
+As briefly described in the introduction to this paper, the project tries to explore Argumentation Logic in seven steps. The last three steps were not implemented, and instead focus was redirected to providing a better overall experience for the first 4 steps.
+
+\subsection{Step 1: Basic Natural Deduction Proof System}
+The first stage requires a natural deduction proof system that can find the steps required to reach a goal, given the theory and the goal that must be met. Natural deduction proofs are generated using the proof system built in this step (\autoref{chap:prover}), in order to later on (in step 3) check which proofs constitute valid Argumentation Logic proofs, and which can be converted to valid Argumentation Logic proofs (step 5).
+
+\subsection{Step 2: Improving the Proof System}
+The theorem prover was built to be very flexible, with the ability to turn on and off different rules, as required by step 3, checking for the Genuine Absurdity Property.
+
+\subsection{Step 3: Genuine Absurdity Property}
+The third step (\autoref{chap:gapcheck}) involves the processing of produced natural deduction proofs (from step 1 and step 1+) in order to check the presence of the Genuine Absurdity Property as discussed in the Argumentation Logic section before. This property is closely tied to the identification of natural deduction proofs that are compatible with (that is, supported by) Argumentation Logic. Compatible proofs can be visualized as arguments between two debaters as in the following step, which is the aim of the next stage. The property was extended to work with natural deduction proofs using shortcuts, as explained later by step 3+.
+
+\subsection{Step 4: Argumentation Logic Visualization}
+The fourth step requires the construction of a GUI that allows the visualization of Argumentation Logic proofs as sets of arguments. The proofs can originate from natural deduction proofs created automatically from stage 1 (with the help of stage 3), or constructed by the user using the GUI (step 1+). A lot of effort was put into making the GUI more approachable, which dictated that more surrounding features were implemented in order to provide a more well-rounded experience. This resulted in steps 4+ and 4++ explained later. The implementation of this step is described in \autoref{chap:viz}.
+
+\subsection{Step 5: Converting Natural Deduction Proofs to Argumentation Logic Proofs}
+The fifth stage revolves around the conversion of natural deduction proofs that are unsupported by Argumentation Logic (proofs that do not follow the Genuine Absurdity Property) to compatible ones (generated from stages 1 and 3). It can be shown in the technical report on Argumentation Logic that any proof not following the Genuine Absurdity Property can be converted to one that does for a consistent theory. The aim of this step is to allow the possibility of natural deduction proofs to be visualized from an argumentative view. However there was not enough time to implement this step. It therefore remains part of future work.
+
+\subsection{Step 6: Re-Introduction of Disjunction and Implication Connectives}
+The sixth stage involves the introduction of the disjunction and implication connectives. It is shown in the technical report on Argumentation Logic that for consistent theories using only conjunction and negation, Propositional Logic is equivalent to Argumentation Logic. The use of disjunction and implication remains partly subject for future work. The aim of this step was to explore further this area, but unfortunately this step was scrapped in favor of extra steps taken below in order to provide a more complete and well-rounded experience for the basic steps.
+
+\subsection{Step 7: Paraconsistency}
+The seventh and final stage ventures into how Argumentation Logic can allow for reasoning within an inconsistent environment. The aim of this step is to probe the notion of para-consistency of Argumentation Logic. An implementation of the notions of $AL$-entailment and $AL+$-entailment was to be attempted in order to provide visual mapping of arguments coming from (directly or classically) inconsistent theories. This step was not implemented again in favor of a better experience regarding the first 4 steps.
+
+\subsection{Step 1+: Proof Builder}
+After the theorem prover in step 1 was created, proofs could be generated from it by providing the theory and desired goal. However, many times, looking through a large amount of generated proofs in order to find the desired one was found to be tedious, which called for the creation of a proof builder that would allow the user to input proofs directly. This feature is discussed in \autoref{chap:proofbuilder}.
+
+\subsection{Step 3+: Extending the Genuine Absurdity Property}
+This step enables the Genuine Absurdity Property to be extended so that it covers natural deduction proofs that make use of the substitution shortcut. This allows a wider range of proofs that can be considered, which are usually preferred since they look more pleasant to the human eye because of their conciseness. The process for extending the original definition of the Genuine Absurdity Property is shown in \autoref{chap:gapx}.
+
+\subsection{Step 4+: Extracting proofs from arguments}
+The idea behind this step is to write a procedure that can create a natural deduction proof from a given theory and argument. The resulting proof, if visualized again should give back the same argument, essentially forming an inverse of the visualization algorithm in the original step 4. This step allows a more circular data flow by enabling the transition from arguments back to natural deduction. This step is discussed in \autoref{chap:extractor}.
+
+\subsection{Step 4++: Argument Builder}
+In the same way as a proof builder feature made sense for complementing the theorem prover, an argument builder can not only aid the creation of arguments, but also allow arguments to be a data entry point, rather than existing only as post-processing data. This way, the natural deduction - argument cycle (made using steps 4 and 4+) can be started from the argument side as well. The argument builder is discussed in detail in \autoref{chap:argbuilder}.
 
 \section{Solution Architecture}
 \label{sec:solarch}
@@ -1068,36 +1194,45 @@ As with every design, there are some drawbacks as well. There is some unavoidabl
 
 There are some disadvantages that come with web applications as well, but some of them fortunately do not apply to this system. Compatibility and performance issues (compared to native applications) are some of the common problems with web interfaces. Since the server does the heavy lifting the client is left with the responsibility of running the a simple GUI, ruling out any potential issues with performance. Every effort is made to make the Client adhere to standards, reducing the chances of running into compatibility issues with the browser. The main disadvantage however is the need for constant connection to the server. Unless the server is run locally, the client cannot be used as all calculations take place server-side.
 
-\subsection{Structure of Remainder of Report}
-The core implementation as well as the findings of this project are discussed in chapters TODO to TODO. An overview of the different features implemented in the core can be found in \autoref{chap:coreoverview}. The server implementation is discussed in more detail in \autoref{chap:server}. The client is discussed in \autoref{chap:client}. The evaluation of this project can be found in \autoref{chap:eval}, and finally, a conclusion is drawn based on the evaluation in \autoref{chap:chiliconclusion}. A full code listing for the core can be found in the Appendix (TODO).
-
-\chapter{Core Functional Overview}
-\label{chap:coreoverview}
-The core is made of different predicates or procedures that work together in order to provide an ecosystem of functions that can be used to create and manipulate natural deduction proofs and arguments. \autoref{fig:funcmap} provides a functional map that illustrates the different procedures as well as the data flow around them.
+\section{Functional Overview}
+\label{sec:coreoverview}
+The core is made of different predicates or procedures that work together in order to provide an ecosystem of functions that can be used to create and manipulate natural deduction proofs and arguments. The client further provides varying functionality that can work in conjunction with the core procedures. \autoref{fig:funcmap} provides a functional map that illustrates the different procedures as well as the data flow around them.
 
 \begin{figure}[ht]
 \centerline{\includegraphics[scale=0.85]{img/functional-map.png}}
-\caption{The high-level functional map for the core\label{fig:funcmap}}
+\caption{The high-level functional map for the core. White parallelograms represent data, purple boxes represent core predicates and blue boxes represent client functionality\label{fig:funcmap}}
 \end{figure}
 
-The main procedures involved are the following:
+The main procedures involved, shown in purple boxes in the diagram are the following:
 \begin{itemize}
 \item
 Theorem Prover (\autoref{chap:prover}): the theorem proof system provides proofs for the given theory and goal
+
+This is step 1 and 2 of the initial plan
 \item
 GAP Checker (\autoref{chap:gapcheck} and \autoref{chap:gapx}): the Genuine Absurdity Property checker takes a proof and succeeds if the given proof indeed follows the property
+
+This procedure comprises steps 3 and 3+
 \item
 Proof Visualizer (\autoref{chap:viz}): the proof visualization predicate takes a proof that follows the Genuine Absurdity Property and returns an argument that can be used to visualize the given proof
+
+This is step 4 of the original plan
 \item
 Proof Extractor (\autoref{chap:extractor}): this predicate can take an argument (a visualization of a proof) and extract a proof from it
+
+This represents step 4+
 \end{itemize}
 
-In addition to the core module predicates, there are a few client features that can still provide data that can be used by the core modules listed above. These are:
+In addition to the core module predicates, there are a few client features that can still provide data that can be used by the core modules listed above. These features are represented by the blue boxes in the diagram. These are:
 \begin{itemize}
 \item
 Proof Builder (\autoref{chap:proofbuilder}): provides a method of allowing the user to construct a particular proof
+
+This is step 1+ of the new steps
 \item
-Argument Builder(\autoref{chap:argbuilder}): provides a method of allowing the user to construct an argument 
+Argument Builder (\autoref{chap:argbuilder}): provides a method of allowing the user to construct an argument
+
+This is step 4++ of the originally unplanned steps
 \end{itemize}
 
 \chapter{Theorem Proving System}
@@ -1109,6 +1244,8 @@ Different natural deduction provers use different sets of rules, some of which a
 Apart from these variations, the ability to turn off a few rules, such as the Reductio ad Absurdum rule (and the derived "proof by contradiction" rule which combines a Reductio ad Absurdum rule and a $\neg E$ rule), in order to enable $\vdash_{MRA}$ (or $\nvdash_{MRA}$) proving used by the Genuine Absurdity Property (\autoref{chap:gapcheck}).
 
 The theorem prover should also be flexible enough so that it can be used to stitch together sub-proofs in order to form a larger proof as required by the proof extraction algorithm discussed in \autoref{chap:extractor}.
+
+The latter two concerns were the main subject of step 2. A more interactive and direct way to generate proofs is provided by the implementation of step 1+ with the creation of the proof builder, discussed in \autoref{chap:proofbuilder}.
 
 \section{Ruleset Used}
 The implementation tries to approach the proof both backwards (from the bottom up) and forwards (from the top down). Several backwards and forwards rules have been implemented. Backwards rules try to close the gap between the theory and the goal from the bottom, and they are the ones that complete goals in order to finish the proof. The forwards rules are there in order to break down complicated formulas that have already been derived so that the backwards rules can complete their work. The forwards rules do not progress the proof in the sense that they never deal with the goal. They just provide simpler formulas that can be of use to the backwards rules.
@@ -1424,6 +1561,9 @@ As mentioned before, one of the improvements that could be made is to increase t
 
 \chapter{Checking for Genuine Absurdity Property}
 \label{chap:gapcheck}
+
+This chapter refers to the implementation of the Genuine Absurdity Property check and comprises step 3 of the initial plan.
+
 Recall from \autoref{subsec:gap} that for a RAND derivation, $T\cup\{\phi\}\cup\{\phi_1, ..., \phi_k\}\cup\{\neg\psi_1, ..., \neg\psi_l\}\vdash_{MRA}\bot$, where $k, l \geq 0$ and
 
 \begin{itemize}
@@ -1741,7 +1881,7 @@ A limitation of the Genuine Absurdity Property as it is currently defined is tha
 
 \chapter{Extending the Genuine Absurdity Property}
 \label{chap:gapx}
-As briefly mentioned in \autoref{subsec:gap}, the standard definition for the Genuine Absurdity Property comes with a shortcoming. It only considers proofs where the substitution rule is not permitted, which is why only ancestor and child hypotheses are taken into account. This chapter explains how the current definition of the Genuine Absurdity Property can be extended to accommodate proofs of that kind, as many proof search software or even humans tend to use shortcuts or derived rules in order to shorten proofs by decreasing repetition and reduce the amount of effort needed to build a proof.
+As briefly mentioned in \autoref{subsec:gap}, the standard definition for the Genuine Absurdity Property comes with a shortcoming. It only considers proofs where the substitution rule is not permitted, which is why only ancestor and child hypotheses are taken into account. This chapter explains how the current definition of the Genuine Absurdity Property can be extended to accommodate proofs of that kind, as many proof search software or even humans tend to use shortcuts or derived rules in order to shorten proofs by decreasing repetition and reduce the amount of effort needed to build a proof. This chapter covers step 3+ of \autoref{sec:exploration}.
 
 \section{Arriving at the Definition of the Extension}
 This section starts from the classic definition of the Genuine Absurdity Property and arrives at the final definition. This section can be skipped without any loss of context. The final definition is given again in the next section.
@@ -2183,7 +2323,9 @@ Consider again the proof in \autoref{fig:gapxx}. The reason the sub-derivation $
 
 \chapter{Visualization of Genuine Absurdity Property Proofs}
 \label{chap:viz}
-The Argumentation Logic paper does not provide a formal algorithm for visualizing proofs but rather the idea that proofs having the Genuine Absurdity Property can be seen from an argumentative point of view and any abstract argumentation framework can be visualized as shown previously in \autoref{subsec:aafviz}, where an example was given by \autoref{fig:aafviz}. This chapter documents the attempt to provide an algorithm for the visualization of proofs that both follow the original Genuine Absurdity Property or the extension given in \autoref{chap:gapx}.
+The Argumentation Logic paper does not provide a formal algorithm for visualizing proofs but rather the idea that proofs having the Genuine Absurdity Property can be seen from an argumentative point of view and any abstract argumentation framework can be visualized as shown previously in \autoref{subsec:aafviz}, where an example was given by \autoref{fig:aafviz}. This chapter documents the attempt to provide an algorithm for the visualization of proofs that both follow the original Genuine Absurdity Property or the extension given in \autoref{chap:gapx}. 
+
+This chapter covers step 4 of the original planned steps. The reverse procedure, in step 4+, as well as the argument builder, in step 4++, are discussed in \autoref{chap:extractor} and \autoref{chap:argbuilder} respectively.
 
 \section{Assumptions Made by Algorithm}
 The algorithm provided here assumes that the proofs supplied all follow the Genuine Absurdity Property. This property ensures that arguments made in the (corresponding argumentation framework of the) proof are relevant. It might be possible to visualize proofs that do not have this property. The algorithm can deal with proofs that follow the extended version of the property as well.
@@ -2924,7 +3066,7 @@ forestyle
 
 \chapter{Extracting Proofs from Arguments}
 \label{chap:extractor}
-\autoref{chap:viz} shows how proofs following the Genuine Absurdity Property can be seen from an argumentative point of view. An algorithm can be devised to work the opposite way. This chapter discusses how an argument can be used along with the theory it was drawn from to produce a proof that corresponds to this argument. This proof, if visualized again using the algorithm from \autoref{chap:viz} will produce the same argument used to generate the proof.
+\autoref{chap:viz} shows how proofs following the Genuine Absurdity Property can be seen from an argumentative point of view (step 4). An algorithm can be devised to work the opposite way. This chapter discusses how an argument can be used along with the theory it was drawn from to produce a proof that corresponds to this argument. This proof, if visualized again using the algorithm from \autoref{chap:viz} will produce the same argument used to generate the proof. This covers step 4+, as discussed in \autoref{sec:exploration}.
 
 \section{Assumptions Made by Algorithm}
 Valid, complete arguments are the primary assumption of this algorithm. This means that the argument has the form of a tree, in the same way the visualization algorithm produces arguments. Odd layers of the tree represent defenses and even layers represent attacks. The definitions used for attacks and defenses are those found in \nameref{subsec:alfdef} and \nameref{subsec:alfdef2} (\autoref{subsec:alfdef}). Furthermore, the argument must be about the non-acceptability of the initial hypothesis (argument at the root) as described in \autoref{subsec:nacc}. In other words, the argument should be a proof of $NACC^T(\{a\}, \{\})$, where $a$ is the initial hypothesis posited. It might be possible to visualize incomplete arguments, but this is not guaranteed by the algorithm.
@@ -3831,7 +3973,7 @@ In addition, web development has become very fast, with different toolkits and l
 
 \chapter{Proof Builder}
 \label{chap:proofbuilder}
-Experience from repeated usage of the theorem prover in order to generate proofs has shown that sometimes the amount of proofs generated using the theorem prover directly can be overwhelming. Most of the time, a particular proof was required for further study, and going through the generated results was found tedious. Thus a need for a proof builder arose, so that when a particular proof is required, it can be input directly with the help of the proof builder.
+Experience from repeated usage of the theorem prover in order to generate proofs (step 1 and 2) has shown that sometimes the amount of proofs generated using the theorem prover directly can be overwhelming. Most of the time, a particular proof was required for further study, and going through the generated results was found tedious. Thus a need for a proof builder arose (step 1+), so that when a particular proof is required, it can be input directly with the help of the proof builder.
 
 \section{Motivation for Client Side Implementation}
 The proof builder is completely client side. There are several reasons for this decision. 
@@ -3915,13 +4057,15 @@ The user can enter commands to fill in the proof. When the last step in at the t
 
 \chapter{Argument Builder}
 \label{chap:argbuilder}
-In order to complement the proof builder (\autoref{chap:proofbuilder}) an argument builder was created so that specific arguments can be drawn directly, without first having to create the corresponding proof. 
+In order to complement the proof builder (\autoref{chap:proofbuilder}) an argument builder was created so that specific arguments can be drawn directly, without first having to create the corresponding proof in step 1 (theorem prover) or 1+ (proof builder), then checking it in step 3 (Genuine Absurdity Property check) or 3+ (extended property check), and then visualizing it in step 4 (visualization algorithm). 
 
 Much in the same way as the proof builder works, the argument builder provides immediate feedback to the user during the construction of the argument. Unlike the proof builder however, the argument builder is not completely client side. This is due to the fact that the theorem prover needs to be used in order to justify attacks claimed by the user.
 
 The data sent to the server is minimal however, since the only communication between the client and the server when using this builder is a query about whether the supplied theory and given attack claim causes a contradiction with the defense, and does not cause a contradiction without it. The latter is used to check that the actual attack makes sense in that it attacks the defense, and not the theory itself.
 
 Even though the argument builder makes use of the server, all of the state (the theory and the argument under construction) is held locally. This allows the server once more to be stateless. This means that the server does not need to remember any sessions and connections from the clients, greatly simplifying the overall architecture and future maintenance of the project.
+
+The argument builder is step 4++, as discussed in the introduction and \autoref{sec:exploration}.
 
 \section{Features}
 The argument builder makes use of a simple user interface, using elements from other parts of the overall interface. It consists of two input fields for the theory and the first argument, a thumbnail which shows the argument under construction and an attack input field, where the user can specify their attacks.
@@ -3986,7 +4130,94 @@ Other algorithms and procedures include the (extended) Genuine Absurdity Propert
 
 Unit testing was once again employed for the Genuine Absurdity Property checkers. This is a very important procedure, so great care was taken in order for this check to be correct. Both the original definition and the extended share a great deal of similarities, and that is reflected in the conciseness and code reuse of different parts of the code.
 
-Manual tests were plenty and thorough for all of the above procedures and algorithms. Performance was very dependent on the theorem prover. Most of the runtime of the code was spent inside the theorem prover than any of the above procedures. The runtime of these procedures was found to be negligible, suggesting very optimal solutions. The opportunity to optimize the extended version of the Genuine Absurdity Property checker was taken and the result is that siblings do not need to be rechecked whenever referenced. More details about this optimization can be found in \autoref{sec:remarx}.
+Manual tests were plenty and thorough for all of the above procedures and algorithms. Performance was very dependent on the theorem prover. Most of the runtime of the code was spent inside the theorem prover than any of the above procedures. The runtime of these procedures was found to be negligible, suggesting very optimal solutions. In order to measure the time spent on the theorem prover and the time spent on the other predicates, SWI-Prolog's \href{http://www.swi-prolog.org/pldoc/man?section=profile}{profiler}\footnote{http://www.swi-prolog.org/pldoc/man?section=profile} was used. 
+
+Consider as a (representative) example the proof in \autoref{fig:proofiler}. The profiler was used to measure the time spent on different predicates working to determine whether the proof follows the Genuine Absurdity Property or not.
+
+\begin{figure}[thp]
+\[\vbox{\offinterlineskip\halign{
+&\tabskip=1.5em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\tabskip=0em\cr
+%
+1&\neg(\alpha\wedge\neg\beta\wedge\neg\gamma)&\mbox{given}\cr
+2&\neg(\alpha\wedge\beta)&\mbox{given}\cr
+3&\neg(\alpha\wedge\gamma\wedge\neg\delta)&\mbox{given}\cr
+4&\neg(\delta\wedge\neg\beta)&\mbox{given}\cr
+%
+\multispan3\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&5&\alpha&\mbox{hypothesis}&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&6&\beta&\mbox{hypothesis}&\cr
+&7&\alpha\wedge\beta&\wedge I(5,6)&\cr
+&8&\bot&\bot I(2,7)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&9&\neg\beta&\neg I(6,8)&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&10&\gamma&\mbox{hypothesis}&\cr
+%
+&\multispan3\,\vbox{\halign{
+\vrule#&&\hskip.1em\tabskip=1em#\strut&$#$\hfil\tabskip=1em&\hfil$#$\hskip0.1em\tabskip=0em&\vrule#\cr
+\noalign{\hrule}
+%
+&11&\delta&\mbox{hypothesis}&\cr
+&12&\delta\wedge\neg\beta&\wedge I(11,9)&\cr
+&13&\bot&\bot I(4,12)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&14&\neg\delta&\neg I(11,13)&\cr
+&15&\alpha\wedge\gamma&\wedge I(5,10)&\cr
+&16&\alpha\wedge\gamma\wedge\neg\delta&\wedge I(15,14)&\cr
+&17&\bot&\bot I(3,16)&\cr
+%
+\noalign{\hrule}}}\,&\cr
+%
+&18&\neg\gamma&\neg I(10,17)&\cr
+&19&\alpha\wedge\neg\beta&\wedge I(5,9)&\cr
+&20&\alpha\wedge\neg\beta\wedge\neg\gamma&\wedge I(19,18)&\cr
+&21&\bot&\bot I(1,20)&\cr
+%
+\noalign{\hrule}}}\,\cr
+%
+22&\neg\alpha&\neg I(5,21)\cr
+}}\]
+\caption{One of the proofs used to profile execution time of different algorithms versus the theorem prover\label{fig:proofiler}}
+\end{figure}
+
+\autoref{lst:gapxcheck} shows the code for the predicate \lstinline$checkGAPX/1$, and \autoref{fig:scrprofilegapx} shows the analysis done on this predicate. The code listing shows all the predicates used for checking for the Genuine Absurdity Property. The yellow line in the figure represents the "current predicate", which is \lstinline$checkGAPX/1$. The lines below that represent the callees. Those are the predicates called by the current predicate. It can be seen that the time spent by any of the Genuine Absurdity Property-specific predicates is negligible ($0.0\%$) apart from \lstinline$checkGAP/7$, which accounts for most of the total runtime. Focus should now converge to this predicate.
+
+\autoref{lst:gapgapcheck} shows the code for the predicate \lstinline$checkGAP/7$, which makes use of other Genuine Absurdity Property predicates but also the theorem prover. Line 4 of the code listing in particular, makes use of the prover inside a call of the predicate \lstinline$not/1$. \autoref{fig:scrprofilegapcommon} shows the profiling on \lstinline$checkGAP/7$. All of the processing time is attributed to the theorem prover. This predicate, and \lstinline$checkGAPX/1$, along with their children have negligible runtime. This is not only compared to the theorem prover, but in terms of absolute time as well as shown by \autoref{fig:scrprofileabsolutgap}.
+
+\begin{figure}[htp]
+\centerline{\includegraphics[scale=0.6]{img/scr-profile-gapx.png}}
+\caption{Most of \lstinline$checkGAPX/1$'s execution time comes from the predicate \lstinline$checkGAP/7$\label{fig:scrprofilegapx}}
+\end{figure}
+
+\begin{figure}[htp]
+\centerline{\includegraphics[scale=0.6]{img/scr-profile-gapcommon.png}}
+\caption{Most of \lstinline$checkGAP/7$'s execution time comes from the theorem proverwrapped inside a call to \lstinline$not/1$\label{fig:scrprofilegapcommon}}
+\end{figure}
+
+\begin{figure}[htp]
+\centerline{\includegraphics[scale=0.6]{img/scr-profile-absolutgap.png}}
+\caption{The runtime of the Genuine Absurdity Property is negligible not only when compared to that of the theorem prover, but in absolute execution time as well\label{fig:scrprofileabsolutgap}}
+\end{figure}
+
+The proof builder (step 1+), and visualizer (step 4) do not make use of the theorem prover, but the proof extractor (step 4+) and argument builder (step 4++) do use the prover. Runtimes were found to be similar in that algorithm-specific predicates had negligible impact on runtime, and the theorem prover was dominating execution time.
+
+The opportunity to optimize the extended version of the Genuine Absurdity Property checker was taken and the result is that siblings do not need to be rechecked whenever referenced. More details about this optimization can be found in \autoref{sec:remarx}.
 
 \section{Server}
 The server is a very stable and simple unit of code. It was indirectly tested extensively when testing the client (since the server was always running behind the scenes to support it). As discussed in \autoref{sec:remarklet}, it requires virtually no maintenance and a very limited amount of requirements to run.
@@ -4015,13 +4246,13 @@ Unfortunately, there was not enough time to explore the more challenging concept
 
 \chapter{Conclusions and Future Work}
 \label{chap:chiliconclusion}
-Argumentation Logic is still new, but many lessons could be learned by undertaking this project and studying the concept of Argumentation Logic. Among what has been learned is how this new type of logic bridges the gap between traditional propositional logic and argumentation theory, and establishes a connection and an analogy between the two.
+Argumentation Logic is still new, but many lessons were learned by undertaking this project and studying the concept of Argumentation Logic. Among what has been learned is how this new type of logic bridges the gap between traditional propositional logic and argumentation theory, and establishes a connection and an analogy between the two.
 
-Argumentation Logic shows how proofs can be seen as exchanges of relevant arguments, by establishing a check that enforces relevance. Subsequently, finding a way to visualize proofs by defining a mapping that allows to convert a natural deduction proof to an argument and vice versa was another interesting lesson.
+Argumentation Logic shows how proofs can be seen as exchanges of relevant arguments, by establishing a check that enforces relevance (that is, the Genuine Absurdity Property, step 3). Subsequently, finding a way to visualize proofs by defining a mapping that allows to convert a natural deduction proof to an argument (step 4) and vice versa (step 4+) was another interesting lesson, something now available for further study as a result of this project.
 
-Argumentation Logic can be extended further to function with more flexible versions of natural deduction that can include substitution and potentially many more shortcuts and derived rules or connectives.
+Argumentation Logic can be extended further to function with more flexible versions of natural deduction that can include substitution and potentially many more shortcuts and derived rules or connectives (step 3+).
 
-Finally, it can be inferred that an implementation of a particular concept is a great way to help in discovering ideas and probing the concept at hand, leading to more improvements and extensions and a much better understanding of what it involves.
+Finally, it can be inferred that an implementation of a particular concept is a great way to help in discovering ideas and probing the concept at hand, leading to more improvements and extensions and a much better understanding of what it involves. In fact, many of the implemented procedures (such as the extended Genuine Absurdity Property, the visualization of proofs and the extraction of proofs from arguments) were in a sense byproducts of probing Argumentation Logic during the journey of building this tool. The journey (findings) could arguably be considered more important than the destination (final product).
 
 Future work for the theorem prover includes Argumentation Logic-compliant pruning as well as other performance enhancements that will allow the theorem prover to run faster. Profiling the runtime of the theorem prover will allow to the optimization to focus on the slow-running parts of the code.
 
