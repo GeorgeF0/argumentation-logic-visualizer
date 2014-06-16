@@ -15,11 +15,6 @@
 
 \pagestyle{fancy}
 \fancyhf{}
-\fancyhead[RE,LO]{\small\nouppercase{\leftmark}}
-\fancyfoot[CE,CO]{\thepage}
- 
-\renewcommand{\headrulewidth}{1pt}
-\renewcommand{\footrulewidth}{0.5pt}
 
 \newcommand{\cmark}{\ding{51}}
 \newcommand{\xmark}{\ding{55}}
@@ -97,7 +92,7 @@ every node/.style={anchor=west,right,font=\sffamily,xshift=7pt,yshift=1pt}
 
 % Title
 \rule{\linewidth}{0.5mm} \\[0.4cm]
-{ \huge \bfseries An Interactive Theorem Prover for Argumentation Logic \\[0.4cm] }
+{ \huge \bfseries A Toolkit for Exploring \\Argumentation Logic \\[0.4cm] }
 
 \rule{\linewidth}{0.5mm} \\[1.5cm]
 
@@ -126,11 +121,15 @@ Claudia \textsc{Schulz}
 \end{center}
 \end{titlepage}
 
+\cleardoublepage
+
 \begin{abstract}
 Argumentation Logic is a new concept that tries to bridge the gap between Natural Deduction in Propositional Logic and Argumentation Theory by establishing a correspondence between the two. Ultimately, it aims to provide grounds for reasoning in paraconsistent environments.
 
 \noindent In order to help explore this concept, a collection of procedures and a graphical user interface have been implemented that allow the creation of natural deduction proofs and their visualization as arguments and vice-versa. This is accomplished through the use of a mapping that has been devised that describes the connection between natural deduction proofs and arguments.
 \end{abstract}
+
+\cleardoublepage
 
 \chapter*{Acknowledgments}
 First and foremost I would like to wholeheartedly thank my supervisors Dr. Krysia Broda and Dr. Francesca Toni for their continuous and invaluable advice, feedback and support throughout the course of this project, as well as for all the intriguing conversations during our meetings.
@@ -147,9 +146,12 @@ First and foremost I would like to wholeheartedly thank my supervisors Dr. Krysi
 \medskip
 \noindent Finally I would like to thank my family and friends for their undying love and support, as well as MeatLiquor and Patty \& Bun for the great nights out with friends!
 
+\cleardoublepage
 \tableofcontents
 
 \clearpage
+\renewcommand{\headrulewidth}{1pt}
+\renewcommand{\footrulewidth}{0.5pt}
 \fancyhf{}
 \fancyhead[RE,LO]{\small\nouppercase{\leftmark}}
 \fancyhead[LE,RO]{\small\nouppercase{\rightmark}}
