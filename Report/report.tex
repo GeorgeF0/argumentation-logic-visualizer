@@ -1251,7 +1251,7 @@ The latter two concerns were the main subject of step 2. A more interactive and 
 \label{sec:ruleset}
 The implementation tries to approach the proof both backwards (from the bottom up) and forwards (from the top down). Several backwards and forwards rules have been implemented. Backwards rules try to close the gap between the theory and the goal from the bottom, and they are the ones that complete goals in order to finish the proof. The forwards rules are there in order to break down complicated formulas that have already been derived so that the backwards rules can complete their work. The forwards rules do not progress the proof in the sense that they never deal with the goal. They just provide simpler formulas that can be of use to the backwards rules.
 
-The implementation was partly modeled after (or at the very least inspired by) the Carnegie Mellon Proof Tutor (introduced in \autoref{subsec:carnage}, the full paper is \citep{siegfried}). However, the implementation follows a Fitch-style natural deduction. There are also explicit rules for contradiction. No distinction exists between the available assumptions $\alpha$ and derivable (using elimination rules) context $\beta$. Thus the whole context $\alpha\beta$ will be referred to as $\kappa$. The same notation will be used as much as possible.
+The implementation was partly modeled after (or at the very least inspired by) the Carnegie Mellon Proof Tutor (introduced in \autoref{subsec:carnage}, the full paper is \citep{siegfried}). However, the implementation follows a Fitch-style natural deduction. There are also explicit rules for contradiction. No distinction exists between the available assumptions $\alpha$ and derivable (using elimination rules) context $\beta$. Thus the whole context $\alpha\beta$ will be referred to as $\kappa$. The notation is borrowed from the full paper.
 
 Listed below are the forward rules:
 
@@ -1835,7 +1835,7 @@ A limitation of the Genuine Absurdity Property as it is currently defined is tha
 \label{chap:gapx}
 As briefly mentioned in \autoref{subsec:gap}, the standard definition for the Genuine Absurdity Property comes with a shortcoming. It only considers proofs where the substitution rule is not permitted, which is why only ancestor and child hypotheses are taken into account. This chapter explains how the current definition of the Genuine Absurdity Property can be extended to accommodate proofs of that kind, as many proof search software or even humans tend to use shortcuts or derived rules in order to shorten proofs by decreasing repetition and reduce the amount of effort needed to build a proof. This chapter covers step 3+ of \autoref{sec:exploration}.
 
-\section{Arriving at the Definition of the Extension}
+\section{Arriving at the Definition}
 This section starts from the classic definition of the Genuine Absurdity Property and arrives at the final definition. This section can be skipped without any loss of context. The final definition is given again in the next section.
 
 As a first step, extend the definition of the Genuine Absurdity Property from $T\cup\{\phi_1, ..., \phi_k\}\cup\{\neg\psi_1, ..., \neg\psi_l\}\nvdash_{MRA}\bot$ to $T\cup\{\phi_1, ..., \phi_k\}\cup\{\neg\psi_1, ..., \neg\psi_l\}\cup\{\neg\chi_1, ..., \neg\chi_m\}\nvdash_{MRA}\bot$, where $\phi_i$ is an ancestor hypothesis, $\psi_i$ is a child hypothesis and $\chi_i$ is a sibling hypothesis.
@@ -2200,12 +2200,12 @@ Having said that, there is one slight adjustment that needs to be made. So far, 
 
 It can be seen that $[\beta ... \bot]$ is not a sibling to $[\delta ... \bot]$ but rather an ancestor's sibling (or uncle) derivation. In this case, current GAPX does not apply. It can therefore simply extend the $\{\neg\chi_1 ... \neg\chi_m\}$ set to contain any sibling derivation (that came before) of any ancestor up the "tree" that has been referenced, as once again, such derivation would be copied as a child derivation if it were a strict natural deduction proof that forbids shortcuts.
 
-\section{Definition of Genuine Absurdity Property Extension}
+\section{Definition of Extension}
 The previous section showed the thinking behind the arrival at the final definition for the Genuine Absurdity Property extension. This definition is given below:
 
 A certain (sub)derivation $[\phi ... \bot]$ follows the extended Genuine Absurdity Property if $T\cup\{\phi_1, ..., \phi_k\}\cup\{\neg\psi_1, ..., \neg\psi_l\}\cup\{\neg\chi_1, ..., \neg\chi_m\}\nvdash_{MRA}\bot$, where $\chi_i$ is any sibling or any ancestor's sibling derivation hypothesis whose conclusion is referenced by the (sub)derivation currently examined. Child derivations must also follow this property.
 
-\section{Correctness of Genuine Absurdity Property Extension}
+\section{Correctness of Extension}
 Take an arbitrary (sub)derivation in the proof under examination. It can be categorized as either making no references to siblings, or indeed referring to sibling derivations.
 
 \subsection{Case 1: Not Referencing Sibling Derivations}
@@ -2374,7 +2374,7 @@ forestyle
 \caption{Visualization of the proof of example in \autoref{fig:vizexproof}\label{fig:vizex}}
 \end{figure}
 
-\section{Observations, Remarks and Future Work}
+\section{Observations and Remarks}
 \label{sec:vizmarks}
 It may be obvious by now that a certain mapping can be established between the hypotheses and contradictions and defenses and attacks. A hypothesis in the proof always represents a defense from the argumentation point of view, and the individual atoms, negated atoms and negated subformulas whose conjunction (along with the negation of their conjunction) forms the contradiction represent the attack from the argumentation point of view. Some of these atoms, negated atoms and formulas can be traced back to conclusions of $\neg I$ rules, thus it can be said that conclusions of $\neg I$ rules (ie the results of the boxes) form some part of an attack.
 
