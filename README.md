@@ -10,7 +10,7 @@ This program was created in order to explore Argumentation Logic, a concept crea
 The following is a table with the top level folders along with a description of what they contain:
 
 Folder | Content Description
--|-
+------ | -------------------
 Client | Contains all of the GUI interface of the project
 Core | Contains the implementations of the various Argumentation Logic algorithms
 Presentation | Contains the slides for the presentation of the project
